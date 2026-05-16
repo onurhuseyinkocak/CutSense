@@ -9,13 +9,18 @@ final class AnalysisViewModel {
     var audioResult: AudioAnalysisResult?
     var transcriptionResult: TranscriptionResult?
     var roughCutResult: RoughCutResult?
+    var cleanupResult: TranscriptCleanupAnalyzer.CleanupResult?
+    var takeGroups: [TakeGroup] = []
+    var continuityResult: ContinuityChecker.ContinuityResult?
+    var meaningResult: MeaningPreservationEngine.PreservationResult?
 
     let steps = [
-        "Extracting audio...",
-        "Analyzing waveform...",
+        "Analyzing audio...",
         "Transcribing speech...",
-        "Detecting edit commands...",
-        "Building rough cut..."
+        "Cleaning transcript...",
+        "Detecting takes & edits...",
+        "Building rough cut...",
+        "Verifying coherence..."
     ]
 
     private let transcriptionService = SpeechTranscriptionService()
@@ -26,25 +31,55 @@ final class AnalysisViewModel {
         defer { isAnalyzing = false }
 
         do {
-            // Step 1-2: Audio analysis
+            // Step 1: Audio analysis
             currentStep = 0
-            try await Task.sleep(for: .milliseconds(200))
-            currentStep = 1
             audioResult = try await AudioAnalysisService.analyze(url: videoURL)
 
-            // Step 3: Transcription
-            currentStep = 2
+            // Step 2: Transcription
+            currentStep = 1
             transcriptionResult = try await transcriptionService.transcribe(url: videoURL)
 
-            // Step 4-5: Rough cut
-            currentStep = 3
-            try await Task.sleep(for: .milliseconds(100))
-            currentStep = 4
+            guard let audio = audioResult, var transcript = transcriptionResult else { return }
 
-            if let audio = audioResult, let transcript = transcriptionResult {
-                roughCutResult = RoughCutDecisionEngine.generateDecisions(
-                    transcription: transcript,
-                    audioAnalysis: audio
+            // Step 3: Cleanup (fillers, restarts, duplicates)
+            currentStep = 2
+            let cleanup = TranscriptCleanupAnalyzer.analyze(transcript.segments)
+            cleanupResult = cleanup
+            transcript = TranscriptionResult(
+                fullText: transcript.fullText,
+                segments: cleanup.segments,
+                language: transcript.language,
+                overallConfidence: transcript.overallConfidence
+            )
+            transcriptionResult = transcript
+
+            // Step 4: Take detection + edit commands
+            currentStep = 3
+            takeGroups = TakeDetectionEngine.detectTakeGroups(segments: transcript.segments)
+
+            // Step 5: Rough cut decisions
+            currentStep = 4
+            roughCutResult = RoughCutDecisionEngine.generateDecisions(
+                transcription: transcript,
+                audioAnalysis: audio
+            )
+
+            // Step 6: Verify coherence
+            currentStep = 5
+            if let roughCut = roughCutResult {
+                let keptTexts = roughCut.keepSegments.compactMap { decision -> TranscriptSegment? in
+                    transcript.segments.first { seg in
+                        abs(seg.startTime - decision.startTime) < 0.1
+                    }
+                }
+
+                meaningResult = MeaningPreservationEngine.verify(
+                    keptSegments: keptTexts,
+                    allSegments: transcript.segments
+                )
+
+                continuityResult = ContinuityChecker.check(
+                    keptDecisions: roughCut.keepSegments
                 )
             }
         } catch {
@@ -161,6 +196,19 @@ struct AnalysisScreen: View {
                 statRow("Segments kept", value: "\(result.keepSegments.count)")
                 statRow("Segments cut", value: "\(result.cutSegments.count)")
                 statRow("Needs review", value: "\(result.reviewSegments.count)")
+                if let cleanup = viewModel.cleanupResult {
+                    statRow("Fillers removed", value: "\(cleanup.fillersRemoved)")
+                    statRow("Restarts found", value: "\(cleanup.restartsDetected)")
+                }
+                if !viewModel.takeGroups.isEmpty {
+                    statRow("Take groups", value: "\(viewModel.takeGroups.count)")
+                }
+                if let meaning = viewModel.meaningResult {
+                    statRow("Coherence", value: "\(Int(meaning.overallScore))%")
+                }
+                if let continuity = viewModel.continuityResult {
+                    statRow("Continuity", value: "\(Int(continuity.overallScore))%")
+                }
             }
             .padding(.horizontal, 40)
 

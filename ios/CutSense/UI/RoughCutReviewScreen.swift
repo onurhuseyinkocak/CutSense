@@ -4,8 +4,7 @@ struct RoughCutReviewScreen: View {
     @State var roughCut: RoughCutResult
     let transcription: TranscriptionResult
     let videoURL: URL
-    @State private var showExport = false
-    @State private var exportService = ExportService()
+    @State private var showTemplateSelection = false
 
     var body: some View {
         ZStack {
@@ -36,9 +35,9 @@ struct RoughCutReviewScreen: View {
                     // Actions
                     VStack(spacing: 12) {
                         Button {
-                            showExport = true
+                            showTemplateSelection = true
                         } label: {
-                            Text("Continue to Export")
+                            Text("Choose Template")
                                 .fontWeight(.semibold)
                                 .frame(maxWidth: .infinity)
                                 .padding()
@@ -54,8 +53,12 @@ struct RoughCutReviewScreen: View {
         }
         .navigationTitle("Rough Cut Review")
         .toolbarColorScheme(.dark, for: .navigationBar)
-        .sheet(isPresented: $showExport) {
-            ExportScreen(sourceURL: videoURL, exportService: exportService)
+        .navigationDestination(isPresented: $showTemplateSelection) {
+            TemplateSelectionScreen(
+                roughCut: roughCut,
+                transcription: transcription,
+                videoURL: videoURL
+            )
         }
     }
 
