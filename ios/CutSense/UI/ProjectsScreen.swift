@@ -134,15 +134,23 @@ struct ProjectsScreen: View {
     private var projectList: some View {
         List {
             ForEach(viewModel.projects) { project in
-                ProjectRow(project: project)
-                    .listRowBackground(Color.white.opacity(0.05))
-                    .swipeActions(edge: .trailing) {
-                        Button(role: .destructive) {
-                            Task { await viewModel.deleteProject(project) }
-                        } label: {
-                            Label("Delete", systemImage: "trash")
+                NavigationLink {
+                    VideoImportScreen(project: project) { updated in
+                        if let idx = viewModel.projects.firstIndex(where: { $0.id == updated.id }) {
+                            viewModel.projects[idx] = updated
                         }
                     }
+                } label: {
+                    ProjectRow(project: project)
+                }
+                .listRowBackground(Color.white.opacity(0.05))
+                .swipeActions(edge: .trailing) {
+                    Button(role: .destructive) {
+                        Task { await viewModel.deleteProject(project) }
+                    } label: {
+                        Label("Delete", systemImage: "trash")
+                    }
+                }
             }
         }
         .listStyle(.plain)

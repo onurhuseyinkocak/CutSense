@@ -12,12 +12,18 @@
 		229EC4A7B09ACBFFF660A9AC /* ProjectsScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = C2785F1827D73BCE2EBD4017 /* ProjectsScreen.swift */; };
 		301B50764891F1535064762B /* CutSenseApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 86A091CC60867BC2AF47E2C4 /* CutSenseApp.swift */; };
 		33CCAA14CC7C6549A5CD62BD /* AuthManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 72233D1433B64E2F396B2C0B /* AuthManager.swift */; };
+		49D01160A804DD0C19D6264E /* VideoImportScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF11EA132064333A2599A6FB /* VideoImportScreen.swift */; };
 		4A39C3A8C0AF8DCDFD531763 /* AccountScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = F05673FB3EA70406FB93343F /* AccountScreen.swift */; };
 		5671B9304FB2DC42E80E64A3 /* Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2515ADDECC802089D2ED807D /* Models.swift */; };
+		69D63998D72478F3CDD63286 /* VideoPreviewEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = BDB255C682E012DC6B8EC704 /* VideoPreviewEngine.swift */; };
 		922F39C42B814DE21BA7BD9C /* RootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A2E0B8B749BBA30F67CE91A /* RootView.swift */; };
 		99128F340EED2CAADD304369 /* Supabase in Frameworks */ = {isa = PBXBuildFile; productRef = FB538ABFCD1E080DC602EE9B /* Supabase */; };
+		A393A49F65371AA8F739E41E /* ExportScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1E99FFE749DCF4B73DBF1339 /* ExportScreen.swift */; };
 		AC288C9000CFD7226A256596 /* CutSenseTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 668E0F2DEA05FD6C59ED350F /* CutSenseTests.swift */; };
+		ADCAD5E915940F15C057A775 /* VideoMetadataService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9C9CA1330E134212E6674FEC /* VideoMetadataService.swift */; };
 		C53A6705E446B62F2CE64C45 /* SupabaseClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2DB7DC49AAFACB345FCAC32C /* SupabaseClient.swift */; };
+		D2BD8EF815D8FB6530381BE4 /* VideoImportService.swift in Sources */ = {isa = PBXBuildFile; fileRef = C62FC1631B126EE52AC1C53B /* VideoImportService.swift */; };
+		DCF23FD8BCB6E72C2FBE4022 /* ExportService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 88AE4A2C0B4FF7CE416CB779 /* ExportService.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -32,14 +38,20 @@
 
 /* Begin PBXFileReference section */
 		0A2E0B8B749BBA30F67CE91A /* RootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootView.swift; sourceTree = "<group>"; };
+		1E99FFE749DCF4B73DBF1339 /* ExportScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExportScreen.swift; sourceTree = "<group>"; };
 		2515ADDECC802089D2ED807D /* Models.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Models.swift; sourceTree = "<group>"; };
 		2DB7DC49AAFACB345FCAC32C /* SupabaseClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SupabaseClient.swift; sourceTree = "<group>"; };
 		668E0F2DEA05FD6C59ED350F /* CutSenseTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CutSenseTests.swift; sourceTree = "<group>"; };
 		72233D1433B64E2F396B2C0B /* AuthManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthManager.swift; sourceTree = "<group>"; };
 		86A091CC60867BC2AF47E2C4 /* CutSenseApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CutSenseApp.swift; sourceTree = "<group>"; };
+		88AE4A2C0B4FF7CE416CB779 /* ExportService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExportService.swift; sourceTree = "<group>"; };
 		8CE7C67F669CC7C139D97E42 /* CutSenseTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = CutSenseTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		9C9CA1330E134212E6674FEC /* VideoMetadataService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VideoMetadataService.swift; sourceTree = "<group>"; };
 		B9A4ECAEAEB959B791A3372C /* CutSense.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = CutSense.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		BDB255C682E012DC6B8EC704 /* VideoPreviewEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VideoPreviewEngine.swift; sourceTree = "<group>"; };
 		C2785F1827D73BCE2EBD4017 /* ProjectsScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectsScreen.swift; sourceTree = "<group>"; };
+		C62FC1631B126EE52AC1C53B /* VideoImportService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VideoImportService.swift; sourceTree = "<group>"; };
+		CF11EA132064333A2599A6FB /* VideoImportScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VideoImportScreen.swift; sourceTree = "<group>"; };
 		E3B81F86B6235C8375FA3964 /* AuthScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthScreen.swift; sourceTree = "<group>"; };
 		F05673FB3EA70406FB93343F /* AccountScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccountScreen.swift; sourceTree = "<group>"; };
 		F494D19DF79D6891075F003E /* ProjectRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectRepository.swift; sourceTree = "<group>"; };
@@ -60,6 +72,7 @@
 		0DD0231FE1A8DEAA3568A63F /* Export */ = {
 			isa = PBXGroup;
 			children = (
+				88AE4A2C0B4FF7CE416CB779 /* ExportService.swift */,
 			);
 			path = Export;
 			sourceTree = "<group>";
@@ -67,6 +80,9 @@
 		3191EC79147EC13BA7639368 /* Video */ = {
 			isa = PBXGroup;
 			children = (
+				C62FC1631B126EE52AC1C53B /* VideoImportService.swift */,
+				9C9CA1330E134212E6674FEC /* VideoMetadataService.swift */,
+				BDB255C682E012DC6B8EC704 /* VideoPreviewEngine.swift */,
 			);
 			path = Video;
 			sourceTree = "<group>";
@@ -98,7 +114,9 @@
 			isa = PBXGroup;
 			children = (
 				F05673FB3EA70406FB93343F /* AccountScreen.swift */,
+				1E99FFE749DCF4B73DBF1339 /* ExportScreen.swift */,
 				C2785F1827D73BCE2EBD4017 /* ProjectsScreen.swift */,
+				CF11EA132064333A2599A6FB /* VideoImportScreen.swift */,
 			);
 			path = UI;
 			sourceTree = "<group>";
@@ -281,11 +299,17 @@
 				33CCAA14CC7C6549A5CD62BD /* AuthManager.swift in Sources */,
 				009287350ADFA1794A5F547C /* AuthScreen.swift in Sources */,
 				301B50764891F1535064762B /* CutSenseApp.swift in Sources */,
+				A393A49F65371AA8F739E41E /* ExportScreen.swift in Sources */,
+				DCF23FD8BCB6E72C2FBE4022 /* ExportService.swift in Sources */,
 				5671B9304FB2DC42E80E64A3 /* Models.swift in Sources */,
 				1B32AE90CD97373BBC38CA0C /* ProjectRepository.swift in Sources */,
 				229EC4A7B09ACBFFF660A9AC /* ProjectsScreen.swift in Sources */,
 				922F39C42B814DE21BA7BD9C /* RootView.swift in Sources */,
 				C53A6705E446B62F2CE64C45 /* SupabaseClient.swift in Sources */,
+				49D01160A804DD0C19D6264E /* VideoImportScreen.swift in Sources */,
+				D2BD8EF815D8FB6530381BE4 /* VideoImportService.swift in Sources */,
+				ADCAD5E915940F15C057A775 /* VideoMetadataService.swift in Sources */,
+				69D63998D72478F3CDD63286 /* VideoPreviewEngine.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
