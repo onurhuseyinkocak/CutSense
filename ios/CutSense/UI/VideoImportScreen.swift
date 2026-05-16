@@ -7,6 +7,7 @@ struct VideoImportScreen: View {
     @State private var exportService = ExportService()
     @State private var selectedItem: PhotosPickerItem?
     @State private var showExport = false
+    @State private var showAnalysis = false
 
     let project: Project
     let onProjectUpdated: (Project) -> Void
@@ -118,18 +119,20 @@ struct VideoImportScreen: View {
                             .clipShape(RoundedRectangle(cornerRadius: 12))
                     }
 
-                    Button {
-                        showExport = true
+                    NavigationLink {
+                        if let videoURL = importService.importedVideoURL {
+                            AnalysisScreen(videoURL: videoURL)
+                        }
                     } label: {
-                        Text("Export")
+                        Text("Analyze")
                             .fontWeight(.semibold)
                             .frame(maxWidth: .infinity)
                             .padding()
-                            .background(metadata.isSupported ? .white : .gray)
+                            .background(metadata.isSupported && metadata.hasAudio ? .white : .gray)
                             .foregroundStyle(.black)
                             .clipShape(RoundedRectangle(cornerRadius: 12))
                     }
-                    .disabled(!metadata.isSupported)
+                    .disabled(!metadata.isSupported || !metadata.hasAudio)
                 }
                 .padding(.horizontal, 24)
                 .padding(.bottom, 32)
