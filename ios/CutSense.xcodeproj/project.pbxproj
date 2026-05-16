@@ -8,11 +8,12 @@
 
 /* Begin PBXBuildFile section */
 		009287350ADFA1794A5F547C /* AuthScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = E3B81F86B6235C8375FA3964 /* AuthScreen.swift */; };
-		03702E6F231D13F9BCF8C10D /* CutSenseTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 668E0F2DEA05FD6C59ED350F /* CutSenseTests.swift */; };
+		1B32AE90CD97373BBC38CA0C /* ProjectRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = F494D19DF79D6891075F003E /* ProjectRepository.swift */; };
 		229EC4A7B09ACBFFF660A9AC /* ProjectsScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = C2785F1827D73BCE2EBD4017 /* ProjectsScreen.swift */; };
 		301B50764891F1535064762B /* CutSenseApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 86A091CC60867BC2AF47E2C4 /* CutSenseApp.swift */; };
 		33CCAA14CC7C6549A5CD62BD /* AuthManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 72233D1433B64E2F396B2C0B /* AuthManager.swift */; };
 		4A39C3A8C0AF8DCDFD531763 /* AccountScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = F05673FB3EA70406FB93343F /* AccountScreen.swift */; };
+		5671B9304FB2DC42E80E64A3 /* Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2515ADDECC802089D2ED807D /* Models.swift */; };
 		922F39C42B814DE21BA7BD9C /* RootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A2E0B8B749BBA30F67CE91A /* RootView.swift */; };
 		99128F340EED2CAADD304369 /* Supabase in Frameworks */ = {isa = PBXBuildFile; productRef = FB538ABFCD1E080DC602EE9B /* Supabase */; };
 		AC288C9000CFD7226A256596 /* CutSenseTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 668E0F2DEA05FD6C59ED350F /* CutSenseTests.swift */; };
@@ -31,6 +32,7 @@
 
 /* Begin PBXFileReference section */
 		0A2E0B8B749BBA30F67CE91A /* RootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootView.swift; sourceTree = "<group>"; };
+		2515ADDECC802089D2ED807D /* Models.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Models.swift; sourceTree = "<group>"; };
 		2DB7DC49AAFACB345FCAC32C /* SupabaseClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SupabaseClient.swift; sourceTree = "<group>"; };
 		668E0F2DEA05FD6C59ED350F /* CutSenseTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CutSenseTests.swift; sourceTree = "<group>"; };
 		72233D1433B64E2F396B2C0B /* AuthManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthManager.swift; sourceTree = "<group>"; };
@@ -40,6 +42,7 @@
 		C2785F1827D73BCE2EBD4017 /* ProjectsScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectsScreen.swift; sourceTree = "<group>"; };
 		E3B81F86B6235C8375FA3964 /* AuthScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthScreen.swift; sourceTree = "<group>"; };
 		F05673FB3EA70406FB93343F /* AccountScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccountScreen.swift; sourceTree = "<group>"; };
+		F494D19DF79D6891075F003E /* ProjectRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectRepository.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -112,6 +115,8 @@
 		9731EB1791F9C012DCAB3559 /* Database */ = {
 			isa = PBXGroup;
 			children = (
+				2515ADDECC802089D2ED807D /* Models.swift */,
+				F494D19DF79D6891075F003E /* ProjectRepository.swift */,
 			);
 			path = Database;
 			sourceTree = "<group>";
@@ -276,7 +281,8 @@
 				33CCAA14CC7C6549A5CD62BD /* AuthManager.swift in Sources */,
 				009287350ADFA1794A5F547C /* AuthScreen.swift in Sources */,
 				301B50764891F1535064762B /* CutSenseApp.swift in Sources */,
-				03702E6F231D13F9BCF8C10D /* CutSenseTests.swift in Sources */,
+				5671B9304FB2DC42E80E64A3 /* Models.swift in Sources */,
+				1B32AE90CD97373BBC38CA0C /* ProjectRepository.swift in Sources */,
 				229EC4A7B09ACBFFF660A9AC /* ProjectsScreen.swift in Sources */,
 				922F39C42B814DE21BA7BD9C /* RootView.swift in Sources */,
 				C53A6705E446B62F2CE64C45 /* SupabaseClient.swift in Sources */,
@@ -306,6 +312,8 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
+				ENABLE_TESTING_SEARCH_PATHS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -386,6 +394,8 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
+				ENABLE_TESTING_SEARCH_PATHS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",

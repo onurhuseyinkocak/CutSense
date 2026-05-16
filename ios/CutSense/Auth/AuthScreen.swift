@@ -15,7 +15,6 @@ struct AuthScreen: View {
             VStack(spacing: 32) {
                 Spacer()
 
-                // Logo area
                 VStack(spacing: 8) {
                     Text("CutSense")
                         .font(.system(size: 40, weight: .bold, design: .default))
@@ -28,7 +27,6 @@ struct AuthScreen: View {
 
                 Spacer()
 
-                // Auth form
                 VStack(spacing: 16) {
                     TextField("Email", text: $email)
                         .textFieldStyle(.plain)
@@ -84,18 +82,16 @@ struct AuthScreen: View {
                     }
                 }
 
-                // Divider
                 HStack {
                     Rectangle().frame(height: 0.5).foregroundStyle(.gray.opacity(0.4))
                     Text("or").font(.caption).foregroundStyle(.gray)
                     Rectangle().frame(height: 0.5).foregroundStyle(.gray.opacity(0.4))
                 }
 
-                // Sign in with Apple
                 SignInWithAppleButton(.signIn) { request in
                     request.requestedScopes = [.fullName, .email]
-                } onCompletion: { _ in
-                    // Apple Sign In handled in Phase 1
+                } onCompletion: { result in
+                    handleAppleSignIn(result)
                 }
                 .signInWithAppleButtonStyle(.white)
                 .frame(height: 50)
@@ -116,6 +112,18 @@ struct AuthScreen: View {
                 await authManager.signInWithEmail(email, password: password)
             }
             isSubmitting = false
+        }
+    }
+
+    private func handleAppleSignIn(_ result: Result<ASAuthorization, any Error>) {
+        switch result {
+        case .success(let authorization):
+            guard let credential = authorization.credential as? ASAuthorizationAppleIDCredential else { return }
+            Task {
+                await authManager.signInWithApple(credential: credential)
+            }
+        case .failure(let error):
+            authManager.errorMessage = error.localizedDescription
         }
     }
 }

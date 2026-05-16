@@ -17,7 +17,9 @@ targets:
     type: application
     platform: iOS
     sources:
-      - CutSense
+      - path: CutSense
+        excludes:
+          - "Tests/**"
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.cutsense.app
@@ -42,9 +44,13 @@ targets:
     type: bundle.unit-test
     platform: iOS
     sources:
-      - CutSense/Tests
+      - path: CutSense/Tests
+        excludes:
+          - "**/.gitkeep"
     dependencies:
       - target: CutSense
     settings:
       base:
         SWIFT_VERSION: "6.0"
+        ENABLE_TESTING_SEARCH_PATHS: YES
+        GENERATE_INFOPLIST_FILE: YES

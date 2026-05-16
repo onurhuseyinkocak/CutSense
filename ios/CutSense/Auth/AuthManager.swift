@@ -1,7 +1,9 @@
 import Foundation
 import Observation
 import Supabase
+import AuthenticationServices
 
+@MainActor
 @Observable
 final class AuthManager {
     var isAuthenticated = false
@@ -42,6 +44,27 @@ final class AuthManager {
             } else {
                 errorMessage = "Check your email to confirm your account."
             }
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+    }
+
+    func signInWithApple(credential: ASAuthorizationAppleIDCredential) async {
+        errorMessage = nil
+        guard let identityToken = credential.identityToken,
+              let tokenString = String(data: identityToken, encoding: .utf8) else {
+            errorMessage = "Failed to get Apple identity token."
+            return
+        }
+        do {
+            let session = try await supabase.auth.signInWithIdToken(
+                credentials: .init(
+                    provider: .apple,
+                    idToken: tokenString
+                )
+            )
+            currentUser = session.user
+            isAuthenticated = true
         } catch {
             errorMessage = error.localizedDescription
         }
