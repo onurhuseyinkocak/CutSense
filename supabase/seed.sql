@@ -1,0 +1,2 @@
+-- CutSense seed file
+-- No seed data needed yet. Auth creates profiles via trigger.
