@@ -29,6 +29,7 @@
 		69D63998D72478F3CDD63286 /* VideoPreviewEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = BDB255C682E012DC6B8EC704 /* VideoPreviewEngine.swift */; };
 		786602F19EBBE7F49705B4ED /* CleanTimelineBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = F97FF6F27A35AD8B62B81C44 /* CleanTimelineBuilder.swift */; };
 		7ECB66A107EB769406B13E60 /* RoughCutReviewScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1BCE7E0EF6670FA7B6345C51 /* RoughCutReviewScreen.swift */; };
+		837643FFAFE3177E3A31CC81 /* Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = F82E751CD6507A92A9434F6E /* Theme.swift */; };
 		922F39C42B814DE21BA7BD9C /* RootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A2E0B8B749BBA30F67CE91A /* RootView.swift */; };
 		9312FECAA7336E816ECF62CF /* EditDecisionEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5529C17CF84DF8BB00EB4830 /* EditDecisionEngine.swift */; };
 		94ACC917C41892C3F806E80B /* AudioMixService.swift in Sources */ = {isa = PBXBuildFile; fileRef = F01BAB05EFDAFAE4817EDA22 /* AudioMixService.swift */; };
@@ -107,6 +108,7 @@
 		F01BAB05EFDAFAE4817EDA22 /* AudioMixService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioMixService.swift; sourceTree = "<group>"; };
 		F05673FB3EA70406FB93343F /* AccountScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccountScreen.swift; sourceTree = "<group>"; };
 		F494D19DF79D6891075F003E /* ProjectRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectRepository.swift; sourceTree = "<group>"; };
+		F82E751CD6507A92A9434F6E /* Theme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Theme.swift; sourceTree = "<group>"; };
 		F928B8F6178CCF7F82382C34 /* QualityGateService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QualityGateService.swift; sourceTree = "<group>"; };
 		F97FF6F27A35AD8B62B81C44 /* CleanTimelineBuilder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CleanTimelineBuilder.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -243,6 +245,7 @@
 		C352374787B869B685F8D2AB /* DesignSystem */ = {
 			isa = PBXGroup;
 			children = (
+				F82E751CD6507A92A9434F6E /* Theme.swift */,
 			);
 			path = DesignSystem;
 			sourceTree = "<group>";
@@ -413,6 +416,7 @@
 				41A88B209E8C52CC778F8BB8 /* TakeDetectionEngine.swift in Sources */,
 				9FB0F6DBA4FCE052496C4163 /* TemplateConfig.swift in Sources */,
 				0DDF31CD4796724245DC1EF4 /* TemplateSelectionScreen.swift in Sources */,
+				837643FFAFE3177E3A31CC81 /* Theme.swift in Sources */,
 				BB959AF76A2768AC1BC67BD2 /* TranscriptCleanupAnalyzer.swift in Sources */,
 				49D01160A804DD0C19D6264E /* VideoImportScreen.swift in Sources */,
 				D2BD8EF815D8FB6530381BE4 /* VideoImportService.swift in Sources */,
