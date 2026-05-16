@@ -27,13 +27,22 @@ enum CaptionReadabilityGuard {
                 let secondHalf = words[midpoint...].joined(separator: " ")
                 let midTime = (fixed.startTime + fixed.endTime) / 2
 
-                var first = fixed
-                first.text = firstHalf
-                first.endTime = midTime
-
-                var second = fixed
-                second.text = secondHalf
-                second.startTime = midTime
+                let first = CaptionSegment(
+                    startTime: fixed.startTime,
+                    endTime: midTime,
+                    text: firstHalf,
+                    role: fixed.role,
+                    style: fixed.style,
+                    sceneBehavior: fixed.sceneBehavior
+                )
+                let second = CaptionSegment(
+                    startTime: midTime,
+                    endTime: fixed.endTime,
+                    text: secondHalf,
+                    role: fixed.role,
+                    style: fixed.style,
+                    sceneBehavior: fixed.sceneBehavior
+                )
 
                 result.append(first)
                 result.append(second)

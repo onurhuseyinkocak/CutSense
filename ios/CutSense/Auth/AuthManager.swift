@@ -14,7 +14,18 @@ final class AuthManager {
     func restoreSession() async {
         defer { isLoading = false }
         do {
-            let session = try await supabase.auth.session
+            let session = try await withThrowingTaskGroup(of: Session.self) { group in
+                group.addTask {
+                    try await supabase.auth.session
+                }
+                group.addTask {
+                    try await Task.sleep(for: .seconds(5))
+                    throw CancellationError()
+                }
+                let result = try await group.next()!
+                group.cancelAll()
+                return result
+            }
             currentUser = session.user
             isAuthenticated = true
         } catch {

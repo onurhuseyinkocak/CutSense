@@ -2,8 +2,20 @@ import Foundation
 import Supabase
 
 enum SupabaseConfig {
-    static let url = URL(string: "https://xmktbdhilgntfmqovdmb.supabase.co")!
-    static let anonKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhta3RiZGhpbGdudGZtcW92ZG1iIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg4ODY3MjMsImV4cCI6MjA5NDQ2MjcyM30.zbhljhrnID6eDOrDKz1trs-C-IKsatnHprRjdhypjj4"
+    static let url: URL = {
+        guard let urlString = Bundle.main.infoDictionary?["SUPABASE_URL"] as? String,
+              let url = URL(string: urlString) else {
+            fatalError("SUPABASE_URL not set in Info.plist — check Secrets.xcconfig")
+        }
+        return url
+    }()
+
+    static let anonKey: String = {
+        guard let key = Bundle.main.infoDictionary?["SUPABASE_ANON_KEY"] as? String, !key.isEmpty else {
+            fatalError("SUPABASE_ANON_KEY not set in Info.plist — check Secrets.xcconfig")
+        }
+        return key
+    }()
 }
 
 let supabase = SupabaseClient(

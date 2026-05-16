@@ -25,12 +25,15 @@ final class AnalysisViewModel {
 
     private let transcriptionService = SpeechTranscriptionService()
 
-    func analyze(videoURL: URL) async {
+    func analyze(videoURL: URL, projectId: UUID, userId: UUID) async {
         isAnalyzing = true
         errorMessage = nil
         defer { isAnalyzing = false }
 
         do {
+            // Update status to analyzing
+            try? await PipelineRepository().updateProjectStatus(projectId, status: .analyzing)
+
             // Step 1: Audio analysis
             currentStep = 0
             audioResult = try await AudioAnalysisService.analyze(url: videoURL)
@@ -39,7 +42,10 @@ final class AnalysisViewModel {
             currentStep = 1
             transcriptionResult = try await transcriptionService.transcribe(url: videoURL)
 
-            guard let audio = audioResult, var transcript = transcriptionResult else { return }
+            guard let audio = audioResult, var transcript = transcriptionResult else {
+                errorMessage = "Analysis failed: missing audio or transcript data."
+                return
+            }
 
             // Step 3: Cleanup (fillers, restarts, duplicates)
             currentStep = 2
@@ -59,10 +65,16 @@ final class AnalysisViewModel {
 
             // Step 5: Rough cut decisions
             currentStep = 4
-            roughCutResult = RoughCutDecisionEngine.generateDecisions(
+            var roughCut = RoughCutDecisionEngine.generateDecisions(
                 transcription: transcript,
                 audioAnalysis: audio
             )
+
+            // Apply take group results — cut non-best takes
+            if !takeGroups.isEmpty {
+                roughCut = RoughCutDecisionEngine.applyTakeGroups(takeGroups, to: roughCut)
+            }
+            roughCutResult = roughCut
 
             // Step 6: Verify coherence
             currentStep = 5
@@ -82,14 +94,75 @@ final class AnalysisViewModel {
                     keptDecisions: roughCut.keepSegments
                 )
             }
+
+            // Save all analysis data to DB
+            await saveAnalysisData(projectId: projectId, userId: userId)
         } catch {
             errorMessage = error.localizedDescription
+        }
+    }
+
+    private func saveAnalysisData(projectId: UUID, userId: UUID) async {
+        let pipeline = PipelineRepository()
+
+        do {
+            guard let transcript = transcriptionResult else { return }
+
+            // Delete old analysis data to prevent duplicates on re-analysis
+            try await pipeline.deleteAnalysisData(projectId: projectId)
+
+            // Save transcript
+            let transcriptId = try await pipeline.saveTranscript(
+                projectId: projectId,
+                userId: userId,
+                transcription: transcript
+            )
+
+            // Save transcript segments
+            try await pipeline.saveTranscriptSegments(
+                transcriptId: transcriptId,
+                projectId: projectId,
+                userId: userId,
+                segments: transcript.segments
+            )
+
+            // Save rough cut decisions
+            if let roughCut = roughCutResult {
+                try await pipeline.saveRoughCutDecisions(
+                    projectId: projectId,
+                    userId: userId,
+                    decisions: roughCut.decisions
+                )
+
+                // Update project durations
+                try await pipeline.updateProjectDurations(
+                    projectId: projectId,
+                    originalDuration: roughCut.originalDuration,
+                    finalDuration: roughCut.cleanDuration
+                )
+            }
+
+            // Save take groups
+            if !takeGroups.isEmpty {
+                try await pipeline.saveTakeGroups(
+                    projectId: projectId,
+                    userId: userId,
+                    takeGroups: takeGroups
+                )
+            }
+
+            // Update project status
+            try await pipeline.updateProjectStatus(projectId, status: .roughCutReady)
+        } catch {
+            print("[CutSense] DB save after analysis failed: \(error.localizedDescription)")
         }
     }
 }
 
 struct AnalysisScreen: View {
     let videoURL: URL
+    let projectId: UUID
+    @Environment(AuthManager.self) private var authManager
     @State private var viewModel = AnalysisViewModel()
     @State private var showRoughCut = false
 
@@ -115,7 +188,8 @@ struct AnalysisScreen: View {
                 RoughCutReviewScreen(
                     roughCut: result,
                     transcription: transcript,
-                    videoURL: videoURL
+                    videoURL: videoURL,
+                    projectId: projectId
                 )
             }
         }
@@ -132,7 +206,8 @@ struct AnalysisScreen: View {
                 .foregroundStyle(.white)
 
             Button {
-                Task { await viewModel.analyze(videoURL: videoURL) }
+                guard let userId = authManager.currentUser?.id else { return }
+                Task { await viewModel.analyze(videoURL: videoURL, projectId: projectId, userId: userId) }
             } label: {
                 Text("Start Analysis")
                     .fontWeight(.semibold)
@@ -241,7 +316,8 @@ struct AnalysisScreen: View {
                 .padding(.horizontal, 32)
 
             Button("Retry") {
-                Task { await viewModel.analyze(videoURL: videoURL) }
+                guard let userId = authManager.currentUser?.id else { return }
+                Task { await viewModel.analyze(videoURL: videoURL, projectId: projectId, userId: userId) }
             }
             .foregroundStyle(.white)
         }

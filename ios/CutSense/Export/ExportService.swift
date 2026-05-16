@@ -10,20 +10,25 @@ final class ExportService {
     var exportedURL: URL?
 
     private var exportSession: AVAssetExportSession?
+    private var progressTimer: Timer?
 
-    /// Full pipeline export: clean timeline + captions + audio mix
+    /// Full pipeline export: clean timeline + captions + visual effects + audio mix
     @discardableResult
     func exportWithPipeline(
         sourceURL: URL,
         decisions: [RoughCutDecision],
         captions: [CaptionSegment],
-        template: TemplateConfig
+        template: TemplateConfig,
+        editPlan: EditPlan? = nil
     ) async -> URL? {
         isExporting = true
         progress = 0
         errorMessage = nil
         exportedURL = nil
-        defer { isExporting = false }
+        defer {
+            isExporting = false
+            stopProgressTracking()
+        }
 
         do {
             // Step 1: Build clean timeline
@@ -33,22 +38,44 @@ final class ExportService {
                 decisions: decisions
             )
 
-            // Step 2: Create video composition with caption overlay
-            progress = 0.3
+            // Step 2: Remap captions + edit decisions from source to clean timeline
+            progress = 0.2
+            let mapping = TimelineMapper.buildMapping(from: decisions)
+            let remappedCaptions = TimelineMapper.remapCaptions(captions, mapping: mapping)
+            let allEditDecisions = editPlan?.decisions ?? []
+            let remappedEdits = TimelineMapper.remapEditDecisions(allEditDecisions, mapping: mapping)
+
+            // Step 3: Create video composition with caption overlay + visual effects
             let videoComposition = buildVideoComposition(
                 timeline: timeline,
-                captions: captions
+                captions: remappedCaptions,
+                editDecisions: remappedEdits,
+                colorGrade: template.colorGrade
             )
 
-            // Step 3: Create audio mix
-            progress = 0.4
+            // Step 4: Build audio mix for voice track BEFORE adding SFX tracks
             let audioMix = CleanTimelineBuilder.audioMixWithFades(
                 timeline: timeline,
                 template: template
             )
 
-            // Step 4: Export
-            progress = 0.5
+            // Step 5: Insert SFX audio tracks into composition (after audio mix so voice boost doesn't hit SFX)
+            progress = 0.25
+            let remappedSfxEdits = remappedEdits
+            let sfxTracks = await SFXAssetManager.insertSFX(
+                into: timeline.composition,
+                decisions: remappedSfxEdits,
+                sfxVolume: template.sfxVolume
+            )
+            // Set SFX track volumes separately
+            for track in sfxTracks {
+                let sfxParams = AVMutableAudioMixInputParameters(track: track)
+                sfxParams.setVolume(template.sfxVolume, at: CMTime.zero)
+                audioMix.inputParameters = audioMix.inputParameters + [sfxParams]
+            }
+
+            // Step 6: Export
+            progress = 0.3
             guard let session = AVAssetExportSession(
                 asset: timeline.composition,
                 presetName: AVAssetExportPreset1920x1080
@@ -62,6 +89,7 @@ final class ExportService {
             session.videoComposition = videoComposition
             session.audioMix = audioMix
 
+            startProgressTracking(baseProgress: 0.3)
             try await session.export(to: outputURL, as: .mp4)
             progress = 1.0
             exportedURL = outputURL
@@ -80,7 +108,10 @@ final class ExportService {
         progress = 0
         errorMessage = nil
         exportedURL = nil
-        defer { isExporting = false }
+        defer {
+            isExporting = false
+            stopProgressTracking()
+        }
 
         let asset = AVURLAsset(url: sourceURL)
 
@@ -93,6 +124,7 @@ final class ExportService {
         exportSession = session
 
         do {
+            startProgressTracking(baseProgress: 0.0)
             try await session.export(to: outputURL, as: .mp4)
             progress = 1.0
             exportedURL = outputURL
@@ -126,6 +158,24 @@ final class ExportService {
         exportSession?.cancelExport()
     }
 
+    // MARK: - Progress Tracking
+
+    private func startProgressTracking(baseProgress: Float) {
+        progressTimer = Timer.scheduledTimer(withTimeInterval: 0.25, repeats: true) { [weak self] _ in
+            Task { @MainActor [weak self] in
+                guard let self, let session = self.exportSession else { return }
+                // Map session progress (0-1) to remaining range (baseProgress to 0.95)
+                let sessionProgress = session.progress
+                self.progress = baseProgress + (0.95 - baseProgress) * sessionProgress
+            }
+        }
+    }
+
+    private func stopProgressTracking() {
+        progressTimer?.invalidate()
+        progressTimer = nil
+    }
+
     // MARK: - Private
 
     private func exportOutputURL() -> URL {
@@ -137,9 +187,18 @@ final class ExportService {
 
     private func buildVideoComposition(
         timeline: CleanTimeline,
-        captions: [CaptionSegment]
+        captions: [CaptionSegment],
+        editDecisions: [EditDecision] = [],
+        colorGrade: TemplateConfig.ColorGrade = .none
     ) -> AVMutableVideoComposition? {
-        guard !captions.isEmpty else { return nil }
+        let hasContent = !captions.isEmpty || !editDecisions.isEmpty
+        let hasGrade = colorGrade.saturation != 1.0 || colorGrade.brightness != 0.0 ||
+                       colorGrade.contrast != 1.0 || abs(colorGrade.warmth) > 0.01 ||
+                       colorGrade.vignetteIntensity > 0.01
+        guard hasContent || hasGrade else { return nil }
+
+        // Filter to visual-only decisions (SFX handled in audio mix)
+        let visualDecisions = editDecisions.filter { $0.type != .sfx }
 
         let videoComposition = AVMutableVideoComposition()
         videoComposition.renderSize = CGSize(width: 1080, height: 1920)
@@ -150,6 +209,8 @@ final class ExportService {
             timeRange: CMTimeRange(start: .zero, duration: timeline.totalDuration),
             sourceTrackID: timeline.videoTrack.trackID,
             captions: captions,
+            editDecisions: visualDecisions,
+            colorGrade: colorGrade,
             renderSize: CGSize(width: 1080, height: 1920)
         )
 

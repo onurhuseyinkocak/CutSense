@@ -4,6 +4,7 @@ struct TemplateSelectionScreen: View {
     let roughCut: RoughCutResult
     let transcription: TranscriptionResult
     let videoURL: URL
+    let projectId: UUID
     @State private var selectedTemplate: TemplateConfig?
     @State private var showCaptionPreview = false
 
@@ -53,7 +54,8 @@ struct TemplateSelectionScreen: View {
                     roughCut: roughCut,
                     transcription: transcription,
                     template: template,
-                    videoURL: videoURL
+                    videoURL: videoURL,
+                    projectId: projectId
                 )
             }
         }

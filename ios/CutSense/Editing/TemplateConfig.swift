@@ -35,6 +35,19 @@ struct TemplateConfig: Sendable {
     // Timing
     let minCutDuration: Double
     let maxSilenceDuration: Double
+
+    // Color grading
+    let colorGrade: ColorGrade
+
+    struct ColorGrade: Sendable {
+        let saturation: Float    // 1.0 = neutral
+        let brightness: Float    // 0.0 = neutral
+        let contrast: Float      // 1.0 = neutral
+        let warmth: Float        // 0.0 = neutral, >0 warm, <0 cool
+        let vignetteIntensity: Float // 0.0 = off
+
+        static let none = ColorGrade(saturation: 1.0, brightness: 0.0, contrast: 1.0, warmth: 0.0, vignetteIntensity: 0.0)
+    }
 }
 
 // MARK: - Preset Templates
@@ -54,7 +67,8 @@ extension TemplateConfig {
         sfxVolume: 0.15,
         voiceBoostDB: 3.0,
         minCutDuration: 0.5,
-        maxSilenceDuration: 0.6
+        maxSilenceDuration: 0.6,
+        colorGrade: ColorGrade(saturation: 0.95, brightness: 0.02, contrast: 1.05, warmth: 0.08, vignetteIntensity: 0.3)
     )
 
     static let viralCaption = TemplateConfig(
@@ -71,7 +85,8 @@ extension TemplateConfig {
         sfxVolume: 0.30,
         voiceBoostDB: 4.5,
         minCutDuration: 0.3,
-        maxSilenceDuration: 0.35
+        maxSilenceDuration: 0.35,
+        colorGrade: ColorGrade(saturation: 1.15, brightness: 0.04, contrast: 1.12, warmth: 0.0, vignetteIntensity: 0.0)
     )
 
     static let cleanExpert = TemplateConfig(
@@ -88,7 +103,8 @@ extension TemplateConfig {
         sfxVolume: 0.10,
         voiceBoostDB: 2.0,
         minCutDuration: 0.4,
-        maxSilenceDuration: 0.50
+        maxSilenceDuration: 0.50,
+        colorGrade: ColorGrade(saturation: 0.90, brightness: 0.0, contrast: 1.02, warmth: -0.05, vignetteIntensity: 0.15)
     )
 
     static let all: [TemplateConfig] = [.premiumFounder, .viralCaption, .cleanExpert]

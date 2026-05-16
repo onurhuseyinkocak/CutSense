@@ -33,10 +33,11 @@ node_modules/
 out/
 .vercel
 
-# Environment
+# Environment / Secrets
 .env
 .env.local
 .env.production.local
+Secrets.xcconfig
 
 # OS
 .DS_Store

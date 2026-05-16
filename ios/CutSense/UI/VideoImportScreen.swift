@@ -4,10 +4,7 @@ import PhotosUI
 struct VideoImportScreen: View {
     @Environment(AuthManager.self) private var authManager
     @State private var importService = VideoImportService()
-    @State private var exportService = ExportService()
     @State private var selectedItem: PhotosPickerItem?
-    @State private var showExport = false
-    @State private var showAnalysis = false
 
     let project: Project
     let onProjectUpdated: (Project) -> Void
@@ -30,11 +27,6 @@ struct VideoImportScreen: View {
             guard let newItem else { return }
             Task {
                 await importService.importVideo(from: newItem)
-            }
-        }
-        .sheet(isPresented: $showExport) {
-            if let url = importService.importedVideoURL {
-                ExportScreen(sourceURL: url, exportService: exportService)
             }
         }
     }
@@ -121,7 +113,7 @@ struct VideoImportScreen: View {
 
                     NavigationLink {
                         if let videoURL = importService.importedVideoURL {
-                            AnalysisScreen(videoURL: videoURL)
+                            AnalysisScreen(videoURL: videoURL, projectId: project.id)
                         }
                     } label: {
                         Text("Analyze")

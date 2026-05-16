@@ -35,6 +35,42 @@ final class CaptionPreviewViewModel {
             roughCut: roughCut,
             template: template
         )
+
+        // Debug log entire timeline state
+        let debugLog = TimelineDebugLogger.generate(
+            roughCut: roughCut,
+            captions: captions,
+            editPlan: plan,
+            qualityReport: qualityReport
+        )
+        TimelineDebugLogger.printLog(debugLog)
+    }
+
+    func saveCaptionData(projectId: UUID, userId: UUID, templateName: String) async {
+        let pipeline = PipelineRepository()
+        do {
+            try await pipeline.updateProjectTemplate(projectId: projectId, templateName: templateName)
+            try await pipeline.updateProjectStatus(projectId, status: .styling)
+
+            // Delete old caption/edit data to prevent duplicates on re-generation
+            try await pipeline.deleteCaptionData(projectId: projectId)
+
+            try await pipeline.saveCaptionSegments(
+                projectId: projectId,
+                userId: userId,
+                captions: captions
+            )
+
+            if let plan = editPlan {
+                try await pipeline.saveEditDecisions(
+                    projectId: projectId,
+                    userId: userId,
+                    decisions: plan.decisions
+                )
+            }
+        } catch {
+            print("[CutSense] DB save after captioning failed: \(error.localizedDescription)")
+        }
     }
 }
 
@@ -43,6 +79,8 @@ struct CaptionPreviewScreen: View {
     let transcription: TranscriptionResult
     let template: TemplateConfig
     let videoURL: URL
+    let projectId: UUID
+    @Environment(AuthManager.self) private var authManager
     @State private var viewModel = CaptionPreviewViewModel()
     @State private var showExport = false
     @State private var exportService = ExportService()
@@ -101,14 +139,24 @@ struct CaptionPreviewScreen: View {
                 roughCut: roughCut,
                 template: template
             )
+            // Save caption data to DB after generation
+            if let userId = authManager.currentUser?.id {
+                await viewModel.saveCaptionData(
+                    projectId: projectId,
+                    userId: userId,
+                    templateName: template.name
+                )
+            }
         }
         .sheet(isPresented: $showExport) {
             ExportScreen(
                 sourceURL: videoURL,
                 exportService: exportService,
+                projectId: projectId,
                 decisions: roughCut.decisions,
                 captions: viewModel.captions,
-                template: template
+                template: template,
+                editPlan: viewModel.editPlan
             )
         }
     }

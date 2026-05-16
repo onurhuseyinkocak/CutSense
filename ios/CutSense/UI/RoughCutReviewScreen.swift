@@ -4,6 +4,7 @@ struct RoughCutReviewScreen: View {
     @State var roughCut: RoughCutResult
     let transcription: TranscriptionResult
     let videoURL: URL
+    let projectId: UUID
     @State private var showTemplateSelection = false
 
     var body: some View {
@@ -12,6 +13,13 @@ struct RoughCutReviewScreen: View {
 
             ScrollView {
                 VStack(spacing: 20) {
+                    // Video preview
+                    RoughCutPreviewPlayer(
+                        videoURL: videoURL,
+                        decisions: roughCut.decisions
+                    )
+                    .padding(.top, 8)
+
                     // Summary header
                     summaryCard
 
@@ -57,7 +65,8 @@ struct RoughCutReviewScreen: View {
             TemplateSelectionScreen(
                 roughCut: roughCut,
                 transcription: transcription,
-                videoURL: videoURL
+                videoURL: videoURL,
+                projectId: projectId
             )
         }
     }

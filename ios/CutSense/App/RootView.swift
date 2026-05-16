@@ -2,10 +2,13 @@ import SwiftUI
 
 struct RootView: View {
     @Environment(AuthManager.self) private var authManager
+    @AppStorage("hasSeenOnboarding") private var hasSeenOnboarding = false
 
     var body: some View {
         Group {
-            if authManager.isLoading {
+            if !hasSeenOnboarding {
+                OnboardingScreen()
+            } else if authManager.isLoading {
                 LoadingView()
             } else if authManager.isAuthenticated {
                 ProjectsScreen()
@@ -13,8 +16,10 @@ struct RootView: View {
                 AuthScreen()
             }
         }
-        .task {
-            await authManager.restoreSession()
+        .task(id: hasSeenOnboarding) {
+            if hasSeenOnboarding {
+                await authManager.restoreSession()
+            }
         }
     }
 }

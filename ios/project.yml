@@ -11,6 +11,13 @@ packages:
   Supabase:
     url: https://github.com/supabase/supabase-swift
     from: "2.0.0"
+  Lottie:
+    url: https://github.com/airbnb/lottie-ios
+    from: "4.4.0"
+
+configFiles:
+  Debug: Secrets.xcconfig
+  Release: Secrets.xcconfig
 
 targets:
   CutSense:
@@ -20,25 +27,45 @@ targets:
       - path: CutSense
         excludes:
           - "Tests/**"
+    entitlements:
+      path: CutSense/CutSense.entitlements
+      properties:
+        com.apple.developer.applesignin:
+          - Default
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.cutsense.app
         MARKETING_VERSION: "1.0.0"
         CURRENT_PROJECT_VERSION: 1
         SWIFT_VERSION: "6.0"
-        INFOPLIST_KEY_CFBundleDisplayName: CutSense
-        INFOPLIST_KEY_NSPhotoLibraryUsageDescription: "CutSense needs access to your photo library to import videos for editing."
-        INFOPLIST_KEY_NSPhotoLibraryAddUsageDescription: "CutSense needs permission to save edited videos to your photo library."
-        INFOPLIST_KEY_NSSpeechRecognitionUsageDescription: "CutSense uses speech recognition to transcribe your video for intelligent editing."
-        INFOPLIST_KEY_NSMicrophoneUsageDescription: "CutSense may need microphone access for audio analysis."
-        GENERATE_INFOPLIST_FILE: YES
-        INFOPLIST_KEY_UILaunchScreen_Generation: YES
-        INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone: UIInterfaceOrientationPortrait
-        INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad: "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight"
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         CODE_SIGN_STYLE: Automatic
+        DEVELOPMENT_TEAM: 6HCP552XP8
         SWIFT_STRICT_CONCURRENCY: complete
+    info:
+      path: CutSense/Info.plist
+      properties:
+        CFBundleDisplayName: CutSense
+        NSPhotoLibraryUsageDescription: "CutSense needs access to your photo library to import videos for editing."
+        NSPhotoLibraryAddUsageDescription: "CutSense needs permission to save edited videos to your photo library."
+        NSSpeechRecognitionUsageDescription: "CutSense uses speech recognition to transcribe your video for intelligent editing."
+        NSMicrophoneUsageDescription: "CutSense may need microphone access for audio analysis."
+        UISupportedInterfaceOrientations:
+          - UIInterfaceOrientationPortrait
+        UISupportedInterfaceOrientations~ipad:
+          - UIInterfaceOrientationPortrait
+          - UIInterfaceOrientationPortraitUpsideDown
+          - UIInterfaceOrientationLandscapeLeft
+          - UIInterfaceOrientationLandscapeRight
+        UIRequiresFullScreen: true
+        SUPABASE_URL: $(SUPABASE_URL)
+        SUPABASE_ANON_KEY: $(SUPABASE_ANON_KEY)
+        UILaunchScreen:
+          UIColorName: LaunchBackground
+          UIImageName: SplashLogo
     dependencies:
       - package: Supabase
+      - package: Lottie
 
   CutSenseTests:
     type: bundle.unit-test

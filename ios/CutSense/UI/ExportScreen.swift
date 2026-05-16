@@ -5,7 +5,10 @@ struct ExportScreen: View {
     let decisions: [RoughCutDecision]?
     let captions: [CaptionSegment]?
     let template: TemplateConfig?
+    let editPlan: EditPlan?
+    let projectId: UUID
     @Bindable var exportService: ExportService
+    @Environment(AuthManager.self) private var authManager
     @Environment(\.dismiss) private var dismiss
     @State private var didExport = false
     @State private var didSave = false
@@ -13,15 +16,19 @@ struct ExportScreen: View {
     init(
         sourceURL: URL,
         exportService: ExportService,
+        projectId: UUID,
         decisions: [RoughCutDecision]? = nil,
         captions: [CaptionSegment]? = nil,
-        template: TemplateConfig? = nil
+        template: TemplateConfig? = nil,
+        editPlan: EditPlan? = nil
     ) {
         self.sourceURL = sourceURL
         self.exportService = exportService
+        self.projectId = projectId
         self.decisions = decisions
         self.captions = captions
         self.template = template
+        self.editPlan = editPlan
     }
 
     var body: some View {
@@ -60,6 +67,32 @@ struct ExportScreen: View {
         decisions != nil && captions != nil && template != nil
     }
 
+    private var qualityReport: QualityReport? {
+        guard let captions, let template, let editPlan,
+              let decisions else { return nil }
+        let keepSegs = decisions.filter { $0.action == .keep }
+        let cutSegs = decisions.filter { $0.action == .cut || $0.action == .trimStart || $0.action == .trimEnd }
+        let reviewSegs = decisions.filter { $0.requiresReview }
+        var keepDuration: Double = 0
+        for seg in keepSegs { keepDuration += seg.endTime - seg.startTime }
+        var cutDuration: Double = 0
+        for seg in cutSegs { cutDuration += seg.endTime - seg.startTime }
+        let roughCut = RoughCutResult(
+            decisions: decisions,
+            originalDuration: keepDuration + cutDuration,
+            cleanDuration: keepDuration,
+            keepSegments: keepSegs,
+            cutSegments: cutSegs,
+            reviewSegments: reviewSegs
+        )
+        return QualityGateService.evaluate(
+            captions: captions,
+            editPlan: editPlan,
+            roughCut: roughCut,
+            template: template
+        )
+    }
+
     private var readyView: some View {
         VStack(spacing: 20) {
             Image(systemName: "square.and.arrow.up")
@@ -71,9 +104,29 @@ struct ExportScreen: View {
                 .foregroundStyle(.white)
 
             if hasPipeline {
-                Text("Captions + edits will be burned in")
+                Text("Captions + effects will be burned in")
                     .font(.caption)
                     .foregroundStyle(.gray)
+            }
+
+            // Quality warnings
+            if let report = qualityReport, !report.passed {
+                VStack(spacing: 6) {
+                    ForEach(report.failedChecks, id: \.name) { check in
+                        HStack(spacing: 6) {
+                            Image(systemName: check.severity == .critical ? "xmark.circle.fill" : "exclamationmark.triangle.fill")
+                                .foregroundStyle(check.severity == .critical ? .red : .orange)
+                                .font(.caption)
+                            Text(check.detail)
+                                .font(.caption)
+                                .foregroundStyle(.gray)
+                        }
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                    }
+                }
+                .padding(12)
+                .background(Color.red.opacity(0.08))
+                .clipShape(RoundedRectangle(cornerRadius: 8))
             }
 
             Button {
@@ -86,6 +139,17 @@ struct ExportScreen: View {
                     .background(.white)
                     .foregroundStyle(.black)
                     .clipShape(RoundedRectangle(cornerRadius: 12))
+            }
+
+            // Quality score badge
+            if let report = qualityReport {
+                HStack(spacing: 6) {
+                    Image(systemName: report.passed ? "checkmark.shield.fill" : "shield.fill")
+                        .foregroundStyle(report.passed ? .green : .orange)
+                    Text("Quality: \(report.score)/100")
+                        .font(.caption)
+                        .foregroundStyle(report.passed ? .green : .orange)
+                }
             }
         }
     }
@@ -159,16 +223,48 @@ struct ExportScreen: View {
     }
 
     private func startExport() async {
+        // Update status to exporting
+        let userId = authManager.currentUser?.id
+        if userId != nil {
+            try? await PipelineRepository().updateProjectStatus(projectId, status: .exporting)
+        }
+
+        var exportedURL: URL?
         if let decisions, let captions, let template {
-            await exportService.exportWithPipeline(
+            exportedURL = await exportService.exportWithPipeline(
                 sourceURL: sourceURL,
                 decisions: decisions,
                 captions: captions,
-                template: template
+                template: template,
+                editPlan: editPlan
             )
         } else {
-            await exportService.exportNormalized(from: sourceURL)
+            exportedURL = await exportService.exportNormalized(from: sourceURL)
         }
         didExport = true
+
+        // Save export record to DB
+        if let userId, let url = exportedURL {
+            await saveExportRecord(userId: userId, fileURL: url)
+        }
+    }
+
+    private func saveExportRecord(userId: UUID, fileURL: URL) async {
+        let pipeline = PipelineRepository()
+        do {
+            let fileSize = try? FileManager.default.attributesOfItem(atPath: fileURL.path)[.size] as? Int64
+            try await pipeline.saveExport(
+                projectId: projectId,
+                userId: userId,
+                localFileName: fileURL.lastPathComponent,
+                duration: nil,
+                resolution: "1080x1920",
+                templateName: template?.name,
+                fileSizeBytes: fileSize
+            )
+            try await pipeline.updateProjectStatus(projectId, status: .exported)
+        } catch {
+            print("[CutSense] DB save after export failed: \(error.localizedDescription)")
+        }
     }
 }

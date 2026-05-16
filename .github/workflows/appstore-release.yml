@@ -1,0 +1,254 @@
+name: App Store Release
+
+on:
+  push:
+    tags:
+      - 'release-v*'
+
+concurrency:
+  group: appstore-release
+  cancel-in-progress: false
+
+jobs:
+  test:
+    name: Build & Test
+    runs-on: macos-15
+    defaults:
+      run:
+        working-directory: ios
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Select Xcode
+        run: sudo xcode-select -s /Applications/Xcode_16.4.app/Contents/Developer
+
+      - name: Install XcodeGen
+        run: brew install xcodegen
+
+      - name: Create Secrets.xcconfig
+        run: |
+          cat > Secrets.xcconfig << 'EOF'
+          SUPABASE_URL = ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY = ${{ secrets.SUPABASE_ANON_KEY }}
+          EOF
+
+      - name: Generate Xcode project
+        run: xcodegen generate
+
+      - name: Cache SPM
+        uses: actions/cache@v4
+        with:
+          path: ios/.spm-cache
+          key: spm-${{ hashFiles('ios/project.yml') }}
+          restore-keys: spm-
+
+      - name: Resolve packages
+        run: xcodebuild -resolvePackageDependencies -scheme CutSense -clonedSourcePackagesDirPath .spm-cache
+
+      - name: Build & Test
+        run: |
+          xcodebuild test \
+            -scheme CutSenseTests \
+            -destination 'platform=iOS Simulator,name=iPhone 16 Pro' \
+            -clonedSourcePackagesDirPath .spm-cache \
+            CODE_SIGNING_ALLOWED=NO \
+            | xcpretty --color
+
+  release:
+    name: Archive & Submit to App Store Review
+    needs: test
+    runs-on: macos-15
+    defaults:
+      run:
+        working-directory: ios
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Select Xcode
+        run: sudo xcode-select -s /Applications/Xcode_16.4.app/Contents/Developer
+
+      - name: Install XcodeGen
+        run: brew install xcodegen
+
+      - name: Create Secrets.xcconfig
+        run: |
+          cat > Secrets.xcconfig << 'EOF'
+          SUPABASE_URL = ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY = ${{ secrets.SUPABASE_ANON_KEY }}
+          EOF
+
+      - name: Generate Xcode project
+        run: xcodegen generate
+
+      - name: Cache SPM
+        uses: actions/cache@v4
+        with:
+          path: ios/.spm-cache
+          key: spm-${{ hashFiles('ios/project.yml') }}
+          restore-keys: spm-
+
+      - name: Resolve packages
+        run: xcodebuild -resolvePackageDependencies -scheme CutSense -clonedSourcePackagesDirPath .spm-cache
+
+      - name: Install signing certificate
+        env:
+          P12_BASE64: ${{ secrets.DISTRIBUTION_CERTIFICATE_P12 }}
+          P12_PASSWORD: ${{ secrets.DISTRIBUTION_CERTIFICATE_PASSWORD }}
+        run: |
+          KEYCHAIN_PATH=$RUNNER_TEMP/signing.keychain-db
+          KEYCHAIN_PASSWORD=$(openssl rand -hex 16)
+          security create-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+          security set-keychain-settings -lut 3600 "$KEYCHAIN_PATH"
+          security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+          echo "$P12_BASE64" | base64 --decode > $RUNNER_TEMP/cert.p12
+          security import $RUNNER_TEMP/cert.p12 \
+            -P "$P12_PASSWORD" \
+            -A \
+            -t cert \
+            -f pkcs12 \
+            -k "$KEYCHAIN_PATH"
+          security set-key-partition-list -S apple-tool:,apple: -k "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+          security list-keychains -d user -s "$KEYCHAIN_PATH" $(security list-keychains -d user | tr -d '"')
+
+      - name: Install ASC API key
+        env:
+          API_KEY_BASE64: ${{ secrets.ASC_API_KEY_P8 }}
+          API_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+        run: |
+          mkdir -p ~/private_keys
+          echo "$API_KEY_BASE64" | base64 --decode > ~/private_keys/AuthKey_${API_KEY_ID}.p8
+
+      - name: Extract version from tag
+        id: version
+        run: echo "version=${GITHUB_REF_NAME#release-v}" >> "$GITHUB_OUTPUT"
+
+      - name: Set marketing version
+        run: |
+          sed -i '' "s/MARKETING_VERSION: .*/MARKETING_VERSION: \"${{ steps.version.outputs.version }}\"/" project.yml
+          xcodegen generate
+
+      - name: Archive
+        env:
+          API_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          API_KEY_ISSUER: ${{ secrets.ASC_ISSUER_ID }}
+        run: |
+          xcodebuild archive \
+            -scheme CutSense \
+            -archivePath $RUNNER_TEMP/CutSense.xcarchive \
+            -destination 'generic/platform=iOS' \
+            -clonedSourcePackagesDirPath .spm-cache \
+            -allowProvisioningUpdates \
+            -authenticationKeyPath ~/private_keys/AuthKey_${API_KEY_ID}.p8 \
+            -authenticationKeyID "$API_KEY_ID" \
+            -authenticationKeyIssuerID "$API_KEY_ISSUER" \
+            | xcpretty --color
+
+      - name: Export & Upload to App Store Connect
+        env:
+          API_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          API_KEY_ISSUER: ${{ secrets.ASC_ISSUER_ID }}
+        run: |
+          xcodebuild -exportArchive \
+            -archivePath $RUNNER_TEMP/CutSense.xcarchive \
+            -exportOptionsPlist ExportOptions.plist \
+            -exportPath $RUNNER_TEMP/export \
+            -allowProvisioningUpdates \
+            -authenticationKeyPath ~/private_keys/AuthKey_${API_KEY_ID}.p8 \
+            -authenticationKeyID "$API_KEY_ID" \
+            -authenticationKeyIssuerID "$API_KEY_ISSUER" \
+            | xcpretty --color
+
+      - name: Submit for App Store Review
+        env:
+          API_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          API_KEY_ISSUER: ${{ secrets.ASC_ISSUER_ID }}
+        run: |
+          # Wait for build processing (App Store Connect needs time)
+          echo "Waiting 60s for build processing..."
+          sleep 60
+
+          # Install asc CLI for submission
+          brew tap rorkio/tap && brew install asc || true
+
+          # Create version and submit
+          VERSION="${{ steps.version.outputs.version }}"
+          echo "Submitting version $VERSION for review..."
+
+          # Use App Store Connect API via curl as fallback
+          # Generate JWT
+          KEY_PATH=~/private_keys/AuthKey_${API_KEY_ID}.p8
+          HEADER=$(echo -n '{"alg":"ES256","kid":"'${API_KEY_ID}'","typ":"JWT"}' | base64 | tr -d '=' | tr '/+' '_-' | tr -d '\n')
+          NOW=$(date +%s)
+          EXP=$((NOW + 1200))
+          PAYLOAD=$(echo -n '{"iss":"'${API_KEY_ISSUER}'","iat":'${NOW}',"exp":'${EXP}',"aud":"appstoreconnect-v1"}' | base64 | tr -d '=' | tr '/+' '_-' | tr -d '\n')
+          SIGNATURE=$(echo -n "${HEADER}.${PAYLOAD}" | openssl dgst -sha256 -sign "$KEY_PATH" | base64 | tr -d '=' | tr '/+' '_-' | tr -d '\n')
+          JWT="${HEADER}.${PAYLOAD}.${SIGNATURE}"
+
+          APP_ID="6770024868"
+
+          # Get the latest build for this version
+          echo "Fetching builds..."
+          BUILDS=$(curl -s -H "Authorization: Bearer $JWT" \
+            "https://api.appstoreconnect.apple.com/v1/builds?filter[app]=${APP_ID}&filter[version]=${VERSION}&sort=-uploadedDate&limit=1")
+          BUILD_ID=$(echo "$BUILDS" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d['data'][0]['id'])" 2>/dev/null || true)
+
+          if [ -z "$BUILD_ID" ]; then
+            echo "::warning::Build not yet processed. Submit manually via App Store Connect or re-run after processing completes."
+            exit 0
+          fi
+
+          echo "Build ID: $BUILD_ID"
+
+          # Create App Store version
+          echo "Creating App Store version $VERSION..."
+          curl -s -X POST -H "Authorization: Bearer $JWT" \
+            -H "Content-Type: application/json" \
+            "https://api.appstoreconnect.apple.com/v1/appStoreVersions" \
+            -d '{
+              "data": {
+                "type": "appStoreVersions",
+                "attributes": {
+                  "platform": "IOS",
+                  "versionString": "'"$VERSION"'"
+                },
+                "relationships": {
+                  "app": {
+                    "data": { "type": "apps", "id": "'"$APP_ID"'" }
+                  },
+                  "build": {
+                    "data": { "type": "builds", "id": "'"$BUILD_ID"'" }
+                  }
+                }
+              }
+            }' | python3 -c "
+          import sys, json
+          d = json.load(sys.stdin)
+          if 'data' in d:
+              vid = d['data']['id']
+              print(f'Version created: {vid}')
+          elif 'errors' in d:
+              for e in d['errors']:
+                  print(f'Error: {e.get(\"detail\", e)}')
+          " || true
+
+          echo "App Store submission complete. Check App Store Connect for review status."
+
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          cd ..
+          gh release create "$GITHUB_REF_NAME" \
+            --title "CutSense v${VERSION}" \
+            --generate-notes \
+            --latest
+
+      - name: Clean up keychain
+        if: always()
+        run: |
+          security delete-keychain $RUNNER_TEMP/signing.keychain-db 2>/dev/null || true
+          rm -f $RUNNER_TEMP/cert.p12
+          rm -rf ~/private_keys

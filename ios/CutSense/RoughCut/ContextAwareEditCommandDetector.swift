@@ -94,6 +94,7 @@ enum ContextAwareEditCommandDetector {
 
             let contextScore = evaluateContext(
                 text: text,
+                segmentEndTime: segment.endTime,
                 suspiciousWord: word,
                 previous: previousSegment,
                 next: nextSegment,
@@ -142,6 +143,7 @@ enum ContextAwareEditCommandDetector {
 
     private static func evaluateContext(
         text: String,
+        segmentEndTime: Double,
         suspiciousWord: String,
         previous: TranscriptSegment?,
         next: TranscriptSegment?,
@@ -175,9 +177,9 @@ enum ContextAwareEditCommandDetector {
         }
 
         // If followed by silence, more likely a command/restart
-        if let audio = audioResult, let next {
-            let gapStart = segment(endTime: text, segmentEndTime: 0) // simplified
-            let hasSilenceAfter = audio.silenceIntervals.contains { $0.contains(next.startTime - 0.5) }
+        if let audio = audioResult {
+            let gapStart = segmentEndTime
+            let hasSilenceAfter = audio.silenceIntervals.contains { $0.contains(gapStart + 0.1) }
             if hasSilenceAfter {
                 commandSignals += 1
             }
@@ -210,8 +212,6 @@ enum ContextAwareEditCommandDetector {
             )
         }
     }
-
-    private static func segment(endTime: String, segmentEndTime: Double) -> Double { segmentEndTime }
 
     private static func isInsideContentContext(text: String, pattern: String, next: TranscriptSegment?) -> Bool {
         // If the sentence continues naturally after the pattern, it's content
