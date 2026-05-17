@@ -1,4 +1,5 @@
 import SwiftUI
+import AVFoundation
 
 struct ExportScreen: View {
     let sourceURL: URL
@@ -7,10 +8,10 @@ struct ExportScreen: View {
     let template: TemplateConfig?
     let editPlan: EditPlan?
     let projectId: UUID
+    let qualityReport: QualityReport?
     @Bindable var exportService: ExportService
     @Environment(AuthManager.self) private var authManager
     @Environment(\.dismiss) private var dismiss
-    @State private var didExport = false
     @State private var didSave = false
 
     init(
@@ -20,7 +21,8 @@ struct ExportScreen: View {
         decisions: [RoughCutDecision]? = nil,
         captions: [CaptionSegment]? = nil,
         template: TemplateConfig? = nil,
-        editPlan: EditPlan? = nil
+        editPlan: EditPlan? = nil,
+        qualityReport: QualityReport? = nil
     ) {
         self.sourceURL = sourceURL
         self.exportService = exportService
@@ -29,6 +31,7 @@ struct ExportScreen: View {
         self.captions = captions
         self.template = template
         self.editPlan = editPlan
+        self.qualityReport = qualityReport
     }
 
     var body: some View {
@@ -43,6 +46,8 @@ struct ExportScreen: View {
                         exportingView
                     } else if let url = exportService.exportedURL {
                         completedView(url: url)
+                    } else if let error = exportService.errorMessage, !exportService.isExporting {
+                        failedView(error: error)
                     } else {
                         readyView
                     }
@@ -60,6 +65,17 @@ struct ExportScreen: View {
                         .foregroundStyle(.gray)
                 }
             }
+            .onChange(of: exportService.exportedURL != nil) { _, isDone in
+                if isDone {
+                    UINotificationFeedbackGenerator().notificationOccurred(.success)
+                    // Auto-save to Photos
+                    if let url = exportService.exportedURL, !didSave {
+                        Task {
+                            didSave = await exportService.saveToPhotos(url: url)
+                        }
+                    }
+                }
+            }
         }
     }
 
@@ -67,30 +83,9 @@ struct ExportScreen: View {
         decisions != nil && captions != nil && template != nil
     }
 
-    private var qualityReport: QualityReport? {
-        guard let captions, let template, let editPlan,
-              let decisions else { return nil }
-        let keepSegs = decisions.filter { $0.action == .keep }
-        let cutSegs = decisions.filter { $0.action == .cut || $0.action == .trimStart || $0.action == .trimEnd }
-        let reviewSegs = decisions.filter { $0.requiresReview }
-        var keepDuration: Double = 0
-        for seg in keepSegs { keepDuration += seg.endTime - seg.startTime }
-        var cutDuration: Double = 0
-        for seg in cutSegs { cutDuration += seg.endTime - seg.startTime }
-        let roughCut = RoughCutResult(
-            decisions: decisions,
-            originalDuration: keepDuration + cutDuration,
-            cleanDuration: keepDuration,
-            keepSegments: keepSegs,
-            cutSegments: cutSegs,
-            reviewSegments: reviewSegs
-        )
-        return QualityGateService.evaluate(
-            captions: captions,
-            editPlan: editPlan,
-            roughCut: roughCut,
-            template: template
-        )
+    private var hasCriticalFailures: Bool {
+        guard let report = qualityReport else { return false }
+        return report.checks.contains { !$0.passed && $0.severity == .critical }
     }
 
     private var readyView: some View {
@@ -136,10 +131,11 @@ struct ExportScreen: View {
                     .fontWeight(.semibold)
                     .frame(maxWidth: .infinity)
                     .padding()
-                    .background(.white)
-                    .foregroundStyle(.black)
+                    .background(hasCriticalFailures ? Color.gray : .white)
+                    .foregroundStyle(hasCriticalFailures ? .white.opacity(0.5) : .black)
                     .clipShape(RoundedRectangle(cornerRadius: 12))
             }
+            .disabled(hasCriticalFailures)
 
             // Quality score badge
             if let report = qualityReport {
@@ -163,7 +159,7 @@ struct ExportScreen: View {
                 .font(.headline)
                 .foregroundStyle(.white)
 
-            Text("Exporting...")
+            Text(exportService.currentStepLabel.isEmpty ? "Exporting..." : exportService.currentStepLabel)
                 .foregroundStyle(.gray)
 
             Button("Cancel") {
@@ -174,13 +170,46 @@ struct ExportScreen: View {
         }
     }
 
+    private func failedView(error: String) -> some View {
+        VStack(spacing: 20) {
+            Image(systemName: "exclamationmark.triangle.fill")
+                .font(.system(size: 48))
+                .foregroundStyle(.red)
+
+            Text("Export Failed")
+                .font(.title3)
+                .foregroundStyle(.white)
+
+            Text(error)
+                .font(.caption)
+                .foregroundStyle(.gray)
+                .multilineTextAlignment(.center)
+
+            Button {
+                exportService.errorMessage = nil
+                Task { await startExport() }
+            } label: {
+                Text("Retry")
+                    .fontWeight(.semibold)
+                    .frame(maxWidth: .infinity)
+                    .padding()
+                    .background(.white)
+                    .foregroundStyle(.black)
+                    .clipShape(RoundedRectangle(cornerRadius: 12))
+            }
+
+            Button("Close") { dismiss() }
+                .foregroundStyle(.gray)
+        }
+    }
+
     private func completedView(url: URL) -> some View {
         VStack(spacing: 20) {
             Image(systemName: didSave ? "checkmark.seal.fill" : "checkmark.circle.fill")
                 .font(.system(size: 48))
                 .foregroundStyle(didSave ? .green : .white)
 
-            Text(didSave ? "Saved to Photos" : "Export Complete")
+            Text(didSave ? "Saved to Photos!" : "Saving to Photos...")
                 .font(.title3)
                 .foregroundStyle(.white)
 
@@ -188,15 +217,15 @@ struct ExportScreen: View {
                 Text(error)
                     .font(.caption)
                     .foregroundStyle(.red)
-            }
 
-            if !didSave {
+                // Show manual save button if auto-save failed
                 Button {
                     Task {
+                        exportService.errorMessage = nil
                         didSave = await exportService.saveToPhotos(url: url)
                     }
                 } label: {
-                    Label("Save to Photos", systemImage: "photo.on.rectangle")
+                    Label("Retry Save", systemImage: "photo.on.rectangle")
                         .fontWeight(.semibold)
                         .frame(maxWidth: .infinity)
                         .padding()
@@ -204,16 +233,16 @@ struct ExportScreen: View {
                         .foregroundStyle(.black)
                         .clipShape(RoundedRectangle(cornerRadius: 12))
                 }
+            }
 
-                ShareLink(item: url) {
-                    Label("Share", systemImage: "square.and.arrow.up")
-                        .fontWeight(.medium)
-                        .frame(maxWidth: .infinity)
-                        .padding()
-                        .background(Color.white.opacity(0.08))
-                        .foregroundStyle(.white)
-                        .clipShape(RoundedRectangle(cornerRadius: 12))
-                }
+            ShareLink(item: url) {
+                Label("Share", systemImage: "square.and.arrow.up")
+                    .fontWeight(.medium)
+                    .frame(maxWidth: .infinity)
+                    .padding()
+                    .background(Color.white.opacity(0.08))
+                    .foregroundStyle(.white)
+                    .clipShape(RoundedRectangle(cornerRadius: 12))
             }
 
             Button("Done") { dismiss() }
@@ -241,11 +270,11 @@ struct ExportScreen: View {
         } else {
             exportedURL = await exportService.exportNormalized(from: sourceURL)
         }
-        didExport = true
-
-        // Save export record to DB
+        // Save export record to DB or mark failed
         if let userId, let url = exportedURL {
             await saveExportRecord(userId: userId, fileURL: url)
+        } else if userId != nil {
+            try? await PipelineRepository().updateProjectStatus(projectId, status: .failed)
         }
     }
 
@@ -253,18 +282,24 @@ struct ExportScreen: View {
         let pipeline = PipelineRepository()
         do {
             let fileSize = try? FileManager.default.attributesOfItem(atPath: fileURL.path)[.size] as? Int64
+            // Get actual exported video duration
+            let asset = AVURLAsset(url: fileURL)
+            let exportDuration = try? await asset.load(.duration)
+            let durationSecs = exportDuration.map { CMTimeGetSeconds($0) }
             try await pipeline.saveExport(
                 projectId: projectId,
                 userId: userId,
                 localFileName: fileURL.lastPathComponent,
-                duration: nil,
+                duration: durationSecs,
                 resolution: "1080x1920",
                 templateName: template?.name,
                 fileSizeBytes: fileSize
             )
             try await pipeline.updateProjectStatus(projectId, status: .exported)
         } catch {
+            #if DEBUG
             print("[CutSense] DB save after export failed: \(error.localizedDescription)")
+            #endif
         }
     }
 }

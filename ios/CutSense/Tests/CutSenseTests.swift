@@ -138,7 +138,7 @@ struct IntensityLimiterTests {
         }
         let template = TemplateConfig.premiumFounder // low intensity
         let limited = IntensityLimiter.limit(decisions, template: template)
-        #expect(limited.count <= 4) // max 2 per 10s window
+        #expect(limited.count <= 8) // max 4 per 10s window at low intensity
     }
 
     @Test("High intensity allows more effects")
@@ -170,7 +170,7 @@ struct OverEditingGuardTests {
             EditDecision(time: 5, duration: 0.3, type: .zoom, reason: "c", intensity: 0.5),
         ]
         let filtered = OverEditingGuard.filter(decisions, totalDuration: 60)
-        // time=1 should be removed (within 3s of time=0)
+        // time=1 should be removed (within 1.5s of time=0)
         #expect(filtered.count == 2)
     }
 
@@ -186,9 +186,10 @@ struct OverEditingGuardTests {
 
     @Test("Per-minute cap enforced")
     func perMinuteCap() {
-        let decisions = (0..<20).map { i in
+        // 50 effects in 60s = 50/min — exceeds 40/min cap
+        let decisions = (0..<50).map { i in
             EditDecision(
-                time: Double(i) * 2,
+                time: Double(i) * 1.2,
                 duration: 0.3,
                 type: EditType.allCases[i % EditType.allCases.count],
                 reason: "test",
@@ -196,7 +197,7 @@ struct OverEditingGuardTests {
             )
         }
         let filtered = OverEditingGuard.filter(decisions, totalDuration: 60)
-        #expect(filtered.count <= 8) // max 8 per minute
+        #expect(filtered.count <= 40) // max 40 per minute
     }
 }
 
@@ -376,9 +377,9 @@ struct ContinuityCheckerTests {
 
 @Suite("TemplateConfig")
 struct TemplateConfigTests {
-    @Test("Three presets exist")
-    func threePresetsExist() {
-        #expect(TemplateConfig.all.count == 3)
+    @Test("Five presets exist")
+    func fivePresetsExist() {
+        #expect(TemplateConfig.all.count == 5)
     }
 
     @Test("Premium Founder is low intensity")
@@ -394,6 +395,104 @@ struct TemplateConfigTests {
     @Test("Each template has unique ID")
     func uniqueIDs() {
         let ids = TemplateConfig.all.map(\.id)
-        #expect(Set(ids).count == 3)
+        #expect(Set(ids).count == 5)
+    }
+}
+
+// MARK: - Confidence-Based Review
+
+@Suite("ConfidenceBasedReview")
+struct ConfidenceBasedReviewTests {
+    private func makeSegment(
+        text: String,
+        type: TranscriptSegment.SegmentType,
+        aiConfidence: Float?,
+        aiReason: String? = nil
+    ) -> TranscriptSegment {
+        TranscriptSegment(
+            startTime: 0, endTime: 1, text: text,
+            confidence: 0.9, segmentType: type,
+            aiConfidence: aiConfidence, aiReason: aiReason
+        )
+    }
+
+    private func makeAudio() -> AudioAnalysisResult {
+        AudioAnalysisResult(
+            segments: [AudioSegment(startTime: 0, endTime: 10, type: .speech, energy: 0.5)],
+            silenceIntervals: [],
+            averageEnergy: 0.3,
+            peakEnergy: 0.8,
+            duration: 10
+        )
+    }
+
+    @Test("High-confidence filler is hard cut")
+    func highConfidenceFillerCut() {
+        let seg = makeSegment(text: "um", type: .filler, aiConfidence: 0.95, aiReason: "Pure filler")
+        let transcript = TranscriptionResult(fullText: "um", segments: [seg], language: "en", overallConfidence: 0.9)
+        let result = RoughCutDecisionEngine.generateDecisions(transcription: transcript, audioAnalysis: makeAudio())
+        let decision = result.decisions.first { $0.linkedTranscriptText == "um" }
+        #expect(decision?.action == .cut)
+        #expect(decision?.requiresReview == false)
+    }
+
+    @Test("Low-confidence filler flagged for review")
+    func lowConfidenceFillerReview() {
+        let seg = makeSegment(text: "şey gibi", type: .filler, aiConfidence: 0.55, aiReason: "Might be filler")
+        let transcript = TranscriptionResult(fullText: "şey gibi", segments: [seg], language: "tr", overallConfidence: 0.9)
+        let result = RoughCutDecisionEngine.generateDecisions(transcription: transcript, audioAnalysis: makeAudio())
+        let decision = result.decisions.first { $0.linkedTranscriptText == "şey gibi" }
+        #expect(decision?.action == .reviewRequired)
+        #expect(decision?.requiresReview == true)
+        #expect(decision?.reason.contains("uncertain") == true)
+    }
+
+    @Test("High-confidence restart is hard cut")
+    func highConfidenceRestartCut() {
+        let seg = makeSegment(text: "bugün ben", type: .suspectedRestart, aiConfidence: 0.85, aiReason: "Incomplete start")
+        let transcript = TranscriptionResult(fullText: "bugün ben", segments: [seg], language: "tr", overallConfidence: 0.9)
+        let result = RoughCutDecisionEngine.generateDecisions(transcription: transcript, audioAnalysis: makeAudio())
+        let decision = result.decisions.first { $0.linkedTranscriptText == "bugün ben" }
+        #expect(decision?.action == .cut)
+        #expect(decision?.requiresReview == false)
+    }
+
+    @Test("Low-confidence restart flagged for review")
+    func lowConfidenceRestartReview() {
+        let seg = makeSegment(text: "bugün ben", type: .suspectedRestart, aiConfidence: 0.45, aiReason: "Might be restart or real content")
+        let transcript = TranscriptionResult(fullText: "bugün ben", segments: [seg], language: "tr", overallConfidence: 0.9)
+        let result = RoughCutDecisionEngine.generateDecisions(transcription: transcript, audioAnalysis: makeAudio())
+        let decision = result.decisions.first { $0.linkedTranscriptText == "bugün ben" }
+        #expect(decision?.action == .reviewRequired)
+        #expect(decision?.requiresReview == true)
+    }
+
+    @Test("Low-confidence content kept but flagged for review")
+    func lowConfidenceContentReview() {
+        let seg = makeSegment(text: "kese kağıdı", type: .contentSentence, aiConfidence: 0.60, aiReason: "Contains 'kes' but seems like content")
+        let transcript = TranscriptionResult(fullText: "kese kağıdı", segments: [seg], language: "tr", overallConfidence: 0.9)
+        let result = RoughCutDecisionEngine.generateDecisions(transcription: transcript, audioAnalysis: makeAudio())
+        let decision = result.decisions.first { $0.linkedTranscriptText == "kese kağıdı" }
+        #expect(decision?.action == .keep)
+        #expect(decision?.requiresReview == true)
+    }
+
+    @Test("No AI confidence (heuristic path) uses defaults")
+    func heuristicFallbackNoReview() {
+        let seg = makeSegment(text: "eee", type: .filler, aiConfidence: nil)
+        let transcript = TranscriptionResult(fullText: "eee", segments: [seg], language: "tr", overallConfidence: 0.9)
+        let result = RoughCutDecisionEngine.generateDecisions(transcription: transcript, audioAnalysis: makeAudio())
+        let decision = result.decisions.first { $0.linkedTranscriptText == "eee" }
+        #expect(decision?.action == .cut)
+        #expect(decision?.requiresReview == false)
+    }
+
+    @Test("AI reason propagated to decision")
+    func aiReasonPropagated() {
+        let seg = makeSegment(text: "bunu kes", type: .filler, aiConfidence: 0.92, aiReason: "Speaker directing editor to cut")
+        let transcript = TranscriptionResult(fullText: "bunu kes", segments: [seg], language: "tr", overallConfidence: 0.9)
+        let result = RoughCutDecisionEngine.generateDecisions(transcription: transcript, audioAnalysis: makeAudio())
+        let decision = result.decisions.first { $0.linkedTranscriptText == "bunu kes" }
+        #expect(decision?.reason == "Speaker directing editor to cut")
     }
 }

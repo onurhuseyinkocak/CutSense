@@ -35,11 +35,25 @@ struct ProjectRepository: Sendable {
             .execute()
     }
 
-    func deleteProject(projectId: UUID) async throws {
+    func deleteProject(projectId: UUID, localVideoPath: String? = nil) async throws {
+        // Delete child data first to prevent orphans if FK cascade not configured
+        let pipeline = PipelineRepository()
+        try await pipeline.deleteCaptionData(projectId: projectId)
+        try await pipeline.deleteAnalysisData(projectId: projectId)
+        try await supabase.from("exports")
+            .delete()
+            .eq("project_id", value: projectId.uuidString)
+            .execute()
+
         try await supabase
             .from("projects")
             .delete()
             .eq("id", value: projectId.uuidString)
             .execute()
+
+        // Clean up local video file
+        if let path = localVideoPath {
+            try? FileManager.default.removeItem(atPath: path)
+        }
     }
 }

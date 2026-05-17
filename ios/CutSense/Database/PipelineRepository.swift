@@ -200,6 +200,118 @@ struct PipelineRepository: Sendable {
             .execute()
     }
 
+    // MARK: - AI Feedback
+
+    func saveAiFeedback(
+        userId: UUID,
+        segmentText: String,
+        aiClassification: String,
+        aiConfidence: Double?,
+        aiReason: String?,
+        userAction: String,
+        language: String?
+    ) async throws {
+        let insert = AiFeedbackInsert(
+            userId: userId,
+            segmentText: segmentText,
+            aiClassification: aiClassification,
+            aiConfidence: aiConfidence,
+            aiReason: aiReason,
+            userAction: userAction,
+            language: language
+        )
+        try await supabase
+            .from("ai_feedback")
+            .insert(insert)
+            .execute()
+    }
+
+    func fetchRecentAiFeedback(userId: UUID, limit: Int = 20) async throws -> [AiFeedbackRow] {
+        try await supabase
+            .from("ai_feedback")
+            .select()
+            .eq("user_id", value: userId.uuidString)
+            .order("created_at", ascending: false)
+            .limit(limit)
+            .execute()
+            .value
+    }
+
+    // MARK: - Fetch (for project resume)
+
+    func fetchTranscript(projectId: UUID) async throws -> TranscriptionResult? {
+        let rows: [TranscriptRow] = try await supabase
+            .from("transcripts")
+            .select()
+            .eq("project_id", value: projectId.uuidString)
+            .order("created_at", ascending: false)
+            .limit(1)
+            .execute()
+            .value
+        guard let row = rows.first else { return nil }
+
+        let segmentRows: [TranscriptSegmentRow] = try await supabase
+            .from("transcript_segments")
+            .select()
+            .eq("project_id", value: projectId.uuidString)
+            .order("start_time", ascending: true)
+            .execute()
+            .value
+
+        let segments = segmentRows.map { s in
+            TranscriptSegment(
+                startTime: s.startTime,
+                endTime: s.endTime,
+                text: s.text,
+                confidence: Float(s.confidence),
+                segmentType: TranscriptSegment.SegmentType(rawValue: s.segmentType) ?? .speech
+            )
+        }
+
+        return TranscriptionResult(
+            fullText: row.fullText,
+            segments: segments,
+            language: row.language,
+            overallConfidence: Float(row.confidence)
+        )
+    }
+
+    func fetchRoughCutDecisions(projectId: UUID) async throws -> RoughCutResult? {
+        let rows: [RoughCutDecisionRow] = try await supabase
+            .from("rough_cut_decisions")
+            .select()
+            .eq("project_id", value: projectId.uuidString)
+            .order("start_time", ascending: true)
+            .execute()
+            .value
+        guard !rows.isEmpty else { return nil }
+
+        let decisions = rows.map { r in
+            RoughCutDecision(
+                startTime: r.startTime,
+                endTime: r.endTime,
+                action: CutAction(rawValue: r.action) ?? .keep,
+                reason: r.reason,
+                confidence: Float(r.confidence),
+                linkedTranscriptText: r.linkedTranscriptText,
+                requiresReview: r.requiresReview
+            )
+        }
+
+        let keepSegments = decisions.filter { $0.action == .keep }
+        let cleanDuration = keepSegments.reduce(0.0) { $0 + ($1.endTime - $1.startTime) }
+        let originalDuration = decisions.map(\.endTime).max() ?? 0
+
+        return RoughCutResult(
+            decisions: decisions,
+            originalDuration: originalDuration,
+            cleanDuration: cleanDuration,
+            keepSegments: keepSegments,
+            cutSegments: decisions.filter { $0.action == .cut || $0.action == .trimStart || $0.action == .trimEnd },
+            reviewSegments: decisions.filter { $0.requiresReview }
+        )
+    }
+
     // MARK: - Cleanup (delete old data before re-insert)
 
     func deleteAnalysisData(projectId: UUID) async throws {
@@ -221,6 +333,13 @@ struct PipelineRepository: Sendable {
             .eq("project_id", value: projectId.uuidString)
             .execute()
         try await supabase.from("transcripts")
+            .delete()
+            .eq("project_id", value: projectId.uuidString)
+            .execute()
+    }
+
+    func deleteRoughCutDecisions(projectId: UUID) async throws {
+        try await supabase.from("rough_cut_decisions")
             .delete()
             .eq("project_id", value: projectId.uuidString)
             .execute()
@@ -267,6 +386,17 @@ struct PipelineRepository: Sendable {
         try await supabase
             .from("projects")
             .update(["selected_template": templateName, "updated_at": ISO8601DateFormatter().string(from: Date())])
+            .eq("id", value: projectId.uuidString)
+            .execute()
+    }
+
+    func updateProjectLocalPath(
+        projectId: UUID,
+        path: String
+    ) async throws {
+        try await supabase
+            .from("projects")
+            .update(["local_project_path": path, "updated_at": ISO8601DateFormatter().string(from: Date())])
             .eq("id", value: projectId.uuidString)
             .execute()
     }
@@ -425,6 +555,94 @@ private struct ExportInsert: Codable {
         case duration, resolution
         case templateName = "template_name"
         case fileSizeBytes = "file_size_bytes"
+    }
+}
+
+private struct AiFeedbackInsert: Codable {
+    let userId: UUID
+    let segmentText: String
+    let aiClassification: String
+    let aiConfidence: Double?
+    let aiReason: String?
+    let userAction: String
+    let language: String?
+
+    enum CodingKeys: String, CodingKey {
+        case userId = "user_id"
+        case segmentText = "segment_text"
+        case aiClassification = "ai_classification"
+        case aiConfidence = "ai_confidence"
+        case aiReason = "ai_reason"
+        case userAction = "user_action"
+        case language
+    }
+}
+
+struct AiFeedbackRow: Codable, Sendable {
+    let id: UUID
+    let segmentText: String
+    let aiClassification: String
+    let aiConfidence: Double?
+    let aiReason: String?
+    let userAction: String
+    let language: String?
+
+    enum CodingKeys: String, CodingKey {
+        case id
+        case segmentText = "segment_text"
+        case aiClassification = "ai_classification"
+        case aiConfidence = "ai_confidence"
+        case aiReason = "ai_reason"
+        case userAction = "user_action"
+        case language
+    }
+}
+
+// MARK: - Fetch Row Models
+
+private struct TranscriptRow: Codable {
+    let id: UUID
+    let fullText: String
+    let language: String
+    let confidence: Double
+
+    enum CodingKeys: String, CodingKey {
+        case id
+        case fullText = "full_text"
+        case language, confidence
+    }
+}
+
+private struct TranscriptSegmentRow: Codable {
+    let startTime: Double
+    let endTime: Double
+    let text: String
+    let confidence: Double
+    let segmentType: String
+
+    enum CodingKeys: String, CodingKey {
+        case startTime = "start_time"
+        case endTime = "end_time"
+        case text, confidence
+        case segmentType = "segment_type"
+    }
+}
+
+private struct RoughCutDecisionRow: Codable {
+    let startTime: Double
+    let endTime: Double
+    let action: String
+    let reason: String
+    let confidence: Double
+    let linkedTranscriptText: String?
+    let requiresReview: Bool
+
+    enum CodingKeys: String, CodingKey {
+        case startTime = "start_time"
+        case endTime = "end_time"
+        case action, reason, confidence
+        case linkedTranscriptText = "linked_transcript_text"
+        case requiresReview = "requires_review"
     }
 }
 

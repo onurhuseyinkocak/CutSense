@@ -12,9 +12,12 @@ final class CaptionPreviewViewModel {
         transcription: TranscriptionResult,
         roughCut: RoughCutResult,
         template: TemplateConfig
-    ) {
+    ) async {
         isProcessing = true
         defer { isProcessing = false }
+
+        // Yield to let SwiftUI render the loading state
+        await Task.yield()
 
         captions = CaptionEngine.generateCaptions(
             from: transcription,
@@ -29,11 +32,25 @@ final class CaptionPreviewViewModel {
         )
         editPlan = plan
 
+        // Compute continuity and coherence for quality gate
+        let continuity = ContinuityChecker.check(keptDecisions: roughCut.keepSegments)
+        let keptTexts = roughCut.keepSegments.compactMap { decision -> TranscriptSegment? in
+            transcription.segments.first { seg in
+                abs(seg.startTime - decision.startTime) < 0.1
+            }
+        }
+        let coherence = MeaningPreservationEngine.verify(
+            keptSegments: keptTexts,
+            allSegments: transcription.segments.filter { $0.segmentType == .speech }
+        )
+
         qualityReport = QualityGateService.evaluate(
             captions: captions,
             editPlan: plan,
             roughCut: roughCut,
-            template: template
+            template: template,
+            continuity: continuity,
+            coherence: coherence
         )
 
         // Debug log entire timeline state
@@ -47,6 +64,7 @@ final class CaptionPreviewViewModel {
     }
 
     func saveCaptionData(projectId: UUID, userId: UUID, templateName: String) async {
+        guard !captions.isEmpty else { return }
         let pipeline = PipelineRepository()
         do {
             try await pipeline.updateProjectTemplate(projectId: projectId, templateName: templateName)
@@ -69,7 +87,9 @@ final class CaptionPreviewViewModel {
                 )
             }
         } catch {
+            #if DEBUG
             print("[CutSense] DB save after captioning failed: \(error.localizedDescription)")
+            #endif
         }
     }
 }
@@ -134,7 +154,7 @@ struct CaptionPreviewScreen: View {
         .navigationTitle("Captions")
         .toolbarColorScheme(.dark, for: .navigationBar)
         .task {
-            viewModel.generate(
+            await viewModel.generate(
                 transcription: transcription,
                 roughCut: roughCut,
                 template: template
@@ -156,7 +176,8 @@ struct CaptionPreviewScreen: View {
                 decisions: roughCut.decisions,
                 captions: viewModel.captions,
                 template: template,
-                editPlan: viewModel.editPlan
+                editPlan: viewModel.editPlan,
+                qualityReport: viewModel.qualityReport
             )
         }
     }

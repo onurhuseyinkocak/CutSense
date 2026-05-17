@@ -89,5 +89,6 @@ final class AuthManager {
         }
         currentUser = nil
         isAuthenticated = false
+        errorMessage = nil
     }
 }

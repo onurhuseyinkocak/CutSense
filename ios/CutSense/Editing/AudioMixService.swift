@@ -9,9 +9,13 @@ enum AudioMixService {
         let fadeOutDuration: Double
     }
 
+    /// Create audio mix for the main voice track(s) only.
+    /// SFX tracks should NOT get voice boost — they get separate volume params.
+    /// Pass `mainTrackIDs` to limit boost to only the original voice track.
     static func createMix(
         for composition: AVMutableComposition,
-        template: TemplateConfig
+        template: TemplateConfig,
+        mainTrackIDs: Set<CMPersistentTrackID>? = nil
     ) -> AVMutableAudioMix {
         let audioMix = AVMutableAudioMix()
         var params: [AVMutableAudioMixInputParameters] = []
@@ -19,6 +23,11 @@ enum AudioMixService {
         let audioTracks = composition.tracks(withMediaType: .audio)
 
         for track in audioTracks {
+            // Only apply voice boost to main tracks, not SFX
+            if let mainIDs = mainTrackIDs, !mainIDs.contains(track.trackID) {
+                continue
+            }
+
             let inputParams = AVMutableAudioMixInputParameters(track: track)
 
             // Apply voice boost via volume ramp

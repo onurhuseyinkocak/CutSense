@@ -1,16 +1,16 @@
 import Foundation
 
 enum OverEditingGuard {
-    /// Max effects per minute of content
-    private static let maxEffectsPerMinute = 8
+    /// Max effects per minute of content (aligned with IntensityLimiter high-tier)
+    private static let maxEffectsPerMinute = 40
     /// Min seconds between consecutive effects of the same type
-    private static let minSameTypeGap: Double = 3.0
+    private static let minSameTypeGap: Double = 1.5
 
     static func filter(_ decisions: [EditDecision], totalDuration: Double) -> [EditDecision] {
         guard !decisions.isEmpty else { return [] }
 
         let maxTotal = Int(ceil(totalDuration / 60.0)) * maxEffectsPerMinute
-        var sorted = decisions.sorted { $0.time < $1.time }
+        let sorted = decisions.sorted { $0.time < $1.time }
 
         // Remove same-type clusters
         var filtered: [EditDecision] = []

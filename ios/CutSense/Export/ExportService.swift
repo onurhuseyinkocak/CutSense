@@ -8,6 +8,7 @@ final class ExportService {
     var isExporting = false
     var errorMessage: String?
     var exportedURL: URL?
+    var currentStepLabel = ""
 
     private var exportSession: AVAssetExportSession?
     private var progressTimer: Timer?
@@ -25,78 +26,119 @@ final class ExportService {
         progress = 0
         errorMessage = nil
         exportedURL = nil
+        let outputURL = exportOutputURL()
         defer {
             isExporting = false
             stopProgressTracking()
+            exportSession = nil
         }
 
         do {
             // Step 1: Build clean timeline
             progress = 0.1
+            currentStepLabel = "Building clean timeline..."
             let timeline = try await CleanTimelineBuilder.build(
                 from: sourceURL,
                 decisions: decisions
             )
 
+            // Detect source video dimensions for correct render size
+            let renderSize = await detectRenderSize(from: sourceURL)
+            #if DEBUG
+            print("[Export] Step 1: Clean timeline built — duration=\(CMTimeGetSeconds(timeline.totalDuration))s, keepSegments=\(decisions.filter { $0.action == .keep }.count), renderSize=\(renderSize)")
+            #endif
+
             // Step 2: Remap captions + edit decisions from source to clean timeline
             progress = 0.2
+            currentStepLabel = "Remapping captions..."
             let mapping = TimelineMapper.buildMapping(from: decisions)
-            let remappedCaptions = TimelineMapper.remapCaptions(captions, mapping: mapping)
+            let remappedCaptions = TimelineMapper.resolveOverlaps(
+                TimelineMapper.remapCaptions(captions, mapping: mapping)
+            )
             let allEditDecisions = editPlan?.decisions ?? []
             let remappedEdits = TimelineMapper.remapEditDecisions(allEditDecisions, mapping: mapping)
+            #if DEBUG
+            print("[Export] Step 2: Remapped — captions=\(captions.count)→\(remappedCaptions.count), effects=\(allEditDecisions.count)→\(remappedEdits.count)")
+            if let first = remappedCaptions.first {
+                print("[Export]   First caption: \"\(first.text.prefix(30))\" at \(String(format: "%.2f", first.startTime))-\(String(format: "%.2f", first.endTime))s role=\(first.role)")
+            }
+            #endif
 
-            // Step 3: Create video composition with caption overlay + visual effects
-            let videoComposition = buildVideoComposition(
-                timeline: timeline,
-                captions: remappedCaptions,
-                editDecisions: remappedEdits,
-                colorGrade: template.colorGrade
+            // Step 3: Insert SFX audio tracks BEFORE building audio mix
+            progress = 0.25
+            currentStepLabel = "Adding sound effects..."
+            let sfxResult = await SFXAssetManager.insertSFX(
+                into: timeline.composition,
+                decisions: remappedEdits,
+                sfxVolume: template.sfxVolume
             )
+            let sfxTracks = sfxResult.tracks
+            if sfxResult.failedCount > 0 {
+                currentStepLabel = "Some sound effects unavailable (\(sfxResult.failedCount) skipped)"
+            }
+            #if DEBUG
+            let sfxCount = remappedEdits.filter { $0.type == .sfx }.count
+            print("[Export] Step 3: SFX — \(sfxCount) decisions, \(sfxTracks.count) tracks inserted, \(sfxResult.failedCount) failed, volume=\(template.sfxVolume)")
+            #endif
 
-            // Step 4: Build audio mix for voice track BEFORE adding SFX tracks
+            // Step 4: Build audio mix AFTER SFX tracks are in composition
             let audioMix = CleanTimelineBuilder.audioMixWithFades(
                 timeline: timeline,
                 template: template
             )
-
-            // Step 5: Insert SFX audio tracks into composition (after audio mix so voice boost doesn't hit SFX)
-            progress = 0.25
-            let remappedSfxEdits = remappedEdits
-            let sfxTracks = await SFXAssetManager.insertSFX(
-                into: timeline.composition,
-                decisions: remappedSfxEdits,
-                sfxVolume: template.sfxVolume
-            )
-            // Set SFX track volumes separately
+            // Override SFX track volumes (audioMixWithFades applies voice boost to all tracks)
             for track in sfxTracks {
                 let sfxParams = AVMutableAudioMixInputParameters(track: track)
                 sfxParams.setVolume(template.sfxVolume, at: CMTime.zero)
                 audioMix.inputParameters = audioMix.inputParameters + [sfxParams]
             }
 
+            // Step 5: Create video composition with caption overlay + visual effects
+            let videoComposition = buildVideoComposition(
+                timeline: timeline,
+                captions: remappedCaptions,
+                editDecisions: remappedEdits,
+                colorGrade: template.colorGrade,
+                captionTheme: template.captionTheme,
+                renderSize: renderSize
+            )
+            #if DEBUG
+            print("[Export] Step 5: VideoComposition=\(videoComposition != nil ? "CREATED" : "NIL") renderSize=\(videoComposition?.renderSize ?? .zero)")
+            #endif
+
             // Step 6: Export
             progress = 0.3
+            currentStepLabel = "Encoding video..."
             guard let session = AVAssetExportSession(
                 asset: timeline.composition,
-                presetName: AVAssetExportPreset1920x1080
+                presetName: AVAssetExportPresetHighestQuality
             ) else {
                 errorMessage = "Could not create export session."
                 return nil
             }
 
-            let outputURL = exportOutputURL()
             exportSession = session
             session.videoComposition = videoComposition
             session.audioMix = audioMix
+            #if DEBUG
+            print("[Export] Step 6: Exporting — preset=HighestQuality, videoComposition=\(session.videoComposition != nil), audioMix=\(session.audioMix != nil)")
+            #endif
 
             startProgressTracking(baseProgress: 0.3)
             try await session.export(to: outputURL, as: .mp4)
             progress = 1.0
             exportedURL = outputURL
+            #if DEBUG
+            print("[Export] DONE — output=\(outputURL.lastPathComponent)")
+            #endif
             return outputURL
         } catch {
             progress = 0
             errorMessage = error.localizedDescription
+            cleanupPartialExport(outputURL)
+            #if DEBUG
+            print("[Export] FAILED: \(error)")
+            #endif
             return nil
         }
     }
@@ -111,6 +153,7 @@ final class ExportService {
         defer {
             isExporting = false
             stopProgressTracking()
+            exportSession = nil
         }
 
         let asset = AVURLAsset(url: sourceURL)
@@ -132,15 +175,22 @@ final class ExportService {
         } catch {
             progress = 0
             errorMessage = error.localizedDescription
+            cleanupPartialExport(outputURL)
             return nil
         }
     }
 
     func saveToPhotos(url: URL) async -> Bool {
+        // Verify file exists before attempting save
+        guard FileManager.default.fileExists(atPath: url.path) else {
+            errorMessage = "Export file not found."
+            return false
+        }
+
         do {
             let authStatus = await PHPhotoLibrary.requestAuthorization(for: .addOnly)
             guard authStatus == .authorized || authStatus == .limited else {
-                errorMessage = "Photos access denied."
+                errorMessage = "Photos access denied. Enable in Settings > CutSense > Photos."
                 return false
             }
 
@@ -149,7 +199,10 @@ final class ExportService {
             }
             return true
         } catch {
-            errorMessage = error.localizedDescription
+            errorMessage = "Failed to save: \(error.localizedDescription)"
+            #if DEBUG
+            print("[Export] Photos save failed: \(error)")
+            #endif
             return false
         }
     }
@@ -178,6 +231,10 @@ final class ExportService {
 
     // MARK: - Private
 
+    private func cleanupPartialExport(_ url: URL) {
+        try? FileManager.default.removeItem(at: url)
+    }
+
     private func exportOutputURL() -> URL {
         let outputDir = FileManager.default.temporaryDirectory
             .appendingPathComponent("CutSense/exports", isDirectory: true)
@@ -185,11 +242,39 @@ final class ExportService {
         return outputDir.appendingPathComponent("export_\(UUID().uuidString.prefix(8)).mp4")
     }
 
+    /// Detect the natural render size from source video, defaulting to 1080x1920 (portrait)
+    private func detectRenderSize(from sourceURL: URL) async -> CGSize {
+        let asset = AVURLAsset(url: sourceURL)
+        do {
+            let videoTracks = try await asset.loadTracks(withMediaType: .video)
+            guard let track = videoTracks.first else { return CGSize(width: 1080, height: 1920) }
+            let naturalSize = try await track.load(.naturalSize)
+            let transform = try await track.load(.preferredTransform)
+            // Apply transform to get actual pixel dimensions (handles rotation)
+            let transformedSize = naturalSize.applying(transform)
+            let w = abs(transformedSize.width)
+            let h = abs(transformedSize.height)
+            // Ensure portrait orientation for social media
+            if w > h {
+                // Landscape source — scale to fit 1080x1920 (pillarbox or crop)
+                return CGSize(width: 1080, height: 1920)
+            }
+            // Portrait or square — use actual dimensions rounded to even
+            let roundedW = CGFloat(Int(w / 2) * 2)
+            let roundedH = CGFloat(Int(h / 2) * 2)
+            return CGSize(width: max(roundedW, 720), height: max(roundedH, 1280))
+        } catch {
+            return CGSize(width: 1080, height: 1920)
+        }
+    }
+
     private func buildVideoComposition(
         timeline: CleanTimeline,
         captions: [CaptionSegment],
         editDecisions: [EditDecision] = [],
-        colorGrade: TemplateConfig.ColorGrade = .none
+        colorGrade: TemplateConfig.ColorGrade = .none,
+        captionTheme: TemplateConfig.CaptionTheme = .premiumGold,
+        renderSize: CGSize = CGSize(width: 1080, height: 1920)
     ) -> AVMutableVideoComposition? {
         let hasContent = !captions.isEmpty || !editDecisions.isEmpty
         let hasGrade = colorGrade.saturation != 1.0 || colorGrade.brightness != 0.0 ||
@@ -201,7 +286,7 @@ final class ExportService {
         let visualDecisions = editDecisions.filter { $0.type != .sfx }
 
         let videoComposition = AVMutableVideoComposition()
-        videoComposition.renderSize = CGSize(width: 1080, height: 1920)
+        videoComposition.renderSize = renderSize
         videoComposition.frameDuration = CMTime(value: 1, timescale: 30)
         videoComposition.customVideoCompositorClass = CaptionOverlayCompositor.self
 
@@ -211,7 +296,8 @@ final class ExportService {
             captions: captions,
             editDecisions: visualDecisions,
             colorGrade: colorGrade,
-            renderSize: CGSize(width: 1080, height: 1920)
+            captionTheme: captionTheme,
+            renderSize: renderSize
         )
 
         videoComposition.instructions = [instruction]

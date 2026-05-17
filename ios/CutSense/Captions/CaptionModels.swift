@@ -65,6 +65,8 @@ enum CaptionSceneBehavior: String, Codable, Sendable, CaseIterable {
     case keywordLockOn
     case transitionWhoosh
     case conclusionHold
+    case subtleZoom
+    case punchIn
 
     var displayName: String {
         switch self {
@@ -75,6 +77,8 @@ enum CaptionSceneBehavior: String, Codable, Sendable, CaseIterable {
         case .keywordLockOn: "Keyword Lock"
         case .transitionWhoosh: "Whoosh"
         case .conclusionHold: "Hold"
+        case .subtleZoom: "Subtle Zoom"
+        case .punchIn: "Punch In"
         }
     }
 }

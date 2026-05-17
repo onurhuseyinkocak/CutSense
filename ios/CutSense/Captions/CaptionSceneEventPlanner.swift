@@ -34,11 +34,11 @@ enum CaptionSceneEventPlanner {
         timeSinceLastBehavior: Double,
         intensity: TemplateIntensity
     ) -> CaptionSceneBehavior {
-        // Minimum gap between behaviors to avoid over-editing
+        // Reduced gaps for Prequel-level editing density
         let minGap: Double = switch intensity {
-        case .low: 8.0
-        case .medium: 5.0
-        case .high: 3.0
+        case .low: 5.0
+        case .medium: 3.0
+        case .high: 2.0
         }
 
         guard timeSinceLastBehavior >= minGap else { return .none }
@@ -51,19 +51,27 @@ enum CaptionSceneEventPlanner {
             return intensity == .low ? .underlineReveal : .focusBlur
 
         case .keyword:
-            return intensity != .low ? .keywordLockOn : .none
+            return .keywordLockOn
 
         case .warning:
             return .underlineReveal
 
         case .transition:
-            return intensity == .high ? .transitionWhoosh : .none
+            return intensity == .low ? .none : .transitionWhoosh
 
         case .conclusion:
             return .conclusionHold
 
         case .regular:
-            return .none
+            // Regular captions now get subtle effects instead of nothing
+            switch intensity {
+            case .low:
+                return .none
+            case .medium:
+                return .subtleZoom
+            case .high:
+                return .punchIn
+            }
         }
     }
 }

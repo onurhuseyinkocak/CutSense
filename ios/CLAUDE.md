@@ -33,3 +33,29 @@ Every phase must include:
 - Screenshots or logs if applicable
 
 No phase can be marked complete without passing its acceptance criteria.
+
+## Quality Test Harness Rules
+
+Before any TestFlight submission:
+1. All tests in `Tests/CutSenseQualityTests/` must pass (`xcodebuild test`)
+2. Golden transcript scenarios A-G must all pass
+3. `scripts/verify.sh` must exit 0
+4. ExportVerificationReport must generate after export (check Documents/CutSense/Reports/)
+5. Manual QA checklist score >= 85% (see docs/manual-qa-checklist.md)
+
+### Test Files
+- `TestHelpers.swift` — TestFixture factory, never delete
+- `GoldenTranscriptTests.swift` — 7 scenarios, add new ones as bugs are found
+- `RoughCutModuleTests.swift` — per-component unit tests
+- `ExportVerificationTests.swift` — quality gate + export pipeline tests
+
+### Debug Tools
+- `Debug/ExportVerificationReport.swift` — JSON report saved after every export
+- `Debug/DebugTimelineScreen.swift` — per-segment debug view (shake gesture in dev)
+
+### Adding Pipeline Features
+When adding a new caption role, scene behavior, or effect type:
+1. Add test case in ExportVerificationTests
+2. Add golden scenario if it's a new classification pattern
+3. Verify effect appears in ExportVerificationReport
+4. Run full test suite before committing

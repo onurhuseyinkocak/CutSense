@@ -31,7 +31,7 @@ final class ProjectsViewModel {
 
     func deleteProject(_ project: Project) async {
         do {
-            try await repository.deleteProject(projectId: project.id)
+            try await repository.deleteProject(projectId: project.id, localVideoPath: project.localProjectPath)
             projects.removeAll { $0.id == project.id }
         } catch {
             errorMessage = error.localizedDescription
@@ -67,6 +67,7 @@ struct ProjectsScreen: View {
                         Image(systemName: "person.circle")
                             .foregroundStyle(.white)
                     }
+                    .accessibilityLabel("Account")
                 }
                 ToolbarItem(placement: .topBarTrailing) {
                     Button {
@@ -75,6 +76,7 @@ struct ProjectsScreen: View {
                         Image(systemName: "plus")
                             .foregroundStyle(.white)
                     }
+                    .accessibilityLabel("New Project")
                 }
             }
             .alert("New Project", isPresented: $viewModel.showNewProject) {
@@ -92,6 +94,16 @@ struct ProjectsScreen: View {
                 }
             }
             .task {
+                guard let userId = authManager.currentUser?.id else { return }
+                await viewModel.loadProjects(userId: userId)
+            }
+            .onAppear {
+                // Re-fetch when returning from child screens (task only fires once)
+                guard !viewModel.projects.isEmpty,
+                      let userId = authManager.currentUser?.id else { return }
+                Task { await viewModel.loadProjects(userId: userId) }
+            }
+            .refreshable {
                 guard let userId = authManager.currentUser?.id else { return }
                 await viewModel.loadProjects(userId: userId)
             }

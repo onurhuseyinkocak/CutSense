@@ -8,6 +8,10 @@ struct TranscriptSegment: Sendable, Identifiable {
     let text: String
     let confidence: Float
     var segmentType: SegmentType
+    /// LLM classification confidence (0.0–1.0), nil when heuristic-only
+    var aiConfidence: Float?
+    /// LLM reason for classification, nil when heuristic-only
+    var aiReason: String?
 
     enum SegmentType: String, Sendable {
         case speech

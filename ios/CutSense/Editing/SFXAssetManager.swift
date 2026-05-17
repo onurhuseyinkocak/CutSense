@@ -37,28 +37,43 @@ enum SFXAssetManager {
         return AVURLAsset(url: url)
     }
 
+    struct InsertResult {
+        let tracks: [AVMutableCompositionTrack]
+        let failedCount: Int
+    }
+
     /// Insert SFX audio tracks into the composition at EditDecision times.
-    /// Returns the SFX tracks added (for audio mix volume control).
-    @MainActor @discardableResult
+    /// Returns tracks added and count of failures (for user feedback).
+    @MainActor
     static func insertSFX(
         into composition: AVMutableComposition,
         decisions: [EditDecision],
         sfxVolume: Float
-    ) async -> [AVMutableCompositionTrack] {
+    ) async -> InsertResult {
         let sfxDecisions = decisions.filter { $0.type == .sfx }
-        guard !sfxDecisions.isEmpty else { return [] }
+        guard !sfxDecisions.isEmpty else { return InsertResult(tracks: [], failedCount: 0) }
 
         var sfxTracks: [AVMutableCompositionTrack] = []
+        var failedCount = 0
 
         for decision in sfxDecisions {
             guard let sfxSound = sound(for: decision),
-                  let sfxAsset = asset(for: sfxSound) else { continue }
+                  let sfxAsset = asset(for: sfxSound) else {
+                failedCount += 1
+                #if DEBUG
+                print("[SFX] Missing asset for decision: \(decision.reason)")
+                #endif
+                continue
+            }
 
             guard let sfxAudioTrack = try? await sfxAsset.loadTracks(withMediaType: .audio).first,
                   let compTrack = composition.addMutableTrack(
                       withMediaType: .audio,
                       preferredTrackID: kCMPersistentTrackID_Invalid
-                  ) else { continue }
+                  ) else {
+                failedCount += 1
+                continue
+            }
 
             let sfxDuration = (try? await sfxAsset.load(.duration)) ?? CMTime(seconds: 1.0, preferredTimescale: 600)
             let insertTime = CMTime(seconds: decision.time, preferredTimescale: 600)
@@ -68,12 +83,13 @@ enum SFXAssetManager {
                 try compTrack.insertTimeRange(timeRange, of: sfxAudioTrack, at: insertTime)
                 sfxTracks.append(compTrack)
             } catch {
+                failedCount += 1
                 #if DEBUG
                 print("[SFX] Failed to insert \(sfxSound.rawValue) at \(decision.time)s: \(error)")
                 #endif
             }
         }
 
-        return sfxTracks
+        return InsertResult(tracks: sfxTracks, failedCount: failedCount)
     }
 }

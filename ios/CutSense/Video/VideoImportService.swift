@@ -7,7 +7,7 @@ import AVFoundation
 final class VideoImportService {
     var selectedItem: PhotosPickerItem?
     var importedVideoURL: URL?
-    var metadata: VideoMetadata?
+    var metadata: VideoMetadata?  // settable externally for resume
     var isImporting = false
     var errorMessage: String?
 
@@ -21,11 +21,28 @@ final class VideoImportService {
                 errorMessage = "Could not load video."
                 return
             }
-            importedVideoURL = movie.url
-            metadata = await VideoMetadataService.extract(from: movie.url)
+
+            // Move from temp to persistent app documents
+            let persistentURL = try Self.persistVideo(from: movie.url)
+            importedVideoURL = persistentURL
+            metadata = await VideoMetadataService.extract(from: persistentURL)
         } catch {
             errorMessage = error.localizedDescription
         }
+    }
+
+    /// Move video from temp directory to persistent app storage
+    private static func persistVideo(from tempURL: URL) throws -> URL {
+        let docsDir = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!
+        let videosDir = docsDir.appendingPathComponent("CutSense/videos", isDirectory: true)
+        try FileManager.default.createDirectory(at: videosDir, withIntermediateDirectories: true)
+
+        let destination = videosDir.appendingPathComponent(tempURL.lastPathComponent)
+        if FileManager.default.fileExists(atPath: destination.path) {
+            try FileManager.default.removeItem(at: destination)
+        }
+        try FileManager.default.moveItem(at: tempURL, to: destination)
+        return destination
     }
 }
 

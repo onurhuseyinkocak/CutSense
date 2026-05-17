@@ -8,6 +8,13 @@ struct CutSenseApp: App {
         WindowGroup {
             RootView()
                 .environment(authManager)
+                .onOpenURL { url in
+                    guard url.pathExtension == "cutsensetemplate" else { return }
+                    let count = CustomTemplateStore.shared.importFile(at: url)
+                    #if DEBUG
+                    print("[CutSense] Imported \(count) template(s) from \(url.lastPathComponent)")
+                    #endif
+                }
         }
     }
 }

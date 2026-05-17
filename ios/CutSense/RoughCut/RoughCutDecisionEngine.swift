@@ -32,11 +32,11 @@ struct RoughCutResult: Sendable {
 }
 
 enum RoughCutDecisionEngine {
-    /// Silence thresholds (seconds)
-    private static let maxIntraSpeechSilence: Double = 0.35
-    private static let maxInterIdeaSilence: Double = 0.55
+    /// Silence thresholds (seconds) — conservative to preserve natural speech rhythm
+    private static let maxIntraSpeechSilence: Double = 0.60
+    private static let maxInterIdeaSilence: Double = 1.0
     /// Breathing room to keep around speech (seconds)
-    private static let breathingRoom: Double = 0.10
+    private static let breathingRoom: Double = 0.15
 
     static func generateDecisions(
         transcription: TranscriptionResult,
@@ -46,6 +46,80 @@ enum RoughCutDecisionEngine {
 
         // Analyze each transcript segment
         for (index, segment) in transcription.segments.enumerated() {
+            // Handle segments classified by SmartTranscriptAnalyzer / heuristics
+            let aiConf = segment.aiConfidence
+            let lowConfidence = aiConf != nil && aiConf! < 0.7
+
+            switch segment.segmentType {
+            case .filler:
+                let reason = segment.aiReason ?? "Filler word detected"
+                let fillerDuration = segment.endTime - segment.startTime
+                // Only cut fillers if they're pure short fillers (< 1s) and high confidence
+                // Longer "fillers" are often misclassified content
+                if fillerDuration > 1.0 || lowConfidence {
+                    decisions.append(RoughCutDecision(
+                        startTime: segment.startTime,
+                        endTime: segment.endTime,
+                        action: .reviewRequired,
+                        reason: fillerDuration > 1.0 ? "Long filler — likely content: \(reason)" : "AI uncertain: \(reason)",
+                        confidence: aiConf ?? 0.50,
+                        linkedTranscriptText: segment.text,
+                        requiresReview: true
+                    ))
+                } else {
+                    decisions.append(RoughCutDecision(
+                        startTime: segment.startTime,
+                        endTime: segment.endTime,
+                        action: .cut,
+                        reason: reason,
+                        confidence: aiConf ?? 0.90,
+                        linkedTranscriptText: segment.text,
+                        requiresReview: false
+                    ))
+                }
+                continue
+            case .suspectedRestart:
+                let reason = segment.aiReason ?? "Suspected restart — cleaner take follows"
+                // Restarts should always go to review unless AI is very confident (>= 0.85)
+                let highConfRestart = aiConf != nil && aiConf! >= 0.85
+                decisions.append(RoughCutDecision(
+                    startTime: segment.startTime,
+                    endTime: segment.endTime,
+                    action: highConfRestart ? .cut : .reviewRequired,
+                    reason: highConfRestart ? reason : "Review: \(reason)",
+                    confidence: aiConf ?? 0.60,
+                    linkedTranscriptText: segment.text,
+                    requiresReview: !highConfRestart
+                ))
+                continue
+            case .suspectedDuplicate:
+                let reason = segment.aiReason ?? "Duplicate content detected"
+                decisions.append(RoughCutDecision(
+                    startTime: segment.startTime,
+                    endTime: segment.endTime,
+                    action: lowConfidence ? .reviewRequired : .cut,
+                    reason: lowConfidence ? "AI uncertain: \(reason)" : reason,
+                    confidence: aiConf ?? 0.75,
+                    linkedTranscriptText: segment.text,
+                    requiresReview: lowConfidence || aiConf == nil
+                ))
+                continue
+            case .contentSentence where lowConfidence:
+                let reason = segment.aiReason ?? "Content (low confidence)"
+                decisions.append(RoughCutDecision(
+                    startTime: segment.startTime,
+                    endTime: segment.endTime,
+                    action: .keep,
+                    reason: "AI uncertain: \(reason)",
+                    confidence: aiConf ?? 0.50,
+                    linkedTranscriptText: segment.text,
+                    requiresReview: true
+                ))
+                continue
+            case .speech, .silence, .contentSentence:
+                break // Fall through to edit command detection
+            }
+
             let prev = index > 0 ? transcription.segments[index - 1] : nil
             let next = index < transcription.segments.count - 1 ? transcription.segments[index + 1] : nil
 
@@ -93,43 +167,30 @@ enum RoughCutDecisionEngine {
             }
         }
 
-        // Process silence intervals
+        // Process silence intervals — only cut clearly excessive silences
         for silence in audioAnalysis.silenceIntervals {
             let duration = silence.upperBound - silence.lowerBound
 
             if duration > maxInterIdeaSilence {
-                // Long silence between ideas — trim but keep breathing room
+                // Long silence between ideas — trim but keep generous breathing room
                 let trimmedStart = silence.lowerBound + breathingRoom
-                let trimmedEnd = silence.upperBound - breathingRoom
+                // Keep a natural pause at the end (0.3s feels organic)
+                let trimmedEnd = silence.upperBound - max(breathingRoom, 0.3)
 
-                if trimmedEnd > trimmedStart {
+                if trimmedEnd > trimmedStart + 0.1 {
                     decisions.append(RoughCutDecision(
                         startTime: trimmedStart,
                         endTime: trimmedEnd,
                         action: .cut,
-                        reason: "Silence exceeds \(String(format: "%.1f", maxInterIdeaSilence))s threshold (\(String(format: "%.1f", duration))s)",
+                        reason: "Long silence (\(String(format: "%.1f", duration))s)",
                         confidence: 0.85,
                         linkedTranscriptText: nil,
                         requiresReview: false
                     ))
                 }
-            } else if duration > maxIntraSpeechSilence {
-                // Medium silence inside speech — trim gently
-                let trimmedStart = silence.lowerBound + breathingRoom
-                let trimmedEnd = silence.upperBound - breathingRoom
-
-                if trimmedEnd > trimmedStart {
-                    decisions.append(RoughCutDecision(
-                        startTime: trimmedStart,
-                        endTime: trimmedEnd,
-                        action: .trimStart,
-                        reason: "Intra-speech silence (\(String(format: "%.1f", duration))s) — trimming gently",
-                        confidence: 0.70,
-                        linkedTranscriptText: nil,
-                        requiresReview: false
-                    ))
-                }
             }
+            // Medium silences (0.6-1.0s) are natural pauses — DON'T trim them
+            // They give the video breathing room and feel natural
         }
 
         // Split keep segments that overlap with silence cuts
@@ -236,16 +297,14 @@ enum RoughCutDecisionEngine {
         decisions: [RoughCutDecision],
         originalDuration: Double
     ) -> RoughCutResult {
-        let cutDuration = decisions
-            .filter { $0.action == .cut || $0.action == .trimStart || $0.action == .trimEnd }
-            .reduce(0.0) { $0 + ($1.endTime - $1.startTime) }
-        let cleanDuration = max(originalDuration - cutDuration, 0)
+        let keepSegments = decisions.filter { $0.action == .keep }
+        let cleanDuration = keepSegments.reduce(0.0) { $0 + ($1.endTime - $1.startTime) }
 
         return RoughCutResult(
             decisions: decisions,
             originalDuration: originalDuration,
             cleanDuration: cleanDuration,
-            keepSegments: decisions.filter { $0.action == .keep },
+            keepSegments: keepSegments,
             cutSegments: decisions.filter { $0.action == .cut || $0.action == .trimStart || $0.action == .trimEnd },
             reviewSegments: decisions.filter { $0.requiresReview }
         )

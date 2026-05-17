@@ -3,9 +3,9 @@ import Foundation
 enum IntensityLimiter {
     /// Max effects per 10-second window
     private static let maxEffectsPerWindow: [TemplateIntensity: Int] = [
-        .low: 2,
-        .medium: 4,
-        .high: 6
+        .low: 4,
+        .medium: 6,
+        .high: 10
     ]
 
     private static let windowDuration: Double = 10.0

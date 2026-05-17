@@ -68,4 +68,25 @@ enum TimelineMapper {
             )
         }
     }
+
+    /// Resolve overlapping captions after remapping.
+    /// If two captions overlap in time, the earlier one's endTime is clamped to the later one's startTime.
+    static func resolveOverlaps(_ captions: [CaptionSegment]) -> [CaptionSegment] {
+        guard captions.count > 1 else { return captions }
+
+        var sorted = captions.sorted { $0.startTime < $1.startTime }
+
+        for i in 0..<(sorted.count - 1) {
+            if sorted[i].endTime > sorted[i + 1].startTime {
+                // Clamp earlier caption's end to next caption's start
+                sorted[i].endTime = sorted[i + 1].startTime
+                // Ensure minimum duration
+                if sorted[i].endTime - sorted[i].startTime < 0.1 {
+                    sorted[i].endTime = sorted[i].startTime + 0.1
+                }
+            }
+        }
+
+        return sorted
+    }
 }

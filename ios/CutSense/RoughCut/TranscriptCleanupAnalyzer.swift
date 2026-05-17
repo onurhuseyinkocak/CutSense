@@ -1,17 +1,16 @@
 import Foundation
 
 enum TranscriptCleanupAnalyzer {
-    // Turkish filler words
+    // Turkish filler words — ONLY pure filler sounds, not words that can be content
+    // "yani", "aslında", "mesela" are valid speech connectors, NOT fillers
     private static let turkishFillers = [
-        "şey", "yani", "hani", "ıı", "eee", "aaa", "mmm", "hmm",
-        "işte", "mesela", "aslında", "bir nevi", "nasıl diyeyim",
-        "şöyle ki", "ya", "evet evet"
+        "ıı", "eee", "aaa", "mmm", "hmm", "şey",
+        "evet evet", "nasıl diyeyim"
     ]
 
-    // English filler words
+    // English filler words — ONLY pure fillers
     private static let englishFillers = [
-        "um", "uh", "like", "you know", "basically", "actually",
-        "literally", "so", "right", "okay so", "I mean"
+        "um", "uh", "erm", "hmm"
     ]
 
     private static let allFillers = turkishFillers + englishFillers
@@ -47,9 +46,10 @@ enum TranscriptCleanupAnalyzer {
                 let words = lower.split(separator: " ")
                 let nextWords = nextLower.split(separator: " ")
 
-                if words.count >= 2 && nextWords.count >= 2 {
+                if words.count >= 3 && nextWords.count >= 3 {
                     let overlap = commonPrefixWordCount(words, nextWords)
-                    if overlap >= 2 && Double(overlap) / Double(words.count) > 0.5 {
+                    // Require at least 3 word overlap AND > 60% of the segment
+                    if overlap >= 3 && Double(overlap) / Double(words.count) > 0.6 {
                         modified.segmentType = .suspectedRestart
                         restartsDetected += 1
                     }

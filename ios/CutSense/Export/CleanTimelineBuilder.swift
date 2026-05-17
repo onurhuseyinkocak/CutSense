@@ -110,7 +110,9 @@ enum CleanTimelineBuilder {
         timeline: CleanTimeline,
         template: TemplateConfig
     ) -> AVMutableAudioMix {
-        let baseMix = AudioMixService.createMix(for: timeline.composition, template: template)
+        // Only boost the main audio track, not SFX tracks added later
+        let mainTrackIDs: Set<CMPersistentTrackID> = [timeline.audioTrack.trackID]
+        let baseMix = AudioMixService.createMix(for: timeline.composition, template: template, mainTrackIDs: mainTrackIDs)
 
         // Add fade-out at end
         let fadeOutStart = CMTimeSubtract(

@@ -420,8 +420,10 @@ struct CaptionReadabilitySplitTests {
         for cap in result {
             #expect(cap.role == .hook)
             #expect(cap.style == .hookImpact)
-            #expect(cap.sceneBehavior == .hookImpact)
         }
+        // First half keeps original scene behavior, second half gets .none to avoid duplicates
+        #expect(result[0].sceneBehavior == .hookImpact)
+        #expect(result[1].sceneBehavior == .none)
     }
 
     @Test("Short captions get minimum display duration")
@@ -469,6 +471,190 @@ struct CaptionReadabilitySplitTests {
         // All IDs unique
         let ids = Set(result.map(\.id))
         #expect(ids.count == 4, "All captions must have unique IDs")
+    }
+}
+
+// MARK: - resolveOverlaps
+
+@Suite("TimelineMapper — resolveOverlaps")
+struct ResolveOverlapsTests {
+
+    private func makeCaption(start: Double, end: Double, text: String = "test") -> CaptionSegment {
+        CaptionSegment(startTime: start, endTime: end, text: text, role: .regular, style: .boldCenterViral)
+    }
+
+    @Test("Non-overlapping captions pass through unchanged")
+    func nonOverlapping() {
+        let captions = [
+            makeCaption(start: 0, end: 2, text: "a"),
+            makeCaption(start: 3, end: 5, text: "b"),
+        ]
+        let result = TimelineMapper.resolveOverlaps(captions)
+        #expect(result.count == 2)
+        #expect(result[0].endTime == 2)
+        #expect(result[1].startTime == 3)
+    }
+
+    @Test("Overlapping captions get clamped")
+    func overlapping() {
+        let captions = [
+            makeCaption(start: 0, end: 4, text: "a"),
+            makeCaption(start: 3, end: 6, text: "b"),
+        ]
+        let result = TimelineMapper.resolveOverlaps(captions)
+        #expect(result[0].endTime == 3) // clamped to b.startTime
+        #expect(result[1].startTime == 3)
+    }
+
+    @Test("Severe overlap enforces minimum 0.1s duration")
+    func severeOverlapMinDuration() {
+        let captions = [
+            makeCaption(start: 0, end: 5, text: "a"),
+            makeCaption(start: 0.05, end: 3, text: "b"), // starts very close to a.start
+        ]
+        let result = TimelineMapper.resolveOverlaps(captions)
+        // After sorting: a(0-5) then b(0.05-3). a.endTime clamped to 0.05, but that's only 0.05s duration, so min enforced to 0.1
+        #expect(result[0].endTime - result[0].startTime >= 0.1)
+    }
+
+    @Test("Single caption passes through")
+    func singleCaption() {
+        let captions = [makeCaption(start: 1, end: 3)]
+        let result = TimelineMapper.resolveOverlaps(captions)
+        #expect(result.count == 1)
+        #expect(result[0].startTime == 1)
+        #expect(result[0].endTime == 3)
+    }
+
+    @Test("Empty array passes through")
+    func emptyArray() {
+        let result = TimelineMapper.resolveOverlaps([])
+        #expect(result.isEmpty)
+    }
+
+    @Test("Three overlapping captions resolved sequentially")
+    func threeOverlapping() {
+        let captions = [
+            makeCaption(start: 0, end: 4, text: "a"),
+            makeCaption(start: 2, end: 6, text: "b"),
+            makeCaption(start: 5, end: 8, text: "c"),
+        ]
+        let result = TimelineMapper.resolveOverlaps(captions)
+        #expect(result[0].endTime == 2) // clamped to b.start
+        #expect(result[1].endTime == 5) // clamped to c.start
+        #expect(result[2].endTime == 8) // unchanged
+    }
+}
+
+// MARK: - cleanDuration computation
+
+@Suite("RoughCutDecisionEngine cleanDuration")
+struct CleanDurationTests {
+
+    @Test("cleanDuration equals sum of keep segment durations")
+    func cleanDurationEqualsKeepSum() {
+        let segments = [
+            TranscriptSegment(startTime: 0, endTime: 3, text: "Hello", confidence: 0.9, segmentType: .speech),
+            TranscriptSegment(startTime: 3, endTime: 4, text: "", confidence: 1.0, segmentType: .silence),
+            TranscriptSegment(startTime: 4, endTime: 7, text: "World", confidence: 0.9, segmentType: .speech),
+        ]
+        let transcription = TranscriptionResult(
+            fullText: "Hello World", segments: segments, language: "en", overallConfidence: 0.9
+        )
+        let audio = AudioAnalysisResult(
+            segments: [
+                AudioSegment(startTime: 0, endTime: 3, type: .speech, energy: 0.4),
+                AudioSegment(startTime: 3, endTime: 4, type: .silence, energy: 0.001),
+                AudioSegment(startTime: 4, endTime: 7, type: .speech, energy: 0.4),
+            ],
+            silenceIntervals: [3.0...4.0],
+            averageEnergy: 0.3, peakEnergy: 0.5, duration: 7
+        )
+
+        let result = RoughCutDecisionEngine.generateDecisions(
+            transcription: transcription, audioAnalysis: audio
+        )
+
+        let keepSum = result.keepSegments.reduce(0.0) { $0 + ($1.endTime - $1.startTime) }
+        #expect(abs(result.cleanDuration - keepSum) < 0.001, "cleanDuration must equal sum of keep segment durations")
+    }
+
+    @Test("cleanDuration excludes reviewRequired segments")
+    func cleanDurationExcludesReview() {
+        // Manually construct a result with review segments to verify
+        let decisions = [
+            RoughCutDecision(startTime: 0, endTime: 5, action: .keep, reason: "", confidence: 0.9, linkedTranscriptText: nil, requiresReview: false),
+            RoughCutDecision(startTime: 5, endTime: 8, action: .reviewRequired, reason: "", confidence: 0.5, linkedTranscriptText: nil, requiresReview: true),
+            RoughCutDecision(startTime: 8, endTime: 12, action: .keep, reason: "", confidence: 0.9, linkedTranscriptText: nil, requiresReview: false),
+        ]
+        let keepSegments = decisions.filter { $0.action == .keep }
+        let cleanDuration = keepSegments.reduce(0.0) { $0 + ($1.endTime - $1.startTime) }
+        // Keep: 5s + 4s = 9s. NOT 12s (which would include review segment)
+        #expect(cleanDuration == 9)
+    }
+}
+
+@Suite("QualityGateService — extended checks")
+struct QualityGateExtendedTests {
+
+    @Test("Audio quality check appears when provided")
+    func audioQualityCheck() {
+        let captions = [
+            CaptionSegment(startTime: 0, endTime: 3, text: "Hook", role: .hook, style: .hookImpact),
+            CaptionSegment(startTime: 3, endTime: 6, text: "End", role: .conclusion, style: .minimalWellness),
+        ]
+        let plan = EditPlan(decisions: [], template: .cleanExpert, totalEffects: 0, averageIntensity: 0)
+        let roughCut = RoughCutResult(decisions: [], originalDuration: 8, cleanDuration: 6, keepSegments: [], cutSegments: [], reviewSegments: [])
+        let audioReport = AudioQualityGuard.QualityReport(
+            peakDB: -3, averageDB: -18, isClipping: false, isTooQuiet: false, dynamicRange: 15, passed: true
+        )
+
+        let report = QualityGateService.evaluate(
+            captions: captions, editPlan: plan, roughCut: roughCut, template: .cleanExpert, audioQuality: audioReport
+        )
+        let audioCheck = report.checks.first { $0.name == "Audio quality" }
+        #expect(audioCheck != nil, "Audio quality check should be present")
+        #expect(audioCheck?.passed == true)
+    }
+
+    @Test("Clipping audio fails quality gate critically")
+    func clippingAudioFails() {
+        let captions = [
+            CaptionSegment(startTime: 0, endTime: 3, text: "Hook", role: .hook, style: .hookImpact),
+            CaptionSegment(startTime: 3, endTime: 6, text: "End", role: .conclusion, style: .minimalWellness),
+        ]
+        let plan = EditPlan(decisions: [], template: .cleanExpert, totalEffects: 0, averageIntensity: 0)
+        let roughCut = RoughCutResult(decisions: [], originalDuration: 8, cleanDuration: 6, keepSegments: [], cutSegments: [], reviewSegments: [])
+        let audioReport = AudioQualityGuard.QualityReport(
+            peakDB: -0.5, averageDB: -10, isClipping: true, isTooQuiet: false, dynamicRange: 9.5, passed: false
+        )
+
+        let report = QualityGateService.evaluate(
+            captions: captions, editPlan: plan, roughCut: roughCut, template: .cleanExpert, audioQuality: audioReport
+        )
+        let audioCheck = report.checks.first { $0.name == "Audio quality" }
+        #expect(audioCheck?.passed == false)
+        #expect(audioCheck?.severity == .critical)
+    }
+
+    @Test("Continuity check appears when provided")
+    func continuityCheck() {
+        let captions = [
+            CaptionSegment(startTime: 0, endTime: 3, text: "Hook", role: .hook, style: .hookImpact),
+            CaptionSegment(startTime: 3, endTime: 6, text: "End", role: .conclusion, style: .minimalWellness),
+        ]
+        let plan = EditPlan(decisions: [], template: .cleanExpert, totalEffects: 0, averageIntensity: 0)
+        let roughCut = RoughCutResult(decisions: [], originalDuration: 8, cleanDuration: 6, keepSegments: [], cutSegments: [], reviewSegments: [])
+        let continuity = ContinuityChecker.ContinuityResult(
+            transitions: [], smoothTransitions: 3, roughTransitions: 0, overallScore: 85
+        )
+
+        let report = QualityGateService.evaluate(
+            captions: captions, editPlan: plan, roughCut: roughCut, template: .cleanExpert, continuity: continuity
+        )
+        let contCheck = report.checks.first { $0.name == "Continuity" }
+        #expect(contCheck != nil)
+        #expect(contCheck?.passed == true)
     }
 }
 
@@ -529,5 +715,77 @@ struct QualityReportTests {
 
         let retention = roughCut.cleanDuration / roughCut.originalDuration
         #expect(retention == 1.0, "No cuts = 100% retention")
+    }
+}
+
+// MARK: - RoughCutDecisionEngine segment type handling
+
+@Suite("RoughCutDecisionEngine segment type routing")
+struct SegmentTypeRoutingTests {
+
+    private func makeAudio(duration: Double) -> AudioAnalysisResult {
+        AudioAnalysisResult(
+            segments: [AudioSegment(startTime: 0, endTime: duration, type: .speech, energy: 0.4)],
+            silenceIntervals: [],
+            averageEnergy: 0.3, peakEnergy: 0.5, duration: duration
+        )
+    }
+
+    @Test("Filler segments produce cut decisions")
+    func fillerSegmentsCut() {
+        // Short filler (< 1s) → auto-cut. Long filler (>= 1s) → review.
+        let segments = [
+            TranscriptSegment(startTime: 0, endTime: 0.5, text: "um", confidence: 0.8, segmentType: .filler),
+            TranscriptSegment(startTime: 0.5, endTime: 5, text: "Hello world", confidence: 0.9, segmentType: .speech),
+        ]
+        let transcription = TranscriptionResult(fullText: "um Hello world", segments: segments, language: "en", overallConfidence: 0.85)
+        let result = RoughCutDecisionEngine.generateDecisions(transcription: transcription, audioAnalysis: makeAudio(duration: 5))
+
+        let fillerDecisions = result.decisions.filter { $0.linkedTranscriptText == "um" }
+        #expect(!fillerDecisions.isEmpty)
+        #expect(fillerDecisions.allSatisfy { $0.action == .cut })
+    }
+
+    @Test("Suspected restart segments produce cut decisions when AI confidence high")
+    func restartSegmentsCut() {
+        // Restarts auto-cut only when aiConfidence >= 0.85
+        let segments = [
+            TranscriptSegment(startTime: 0, endTime: 3, text: "So today we", confidence: 0.9, segmentType: .suspectedRestart, aiConfidence: 0.90),
+            TranscriptSegment(startTime: 3, endTime: 7, text: "Today we discuss Swift", confidence: 0.9, segmentType: .speech),
+        ]
+        let transcription = TranscriptionResult(fullText: "So today we Today we discuss Swift", segments: segments, language: "en", overallConfidence: 0.8)
+        let result = RoughCutDecisionEngine.generateDecisions(transcription: transcription, audioAnalysis: makeAudio(duration: 7))
+
+        let restartDecisions = result.decisions.filter { $0.linkedTranscriptText == "So today we" }
+        #expect(!restartDecisions.isEmpty)
+        #expect(restartDecisions.allSatisfy { $0.action == .cut })
+    }
+
+    @Test("Suspected duplicate segments produce cut with review")
+    func duplicateSegmentsReview() {
+        let segments = [
+            TranscriptSegment(startTime: 0, endTime: 4, text: "Swift is great", confidence: 0.9, segmentType: .speech),
+            TranscriptSegment(startTime: 4, endTime: 8, text: "Swift is great", confidence: 0.85, segmentType: .suspectedDuplicate),
+        ]
+        let transcription = TranscriptionResult(fullText: "Swift is great Swift is great", segments: segments, language: "en", overallConfidence: 0.87)
+        let result = RoughCutDecisionEngine.generateDecisions(transcription: transcription, audioAnalysis: makeAudio(duration: 8))
+
+        let dupDecisions = result.decisions.filter { $0.linkedTranscriptText == "Swift is great" && $0.startTime == 4 }
+        #expect(!dupDecisions.isEmpty)
+        #expect(dupDecisions.allSatisfy { $0.action == .cut })
+        #expect(dupDecisions.allSatisfy { $0.requiresReview == true })
+    }
+
+    @Test("Content sentence segments are kept")
+    func contentSentencesKept() {
+        let segments = [
+            TranscriptSegment(startTime: 0, endTime: 5, text: "Welcome to the show", confidence: 0.95, segmentType: .contentSentence),
+        ]
+        let transcription = TranscriptionResult(fullText: "Welcome to the show", segments: segments, language: "en", overallConfidence: 0.95)
+        let result = RoughCutDecisionEngine.generateDecisions(transcription: transcription, audioAnalysis: makeAudio(duration: 5))
+
+        let contentDecisions = result.decisions.filter { $0.linkedTranscriptText == "Welcome to the show" }
+        #expect(!contentDecisions.isEmpty)
+        #expect(contentDecisions.allSatisfy { $0.action == .keep })
     }
 }

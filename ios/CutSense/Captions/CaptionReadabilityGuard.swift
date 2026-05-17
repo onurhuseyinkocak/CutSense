@@ -35,13 +35,14 @@ enum CaptionReadabilityGuard {
                     style: fixed.style,
                     sceneBehavior: fixed.sceneBehavior
                 )
+                // Second half gets no scene behavior to avoid duplicate effects
                 let second = CaptionSegment(
                     startTime: midTime,
                     endTime: fixed.endTime,
                     text: secondHalf,
                     role: fixed.role,
                     style: fixed.style,
-                    sceneBehavior: fixed.sceneBehavior
+                    sceneBehavior: .none
                 )
 
                 result.append(first)

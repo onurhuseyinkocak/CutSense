@@ -29,7 +29,10 @@ enum QualityGateService {
         captions: [CaptionSegment],
         editPlan: EditPlan,
         roughCut: RoughCutResult,
-        template: TemplateConfig
+        template: TemplateConfig,
+        audioQuality: AudioQualityGuard.QualityReport? = nil,
+        continuity: ContinuityChecker.ContinuityResult? = nil,
+        coherence: MeaningPreservationEngine.PreservationResult? = nil
     ) -> QualityReport {
         var checks: [QualityCheck] = []
 
@@ -64,7 +67,7 @@ enum QualityGateService {
         let effectsPerMinute = roughCut.cleanDuration > 0
             ? Double(editPlan.totalEffects) / (roughCut.cleanDuration / 60.0)
             : 0
-        let maxPerMinute: Double = 10
+        let maxPerMinute: Double = 35
         checks.append(QualityCheck(
             name: "Effect density",
             passed: effectsPerMinute <= maxPerMinute,
@@ -102,6 +105,46 @@ enum QualityGateService {
             detail: hasConclusion ? "Conclusion caption found" : "No conclusion — ending may feel abrupt",
             severity: hasConclusion ? .info : .warning
         ))
+
+        // 8. Audio quality (if available)
+        if let aq = audioQuality {
+            let passed = aq.passed
+            var detail = String(format: "Peak: %.1fdB, Avg: %.1fdB", aq.peakDB, aq.averageDB)
+            if aq.isClipping { detail += " [CLIPPING]" }
+            if aq.isTooQuiet { detail += " [TOO QUIET]" }
+            checks.append(QualityCheck(
+                name: "Audio quality",
+                passed: passed,
+                detail: detail,
+                severity: aq.isClipping ? .critical : (passed ? .info : .warning)
+            ))
+        }
+
+        // 9. Continuity (if available)
+        if let cont = continuity {
+            let hasBadTransitions = cont.roughTransitions > 0
+            let passed = cont.overallScore >= 60
+            checks.append(QualityCheck(
+                name: "Continuity",
+                passed: passed,
+                detail: String(format: "%.0f%% smooth (%d rough transitions)", cont.overallScore, cont.roughTransitions),
+                severity: hasBadTransitions && !passed ? .warning : .info
+            ))
+        }
+
+        // 10. Coherence (if available)
+        if let coh = coherence {
+            let passed = coh.isCoherent
+            let highIssues = coh.issues.filter { $0.severity == .high }.count
+            checks.append(QualityCheck(
+                name: "Coherence",
+                passed: passed,
+                detail: passed
+                    ? String(format: "Score: %.0f/100", coh.overallScore)
+                    : "\(highIssues) critical coherence issue(s) — meaning may be lost",
+                severity: passed ? .info : .warning
+            ))
+        }
 
         // Score
         let criticalFails = checks.filter { !$0.passed && $0.severity == .critical }.count

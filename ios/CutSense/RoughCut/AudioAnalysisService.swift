@@ -24,10 +24,11 @@ struct AudioAnalysisResult: Sendable {
 }
 
 enum AudioAnalysisService {
-    /// Silence threshold in dB — phone recordings have ambient noise at -25 to -35 dB
-    private static let silenceThresholdDB: Float = -35
-    /// Minimum silence duration to consider (seconds)
-    private static let minSilenceDuration: Double = 0.2
+    /// Silence threshold in dB — conservative: only true silence, not quiet speech
+    /// Phone recordings have ambient noise at -25 to -35 dB
+    private static let silenceThresholdDB: Float = -40
+    /// Minimum silence duration to consider (seconds) — shorter silences are natural pauses
+    private static let minSilenceDuration: Double = 0.4
     /// Window size for energy analysis (seconds)
     private static let windowDuration: Double = 0.05
     /// Clipping threshold (0-1 range)
