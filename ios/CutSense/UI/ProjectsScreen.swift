@@ -1,11 +1,11 @@
 import SwiftUI
+import PhotosUI
 
 @MainActor
 @Observable
 final class ProjectsViewModel {
     var projects: [Project] = []
     var isLoading = false
-    var showNewProject = false
     var errorMessage: String?
 
     private let repository = ProjectRepository()
@@ -20,12 +20,14 @@ final class ProjectsViewModel {
         }
     }
 
-    func createProject(userId: UUID, title: String) async {
+    func createProject(userId: UUID, title: String) async -> Project? {
         do {
             let project = try await repository.createProject(userId: userId, title: title)
             projects.insert(project, at: 0)
+            return project
         } catch {
             errorMessage = error.localizedDescription
+            return nil
         }
     }
 
@@ -42,7 +44,12 @@ final class ProjectsViewModel {
 struct ProjectsScreen: View {
     @Environment(AuthManager.self) private var authManager
     @State private var viewModel = ProjectsViewModel()
-    @State private var newProjectTitle = ""
+    @State private var selectedItem: PhotosPickerItem?
+    @State private var importService = VideoImportService()
+    @State private var activeProject: Project?
+    @State private var activeVideoURL: URL?
+    @State private var showEdit = false
+    @State private var isCreating = false
 
     var body: some View {
         NavigationStack {
@@ -51,13 +58,19 @@ struct ProjectsScreen: View {
 
                 if viewModel.isLoading {
                     ProgressView().tint(.white)
+                } else if isCreating || importService.isImporting {
+                    VStack(spacing: 12) {
+                        ProgressView().tint(.white)
+                        Text("Importing video...")
+                            .foregroundStyle(.gray)
+                    }
                 } else if viewModel.projects.isEmpty {
                     emptyState
                 } else {
                     projectList
                 }
             }
-            .navigationTitle("Projects")
+            .navigationTitle("CutSense")
             .toolbarColorScheme(.dark, for: .navigationBar)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
@@ -70,35 +83,22 @@ struct ProjectsScreen: View {
                     .accessibilityLabel("Account")
                 }
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button {
-                        viewModel.showNewProject = true
-                    } label: {
+                    PhotosPicker(selection: $selectedItem, matching: .videos) {
                         Image(systemName: "plus")
                             .foregroundStyle(.white)
                     }
-                    .accessibilityLabel("New Project")
+                    .accessibilityLabel("New Video")
                 }
             }
-            .alert("New Project", isPresented: $viewModel.showNewProject) {
-                TextField("Project title", text: $newProjectTitle)
-                Button("Create") {
-                    guard let userId = authManager.effectiveUserId else { return }
-                    let title = newProjectTitle.isEmpty ? "Untitled" : newProjectTitle
-                    Task {
-                        await viewModel.createProject(userId: userId, title: title)
-                    }
-                    newProjectTitle = ""
-                }
-                Button("Cancel", role: .cancel) {
-                    newProjectTitle = ""
-                }
+            .onChange(of: selectedItem) { _, newItem in
+                guard let newItem else { return }
+                Task { await handleVideoImport(newItem) }
             }
             .task {
                 guard let userId = authManager.effectiveUserId else { return }
                 await viewModel.loadProjects(userId: userId)
             }
             .onAppear {
-                // Re-fetch when returning from child screens (task only fires once)
                 guard !viewModel.projects.isEmpty,
                       let userId = authManager.effectiveUserId else { return }
                 Task { await viewModel.loadProjects(userId: userId) }
@@ -107,8 +107,52 @@ struct ProjectsScreen: View {
                 guard let userId = authManager.effectiveUserId else { return }
                 await viewModel.loadProjects(userId: userId)
             }
+            .navigationDestination(isPresented: $showEdit) {
+                if let project = activeProject, let url = activeVideoURL {
+                    EditScreen(videoURL: url, projectId: project.id)
+                }
+            }
         }
         .preferredColorScheme(.dark)
+    }
+
+    private func handleVideoImport(_ item: PhotosPickerItem) async {
+        isCreating = true
+        defer {
+            isCreating = false
+            selectedItem = nil
+        }
+
+        await importService.importVideo(from: item)
+        guard let videoURL = importService.importedVideoURL else { return }
+        guard let userId = authManager.effectiveUserId else { return }
+
+        // Auto-create project with date-based title
+        let formatter = DateFormatter()
+        formatter.dateFormat = "MMM d, HH:mm"
+        let title = "Video \(formatter.string(from: Date()))"
+
+        guard let project = await viewModel.createProject(userId: userId, title: title) else { return }
+
+        // Save video path to project
+        let pipeline = PipelineRepository()
+        try? await pipeline.updateProjectStatus(project.id, status: .imported)
+        try? await pipeline.updateProjectLocalPath(projectId: project.id, path: videoURL.path)
+
+        activeProject = project
+        activeVideoURL = videoURL
+        showEdit = true
+    }
+
+    private func resumeProject(_ project: Project) {
+        guard let path = project.localProjectPath,
+              FileManager.default.fileExists(atPath: path) else {
+            viewModel.errorMessage = "Video file not found. Re-import needed."
+            return
+        }
+        activeProject = project
+        activeVideoURL = URL(fileURLWithPath: path)
+        showEdit = true
     }
 
     private var emptyState: some View {
@@ -123,14 +167,8 @@ struct ProjectsScreen: View {
                 .font(.title3)
                 .foregroundStyle(.gray)
 
-            Text("Import a video to get started")
-                .font(.subheadline)
-                .foregroundStyle(.gray.opacity(0.7))
-
-            Button {
-                viewModel.showNewProject = true
-            } label: {
-                Label("New Project", systemImage: "plus")
+            PhotosPicker(selection: $selectedItem, matching: .videos) {
+                Label("Import Video", systemImage: "plus")
                     .fontWeight(.semibold)
                     .padding(.horizontal, 24)
                     .padding(.vertical, 12)
@@ -146,12 +184,8 @@ struct ProjectsScreen: View {
     private var projectList: some View {
         List {
             ForEach(viewModel.projects) { project in
-                NavigationLink {
-                    VideoImportScreen(project: project) { updated in
-                        if let idx = viewModel.projects.firstIndex(where: { $0.id == updated.id }) {
-                            viewModel.projects[idx] = updated
-                        }
-                    }
+                Button {
+                    resumeProject(project)
                 } label: {
                     ProjectRow(project: project)
                 }

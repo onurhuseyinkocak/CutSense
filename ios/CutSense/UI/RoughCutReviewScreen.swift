@@ -5,7 +5,6 @@ struct RoughCutReviewScreen: View {
     let transcription: TranscriptionResult
     let videoURL: URL
     let projectId: UUID
-    @State private var showTemplateSelection = false
     @State private var undoStack: [RoughCutResult] = []
     @State private var redoStack: [RoughCutResult] = []
     @State private var filter: DecisionFilter = .all
@@ -113,34 +112,7 @@ struct RoughCutReviewScreen: View {
                         .padding(.horizontal)
                     }
 
-                    // Actions
-                    VStack(spacing: 12) {
-                        Button {
-                            showTemplateSelection = true
-                            Task {
-                                let pipeline = PipelineRepository()
-                                if let userId = authManager.effectiveUserId {
-                                    try? await pipeline.deleteRoughCutDecisions(projectId: projectId)
-                                    try? await pipeline.saveRoughCutDecisions(
-                                        projectId: projectId,
-                                        userId: userId,
-                                        decisions: roughCut.decisions
-                                    )
-                                }
-                                try? await pipeline.updateProjectStatus(projectId, status: .reviewed)
-                            }
-                        } label: {
-                            Text("Choose Template")
-                                .fontWeight(.semibold)
-                                .frame(maxWidth: .infinity)
-                                .padding()
-                                .background(.white)
-                                .foregroundStyle(.black)
-                                .clipShape(RoundedRectangle(cornerRadius: 12))
-                        }
-                    }
-                    .padding(.horizontal, 24)
-                    .padding(.bottom, 32)
+                    Spacer().frame(height: 32)
                 }
             }
         }
@@ -162,14 +134,6 @@ struct RoughCutReviewScreen: View {
                 }
                 .disabled(redoStack.isEmpty)
             }
-        }
-        .navigationDestination(isPresented: $showTemplateSelection) {
-            TemplateSelectionScreen(
-                roughCut: roughCut,
-                transcription: transcription,
-                videoURL: videoURL,
-                projectId: projectId
-            )
         }
     }
 

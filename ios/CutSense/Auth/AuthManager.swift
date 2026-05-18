@@ -37,7 +37,9 @@ final class AuthManager {
                     try await Task.sleep(for: .seconds(5))
                     throw CancellationError()
                 }
-                let result = try await group.next()!
+                guard let result = try await group.next() else {
+                    throw CancellationError()
+                }
                 group.cancelAll()
                 return result
             }
