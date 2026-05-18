@@ -15,6 +15,8 @@ struct EditScreen: View {
     @State private var showPaywall = false
     @State private var didSave = false
     @State private var isSaving = false
+    @State private var isExportPressed = false
+    @State private var selectedTemplateForAnimation: UUID?
     private var store: SubscriptionManager { .shared }
 
     enum EditPhase {
@@ -189,7 +191,9 @@ struct EditScreen: View {
 
             // Export button
             Button {
+                withAnimation(.easeInOut(duration: 0.15)) { isExportPressed = true }
                 Task { await startFullExport() }
+                withAnimation(.easeInOut(duration: 0.15)) { isExportPressed = false }
             } label: {
                 HStack(spacing: 8) {
                     Image(systemName: "bolt.fill")
@@ -199,9 +203,11 @@ struct EditScreen: View {
                 .font(.title3)
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 16)
-                .background(.white)
+                .background(LinearGradient(colors: [.white, Color.white.opacity(0.85)], startPoint: .top, endPoint: .bottom))
                 .foregroundStyle(.black)
                 .clipShape(RoundedRectangle(cornerRadius: 14))
+                .shadow(color: .white.opacity(0.3), radius: 12, y: 4)
+                .scaleEffect(isExportPressed ? 0.97 : 1.0)
             }
             .padding(.horizontal, 24)
 
@@ -240,8 +246,13 @@ struct EditScreen: View {
 
     private func templatePill(_ template: TemplateConfig) -> some View {
         let isSelected = selectedTemplate?.id == template.id
+        @GestureState var isPressing = false
+
         return Button {
-            selectedTemplate = template
+            withAnimation(.easeInOut(duration: 0.15)) {
+                selectedTemplate = template
+                HapticEngine.select()
+            }
         } label: {
             VStack(spacing: 6) {
                 Text(template.name)
@@ -259,8 +270,16 @@ struct EditScreen: View {
                 RoundedRectangle(cornerRadius: 10)
                     .stroke(isSelected ? Color.clear : Color.white.opacity(0.1), lineWidth: 1)
             )
+            .shadow(color: isSelected ? Color.white.opacity(0.2) : Color.clear, radius: 8, y: 2)
+            .scaleEffect(isPressing ? 0.95 : 1.0)
         }
         .buttonStyle(.plain)
+        .gesture(
+            LongPressGesture(minimumDuration: 0.05)
+                .updating($isPressing) { _, state, _ in
+                    state = true
+                }
+        )
     }
 
     // MARK: - Generating Captions
