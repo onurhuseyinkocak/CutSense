@@ -176,7 +176,7 @@
 		F82E751CD6507A92A9434F6E /* Theme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Theme.swift; sourceTree = "<group>"; };
 		F928B8F6178CCF7F82382C34 /* QualityGateService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QualityGateService.swift; sourceTree = "<group>"; };
 		F97FF6F27A35AD8B62B81C44 /* CleanTimelineBuilder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CleanTimelineBuilder.swift; sourceTree = "<group>"; };
-		"TEMP_D520FCE0-23C1-415C-A779-369CE6DC5738" /* Secrets.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Secrets.xcconfig; sourceTree = "<group>"; };
+		"TEMP_1CCB5B22-1FCC-4952-B04A-932F7FADAE4C" /* Secrets.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Secrets.xcconfig; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -445,10 +445,10 @@
 			path = Captions;
 			sourceTree = "<group>";
 		};
-		"TEMP_483AFE21-1B34-4542-9FC4-E734E3A9E307" /* ios */ = {
+		"TEMP_37980D76-1639-4BF9-B035-9C8D4FB37AA5" /* ios */ = {
 			isa = PBXGroup;
 			children = (
-				"TEMP_D520FCE0-23C1-415C-A779-369CE6DC5738" /* Secrets.xcconfig */,
+				"TEMP_1CCB5B22-1FCC-4952-B04A-932F7FADAE4C" /* Secrets.xcconfig */,
 			);
 			path = ios;
 			sourceTree = "<group>";
@@ -674,7 +674,7 @@
 		};
 		5D2B5D51A98111036FFA9A82 /* Debug */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = "TEMP_D520FCE0-23C1-415C-A779-369CE6DC5738" /* Secrets.xcconfig */;
+			baseConfigurationReference = "TEMP_1CCB5B22-1FCC-4952-B04A-932F7FADAE4C" /* Secrets.xcconfig */;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				CLANG_ANALYZER_NONNULL = YES;
@@ -757,7 +757,7 @@
 		};
 		99BC8EAA3459D2B564347FD0 /* Release */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = "TEMP_D520FCE0-23C1-415C-A779-369CE6DC5738" /* Secrets.xcconfig */;
+			baseConfigurationReference = "TEMP_1CCB5B22-1FCC-4952-B04A-932F7FADAE4C" /* Secrets.xcconfig */;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				CLANG_ANALYZER_NONNULL = YES;
@@ -819,7 +819,7 @@
 				CODE_SIGN_ENTITLEMENTS = CutSense/CutSense.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 15;
+				CURRENT_PROJECT_VERSION = 16;
 				DEVELOPMENT_TEAM = 6HCP552XP8;
 				INFOPLIST_FILE = CutSense/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -842,7 +842,7 @@
 				CODE_SIGN_ENTITLEMENTS = CutSense/CutSense.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 15;
+				CURRENT_PROJECT_VERSION = 16;
 				DEVELOPMENT_TEAM = 6HCP552XP8;
 				INFOPLIST_FILE = CutSense/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (

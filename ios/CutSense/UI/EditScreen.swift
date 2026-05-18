@@ -12,6 +12,7 @@ struct EditScreen: View {
     @State private var selectedTemplate: TemplateConfig? = TemplateConfig.all.first
     @State private var phase: EditPhase = .analyzing
     @State private var showRoughCutDetail = false
+    @State private var showPaywall = false
     @State private var didSave = false
     @State private var isSaving = false
     private var store: SubscriptionManager { .shared }
@@ -211,11 +212,14 @@ struct EditScreen: View {
             }
         }
         .sheet(isPresented: $showRoughCutDetail) {
-            if let roughCut = analysisVM.roughCutResult,
+            if analysisVM.roughCutResult != nil,
                let transcript = analysisVM.transcriptionResult {
                 NavigationStack {
                     RoughCutReviewScreen(
-                        roughCut: roughCut,
+                        roughCut: Binding(
+                            get: { self.analysisVM.roughCutResult! },
+                            set: { self.analysisVM.roughCutResult = $0 }
+                        ),
                         transcription: transcript,
                         videoURL: videoURL,
                         projectId: projectId
@@ -228,6 +232,9 @@ struct EditScreen: View {
                     }
                 }
             }
+        }
+        .sheet(isPresented: $showPaywall) {
+            PaywallScreen()
         }
     }
 
@@ -384,7 +391,7 @@ struct EditScreen: View {
               let template = selectedTemplate else { return }
 
         guard store.canExport else {
-            // TODO: show paywall
+            showPaywall = true
             return
         }
 

@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct RoughCutReviewScreen: View {
-    @State var roughCut: RoughCutResult
+    @Binding var roughCut: RoughCutResult
     let transcription: TranscriptionResult
     let videoURL: URL
     let projectId: UUID

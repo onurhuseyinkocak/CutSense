@@ -15,8 +15,6 @@ enum EditType: String, Sendable, CaseIterable {
     case shake
     case flash
     case colorShift = "color_shift"
-    case speedRamp = "speed_ramp"
-    case textPopup = "text_popup"
     case cutTransition = "cut_transition"
 }
 
