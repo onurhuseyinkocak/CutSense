@@ -1,6 +1,6 @@
 import AVFoundation
 
-struct CleanTimeline {
+struct CleanTimeline: @unchecked Sendable {
     let composition: AVMutableComposition
     let videoTrack: AVMutableCompositionTrack
     let audioTrack: AVMutableCompositionTrack

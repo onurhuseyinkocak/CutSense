@@ -1,8 +1,8 @@
-import CoreImage
+@preconcurrency import CoreImage
 import CoreImage.CIFilterBuiltins
 
 enum FilterEngine {
-    private static let ciContext = CIContext(options: [.useSoftwareRenderer: false])
+    nonisolated(unsafe) private static let ciContext = CIContext(options: [.useSoftwareRenderer: false])
 
     /// Apply template color grading to a CIImage
     static func applyGrade(_ grade: TemplateConfig.ColorGrade, to image: CIImage) -> CIImage {
