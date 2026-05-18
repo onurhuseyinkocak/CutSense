@@ -94,13 +94,15 @@ final class ExportService {
             }
 
             // Step 5: Create video composition with caption overlay + visual effects
+            let showWatermark = !SubscriptionManager.shared.isPro
             let videoComposition = buildVideoComposition(
                 timeline: timeline,
                 captions: remappedCaptions,
                 editDecisions: remappedEdits,
                 colorGrade: template.colorGrade,
                 captionTheme: template.captionTheme,
-                renderSize: renderSize
+                renderSize: renderSize,
+                showWatermark: showWatermark
             )
             #if DEBUG
             print("[Export] Step 5: VideoComposition=\(videoComposition != nil ? "CREATED" : "NIL") renderSize=\(videoComposition?.renderSize ?? .zero)")
@@ -187,18 +189,31 @@ final class ExportService {
             return false
         }
 
-        do {
-            let authStatus = await PHPhotoLibrary.requestAuthorization(for: .addOnly)
-            guard authStatus == .authorized || authStatus == .limited else {
-                errorMessage = "Photos access denied. Enable in Settings > CutSense > Photos."
-                return false
+        // Perform Photos save off @MainActor to avoid Swift 6 dispatch_assert_queue crash
+        // on physical devices (iOS 26). PHPhotoLibrary.performChanges uses background queues.
+        let filePath = url.path
+        let result = await Task.detached { () -> Result<Void, Error> in
+            do {
+                let authStatus = await PHPhotoLibrary.requestAuthorization(for: .addOnly)
+                guard authStatus == .authorized || authStatus == .limited else {
+                    return .failure(NSError(domain: "CutSense", code: -1, userInfo: [
+                        NSLocalizedDescriptionKey: "Photos access denied. Enable in Settings > CutSense > Photos."
+                    ]))
+                }
+                let fileURL = URL(fileURLWithPath: filePath)
+                try await PHPhotoLibrary.shared().performChanges {
+                    PHAssetChangeRequest.creationRequestForAssetFromVideo(atFileURL: fileURL)
+                }
+                return .success(())
+            } catch {
+                return .failure(error)
             }
+        }.value
 
-            try await PHPhotoLibrary.shared().performChanges {
-                PHAssetChangeRequest.creationRequestForAssetFromVideo(atFileURL: url)
-            }
+        switch result {
+        case .success:
             return true
-        } catch {
+        case .failure(let error):
             errorMessage = "Failed to save: \(error.localizedDescription)"
             #if DEBUG
             print("[Export] Photos save failed: \(error)")
@@ -262,7 +277,7 @@ final class ExportService {
             // Portrait or square — use actual dimensions rounded to even
             let roundedW = CGFloat(Int(w / 2) * 2)
             let roundedH = CGFloat(Int(h / 2) * 2)
-            return CGSize(width: max(roundedW, 720), height: max(roundedH, 1280))
+            return CGSize(width: roundedW, height: roundedH)
         } catch {
             return CGSize(width: 1080, height: 1920)
         }
@@ -274,13 +289,14 @@ final class ExportService {
         editDecisions: [EditDecision] = [],
         colorGrade: TemplateConfig.ColorGrade = .none,
         captionTheme: TemplateConfig.CaptionTheme = .premiumGold,
-        renderSize: CGSize = CGSize(width: 1080, height: 1920)
+        renderSize: CGSize = CGSize(width: 1080, height: 1920),
+        showWatermark: Bool = false
     ) -> AVMutableVideoComposition? {
         let hasContent = !captions.isEmpty || !editDecisions.isEmpty
         let hasGrade = colorGrade.saturation != 1.0 || colorGrade.brightness != 0.0 ||
                        colorGrade.contrast != 1.0 || abs(colorGrade.warmth) > 0.01 ||
                        colorGrade.vignetteIntensity > 0.01
-        guard hasContent || hasGrade else { return nil }
+        guard hasContent || hasGrade || showWatermark else { return nil }
 
         // Filter to visual-only decisions (SFX handled in audio mix)
         let visualDecisions = editDecisions.filter { $0.type != .sfx }
@@ -297,7 +313,8 @@ final class ExportService {
             editDecisions: visualDecisions,
             colorGrade: colorGrade,
             captionTheme: captionTheme,
-            renderSize: renderSize
+            renderSize: renderSize,
+            showWatermark: showWatermark
         )
 
         videoComposition.instructions = [instruction]

@@ -45,8 +45,18 @@ enum CaptionReadabilityGuard {
                     sceneBehavior: .none
                 )
 
-                result.append(first)
-                result.append(second)
+                // Ensure each half meets min duration
+                var fixedFirst = first
+                var fixedSecond = second
+                if fixedFirst.endTime - fixedFirst.startTime < minDisplayDuration {
+                    fixedFirst.endTime = fixedFirst.startTime + minDisplayDuration
+                    fixedSecond.startTime = fixedFirst.endTime
+                }
+                if fixedSecond.endTime - fixedSecond.startTime < minDisplayDuration {
+                    fixedSecond.endTime = fixedSecond.startTime + minDisplayDuration
+                }
+                result.append(fixedFirst)
+                result.append(fixedSecond)
             } else if fixed.text.count > maxCharsPerLine {
                 // Add line break at natural point
                 let midChar = fixed.text.count / 2

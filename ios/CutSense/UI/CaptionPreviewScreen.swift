@@ -160,7 +160,7 @@ struct CaptionPreviewScreen: View {
                 template: template
             )
             // Save caption data to DB after generation
-            if let userId = authManager.currentUser?.id {
+            if let userId = authManager.effectiveUserId {
                 await viewModel.saveCaptionData(
                     projectId: projectId,
                     userId: userId,

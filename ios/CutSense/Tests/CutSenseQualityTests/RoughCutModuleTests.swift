@@ -281,14 +281,14 @@ struct RoughCutDecisionEngineTests {
         #expect(!silenceCuts.isEmpty, "2.5s silence must be cut")
     }
 
-    @Test("Natural pause (<1.0s) is NOT cut")
+    @Test("Natural pause (<0.7s) is NOT cut")
     func naturalPauseNotCut() {
         let segments = [
             TestFixture.segment(start: 0, end: 3, text: "First sentence here", type: .contentSentence),
-            TestFixture.segment(start: 3.7, end: 6, text: "Second sentence here", type: .contentSentence),
+            TestFixture.segment(start: 3.5, end: 6, text: "Second sentence here", type: .contentSentence),
         ]
         let transcription = TestFixture.transcription(segments: segments)
-        let audio = TestFixture.audioResult(duration: 6.0, silenceIntervals: [3.0...3.7])
+        let audio = TestFixture.audioResult(duration: 6.0, silenceIntervals: [3.0...3.5])
 
         let result = RoughCutDecisionEngine.generateDecisions(
             transcription: transcription,
@@ -296,7 +296,7 @@ struct RoughCutDecisionEngineTests {
         )
 
         let silenceCuts = result.decisions.filter { $0.linkedTranscriptText == nil && $0.action == .cut }
-        #expect(silenceCuts.isEmpty, "0.7s pause is natural and must NOT be cut")
+        #expect(silenceCuts.isEmpty, "0.5s pause between sentences is natural and must NOT be cut")
     }
 
     @Test("Filler with low AI confidence goes to review")

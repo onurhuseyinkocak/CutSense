@@ -42,7 +42,8 @@ enum SFXAssetManager {
         let failedCount: Int
     }
 
-    /// Insert SFX audio tracks into the composition at EditDecision times.
+    /// Insert SFX audio into the composition at EditDecision times.
+    /// Reuses a single audio track for non-overlapping SFX to avoid track count issues.
     /// Returns tracks added and count of failures (for user feedback).
     @MainActor
     static func insertSFX(
@@ -50,11 +51,24 @@ enum SFXAssetManager {
         decisions: [EditDecision],
         sfxVolume: Float
     ) async -> InsertResult {
-        let sfxDecisions = decisions.filter { $0.type == .sfx }
+        let sfxDecisions = decisions.filter { $0.type == .sfx }.sorted { $0.time < $1.time }
         guard !sfxDecisions.isEmpty else { return InsertResult(tracks: [], failedCount: 0) }
 
-        var sfxTracks: [AVMutableCompositionTrack] = []
+        // Use a single shared SFX track — all SFX are short and rarely overlap
+        guard let sfxTrack = composition.addMutableTrack(
+            withMediaType: .audio,
+            preferredTrackID: kCMPersistentTrackID_Invalid
+        ) else {
+            return InsertResult(tracks: [], failedCount: sfxDecisions.count)
+        }
+
+        // Track occupied time ranges per track to detect overlaps
+        var trackOccupiedEnd: [CMPersistentTrackID: Double] = [sfxTrack.trackID: 0]
+        var overflowTrack: AVMutableCompositionTrack?
+        var sfxTracks: [AVMutableCompositionTrack] = [sfxTrack]
         var failedCount = 0
+
+        let compositionDuration = composition.duration.seconds
 
         for decision in sfxDecisions {
             guard let sfxSound = sound(for: decision),
@@ -66,22 +80,52 @@ enum SFXAssetManager {
                 continue
             }
 
-            guard let sfxAudioTrack = try? await sfxAsset.loadTracks(withMediaType: .audio).first,
-                  let compTrack = composition.addMutableTrack(
-                      withMediaType: .audio,
-                      preferredTrackID: kCMPersistentTrackID_Invalid
-                  ) else {
+            guard let sfxAudioTrack = try? await sfxAsset.loadTracks(withMediaType: .audio).first else {
                 failedCount += 1
                 continue
             }
 
             let sfxDuration = (try? await sfxAsset.load(.duration)) ?? CMTime(seconds: 1.0, preferredTimescale: 600)
             let insertTime = CMTime(seconds: decision.time, preferredTimescale: 600)
-            let timeRange = CMTimeRange(start: .zero, duration: sfxDuration)
+
+            // Clip SFX duration so it doesn't extend past composition end
+            let maxDuration = CMTime(seconds: max(0, compositionDuration - decision.time), preferredTimescale: 600)
+            let clippedDuration = CMTimeMinimum(sfxDuration, maxDuration)
+            guard CMTimeGetSeconds(clippedDuration) > 0 else { continue }
+
+            let timeRange = CMTimeRange(start: .zero, duration: clippedDuration)
+
+            // Pick target track: primary if no overlap, overflow if overlapping
+            let primaryEnd = trackOccupiedEnd[sfxTrack.trackID] ?? 0
+            let targetTrack: AVMutableCompositionTrack
+            if decision.time >= primaryEnd {
+                targetTrack = sfxTrack
+            } else {
+                // Check overflow track occupancy too
+                let overflowEnd = overflowTrack.flatMap { trackOccupiedEnd[$0.trackID] } ?? 0
+                if let existing = overflowTrack, decision.time >= overflowEnd {
+                    targetTrack = existing
+                } else {
+                    // Need new overflow track
+                    let newTrack = composition.addMutableTrack(
+                        withMediaType: .audio,
+                        preferredTrackID: kCMPersistentTrackID_Invalid
+                    )
+                    guard let t = newTrack else {
+                        failedCount += 1
+                        continue
+                    }
+                    overflowTrack = t
+                    sfxTracks.append(t)
+                    trackOccupiedEnd[t.trackID] = 0
+                    targetTrack = t
+                }
+            }
 
             do {
-                try compTrack.insertTimeRange(timeRange, of: sfxAudioTrack, at: insertTime)
-                sfxTracks.append(compTrack)
+                try targetTrack.insertTimeRange(timeRange, of: sfxAudioTrack, at: insertTime)
+                let endTime = decision.time + CMTimeGetSeconds(clippedDuration)
+                trackOccupiedEnd[targetTrack.trackID] = max(trackOccupiedEnd[targetTrack.trackID] ?? 0, endTime)
             } catch {
                 failedCount += 1
                 #if DEBUG

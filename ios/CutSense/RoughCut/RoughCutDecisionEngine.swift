@@ -32,11 +32,11 @@ struct RoughCutResult: Sendable {
 }
 
 enum RoughCutDecisionEngine {
-    /// Silence thresholds (seconds) — conservative to preserve natural speech rhythm
-    private static let maxIntraSpeechSilence: Double = 0.60
-    private static let maxInterIdeaSilence: Double = 1.0
+    /// Silence thresholds (seconds) — tuned for social media pacing
+    private static let maxIntraSpeechSilence: Double = 0.40
+    private static let maxInterIdeaSilence: Double = 0.7
     /// Breathing room to keep around speech (seconds)
-    private static let breathingRoom: Double = 0.15
+    private static let breathingRoom: Double = 0.10
 
     static func generateDecisions(
         transcription: TranscriptionResult,
@@ -189,7 +189,7 @@ enum RoughCutDecisionEngine {
                     ))
                 }
             }
-            // Medium silences (0.6-1.0s) are natural pauses — DON'T trim them
+            // Medium silences (0.4-0.7s) are natural pauses — DON'T trim them
             // They give the video breathing room and feel natural
         }
 

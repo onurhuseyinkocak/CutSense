@@ -82,7 +82,7 @@ struct ProjectsScreen: View {
             .alert("New Project", isPresented: $viewModel.showNewProject) {
                 TextField("Project title", text: $newProjectTitle)
                 Button("Create") {
-                    guard let userId = authManager.currentUser?.id else { return }
+                    guard let userId = authManager.effectiveUserId else { return }
                     let title = newProjectTitle.isEmpty ? "Untitled" : newProjectTitle
                     Task {
                         await viewModel.createProject(userId: userId, title: title)
@@ -94,17 +94,17 @@ struct ProjectsScreen: View {
                 }
             }
             .task {
-                guard let userId = authManager.currentUser?.id else { return }
+                guard let userId = authManager.effectiveUserId else { return }
                 await viewModel.loadProjects(userId: userId)
             }
             .onAppear {
                 // Re-fetch when returning from child screens (task only fires once)
                 guard !viewModel.projects.isEmpty,
-                      let userId = authManager.currentUser?.id else { return }
+                      let userId = authManager.effectiveUserId else { return }
                 Task { await viewModel.loadProjects(userId: userId) }
             }
             .refreshable {
-                guard let userId = authManager.currentUser?.id else { return }
+                guard let userId = authManager.effectiveUserId else { return }
                 await viewModel.loadProjects(userId: userId)
             }
         }

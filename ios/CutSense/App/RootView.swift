@@ -6,6 +6,10 @@ struct RootView: View {
 
     var body: some View {
         Group {
+            #if DEBUG
+            // Bypass auth + onboarding in DEBUG builds for simulator testing
+            ProjectsScreen()
+            #else
             if !hasSeenOnboarding {
                 OnboardingScreen()
             } else if authManager.isLoading {
@@ -15,11 +19,16 @@ struct RootView: View {
             } else {
                 AuthScreen()
             }
+            #endif
         }
         .task(id: hasSeenOnboarding) {
+            #if DEBUG
+            // Skip session restore in debug — no Supabase needed
+            #else
             if hasSeenOnboarding {
                 await authManager.restoreSession()
             }
+            #endif
         }
     }
 }

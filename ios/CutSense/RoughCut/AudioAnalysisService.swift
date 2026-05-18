@@ -24,11 +24,10 @@ struct AudioAnalysisResult: Sendable {
 }
 
 enum AudioAnalysisService {
-    /// Silence threshold in dB — conservative: only true silence, not quiet speech
-    /// Phone recordings have ambient noise at -25 to -35 dB
-    private static let silenceThresholdDB: Float = -40
+    /// Base silence threshold in dB — used as fallback if adaptive detection fails
+    private static let baseSilenceThresholdDB: Float = -35
     /// Minimum silence duration to consider (seconds) — shorter silences are natural pauses
-    private static let minSilenceDuration: Double = 0.4
+    private static let minSilenceDuration: Double = 0.3
     /// Window size for energy analysis (seconds)
     private static let windowDuration: Double = 0.05
     /// Clipping threshold (0-1 range)
@@ -92,22 +91,45 @@ enum AudioAnalysisService {
             )
         }
 
-        // Compute RMS energy per window
-        var segments: [AudioSegment] = []
-        var silenceIntervals: [ClosedRange<Double>] = []
-        var energySum: Float = 0
-        var peakEnergy: Float = 0
-        var silenceStart: Double?
+        // First pass: compute RMS per window to find adaptive noise floor
         let totalWindows = allSamples.count / windowSamples
+        var windowRMS: [Float] = []
+        windowRMS.reserveCapacity(totalWindows)
 
         for i in 0..<totalWindows {
             let start = i * windowSamples
             let end = min(start + windowSamples, allSamples.count)
             let window = Array(allSamples[start..<end])
-
             var rms: Float = 0
             vDSP_rmsqv(window, 1, &rms, vDSP_Length(window.count))
+            windowRMS.append(rms)
+        }
 
+        // Adaptive silence threshold: find the noise floor from quietest 10% of windows
+        let silenceThresholdDB: Float
+        if totalWindows > 20 {
+            let sortedRMS = windowRMS.sorted()
+            let percentile10Index = min(totalWindows / 10, sortedRMS.count - 1)
+            let noiseFloorRMS = sortedRMS[percentile10Index]
+            let noiseFloorDB = noiseFloorRMS > 0 ? 20 * log10(noiseFloorRMS) : -100
+            // Set threshold 6dB above noise floor (2x amplitude), clamped to reasonable range
+            silenceThresholdDB = max(min(noiseFloorDB + 6, -20), -50)
+            #if DEBUG
+            print("[AudioAnalysis] Adaptive threshold: noiseFloor=\(String(format: "%.1f", noiseFloorDB))dB → silence threshold=\(String(format: "%.1f", silenceThresholdDB))dB")
+            #endif
+        } else {
+            silenceThresholdDB = baseSilenceThresholdDB
+        }
+
+        // Second pass: classify segments using adaptive threshold
+        var segments: [AudioSegment] = []
+        var silenceIntervals: [ClosedRange<Double>] = []
+        var energySum: Float = 0
+        var peakEnergy: Float = 0
+        var silenceStart: Double?
+
+        for i in 0..<totalWindows {
+            let rms = windowRMS[i]
             let dB = rms > 0 ? 20 * log10(rms) : -100
             energySum += rms
             peakEnergy = max(peakEnergy, rms)

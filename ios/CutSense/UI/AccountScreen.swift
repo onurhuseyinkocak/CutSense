@@ -45,6 +45,8 @@ final class AccountViewModel {
 struct AccountScreen: View {
     @Environment(AuthManager.self) private var authManager
     @State private var viewModel = AccountViewModel()
+    @State private var showPaywall = false
+    private var store: SubscriptionManager { .shared }
 
     var body: some View {
         ZStack {
@@ -63,6 +65,37 @@ struct AccountScreen: View {
                                 .foregroundStyle(.white)
                         }
                         .padding(.top, 32)
+                    }
+
+                    // Subscription status
+                    if store.isPro {
+                        HStack(spacing: 8) {
+                            Image(systemName: "crown.fill")
+                                .foregroundStyle(.yellow)
+                            Text("Pro")
+                                .font(.headline)
+                                .foregroundStyle(.yellow)
+                        }
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 8)
+                        .background(Color.yellow.opacity(0.1))
+                        .clipShape(Capsule())
+                    } else {
+                        Button {
+                            showPaywall = true
+                        } label: {
+                            HStack(spacing: 8) {
+                                Image(systemName: "sparkles")
+                                    .foregroundStyle(.yellow)
+                                Text("Upgrade to Pro")
+                                    .font(.subheadline.bold())
+                                    .foregroundStyle(.white)
+                            }
+                            .padding(.horizontal, 20)
+                            .padding(.vertical, 12)
+                            .background(Color.yellow.opacity(0.15))
+                            .clipShape(Capsule())
+                        }
                     }
 
                     // Analytics
@@ -99,8 +132,11 @@ struct AccountScreen: View {
         .navigationTitle("Account")
         .toolbarColorScheme(.dark, for: .navigationBar)
         .task {
-            guard let userId = authManager.currentUser?.id else { return }
+            guard let userId = authManager.effectiveUserId else { return }
             await viewModel.load(userId: userId)
+        }
+        .sheet(isPresented: $showPaywall) {
+            PaywallScreen()
         }
     }
 

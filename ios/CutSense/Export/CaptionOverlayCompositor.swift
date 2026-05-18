@@ -84,7 +84,7 @@ final class CaptionOverlayCompositor: NSObject, AVVideoCompositing, @unchecked S
         #endif
 
         // No processing needed — pass through
-        guard hasOverlay || hasGrade else {
+        guard hasOverlay || hasGrade || instruction.showWatermark else {
             request.finish(withComposedVideoFrame: sourceBuffer)
             return
         }
@@ -99,8 +99,8 @@ final class CaptionOverlayCompositor: NSObject, AVVideoCompositing, @unchecked S
             return
         }
 
-        // Grade-only: render CIFilter directly to pool buffer
-        if hasGrade && !hasOverlay {
+        // Grade-only (no overlay, no watermark): render CIFilter directly to pool buffer
+        if hasGrade && !hasOverlay && !instruction.showWatermark {
             CVPixelBufferLockBaseAddress(outputBuffer, [])
             let ciImage = CIImage(cvPixelBuffer: sourceBuffer)
             let graded = FilterEngine.applyGrade(grade, to: ciImage)
@@ -125,7 +125,8 @@ final class CaptionOverlayCompositor: NSObject, AVVideoCompositing, @unchecked S
                 currentTime: currentTime,
                 renderSize: instruction.renderSize,
                 captionTheme: instruction.captionTheme,
-                sourceIsAlreadyDrawn: true
+                sourceIsAlreadyDrawn: true,
+                showWatermark: instruction.showWatermark
             )
         } else {
             // Overlay only: copy source to pool buffer, then draw overlay
@@ -137,7 +138,8 @@ final class CaptionOverlayCompositor: NSObject, AVVideoCompositing, @unchecked S
                 renderSize: instruction.renderSize,
                 captionTheme: instruction.captionTheme,
                 sourceIsAlreadyDrawn: false,
-                sourceBuffer: sourceBuffer
+                sourceBuffer: sourceBuffer,
+                showWatermark: instruction.showWatermark
             )
         }
 
@@ -156,7 +158,8 @@ final class CaptionOverlayCompositor: NSObject, AVVideoCompositing, @unchecked S
         renderSize: CGSize,
         captionTheme: TemplateConfig.CaptionTheme = .premiumGold,
         sourceIsAlreadyDrawn: Bool,
-        sourceBuffer: CVPixelBuffer? = nil
+        sourceBuffer: CVPixelBuffer? = nil,
+        showWatermark: Bool = false
     ) {
         let width = CVPixelBufferGetWidth(outputBuffer)
         let height = CVPixelBufferGetHeight(outputBuffer)
@@ -225,16 +228,58 @@ final class CaptionOverlayCompositor: NSObject, AVVideoCompositing, @unchecked S
         if let caption {
             drawCaption(caption, in: context, width: CGFloat(width), height: CGFloat(height), currentTime: currentTime, theme: captionTheme)
         }
+
+        // Draw watermark for free tier
+        if showWatermark {
+            drawWatermark(in: context, width: CGFloat(width), height: CGFloat(height))
+        }
+    }
+
+    // MARK: - Watermark
+
+    private func drawWatermark(in context: CGContext, width: CGFloat, height: CGFloat) {
+        context.saveGState()
+        // Flip for UIKit text drawing
+        context.translateBy(x: 0, y: height)
+        context.scaleBy(x: 1, y: -1)
+
+        UIGraphicsPushContext(context)
+
+        let text = "Made with CutSense" as NSString
+        let fontSize = max(width * 0.028, 14)
+        let padding = width * 0.03
+        let font = UIFont.systemFont(ofSize: fontSize, weight: .semibold)
+
+        let shadowAttrs: [NSAttributedString.Key: Any] = [
+            .font: font,
+            .foregroundColor: UIColor.black.withAlphaComponent(0.5)
+        ]
+        let attrs: [NSAttributedString.Key: Any] = [
+            .font: font,
+            .foregroundColor: UIColor.white.withAlphaComponent(0.7)
+        ]
+
+        let textSize = text.size(withAttributes: attrs)
+        let x = width - textSize.width - padding
+        let y = height - textSize.height - padding
+
+        // Shadow
+        text.draw(at: CGPoint(x: x + 1, y: y + 1), withAttributes: shadowAttrs)
+        // Text
+        text.draw(at: CGPoint(x: x, y: y), withAttributes: attrs)
+
+        UIGraphicsPopContext()
+        context.restoreGState()
     }
 
     // MARK: - Visual Effects
 
     private func applyVisualEffects(_ effects: [EditDecision], context: CGContext, width: Int, height: Int, currentTime: Double) {
-        // Zoom effect: scale from center
+        // Zoom effect: subtle scale from center (Prequel-style: barely noticeable, smooth)
         if let zoom = effects.first(where: { $0.type == .zoom }) {
             let progress = effectProgress(zoom, at: currentTime)
             let eased = smoothstep(progress)
-            let scale = 1.0 + CGFloat(zoom.intensity) * 0.15 * eased
+            let scale = 1.0 + CGFloat(zoom.intensity) * 0.04 * eased
             let cx = CGFloat(width) / 2
             let cy = CGFloat(height) / 2
             context.translateBy(x: cx, y: cy)
@@ -242,10 +287,10 @@ final class CaptionOverlayCompositor: NSObject, AVVideoCompositing, @unchecked S
             context.translateBy(x: -cx, y: -cy)
         }
 
-        // Shake effect: small deterministic offset
+        // Shake effect: very subtle offset (Prequel-style: micro-shake, not jarring)
         if let shake = effects.first(where: { $0.type == .shake }) {
             let progress = effectProgress(shake, at: currentTime)
-            let magnitude = CGFloat(shake.intensity) * 8.0
+            let magnitude = CGFloat(shake.intensity) * 2.5
             let phase = progress * .pi * 6
             let dx = sin(phase) * magnitude
             let dy = cos(phase * 1.3) * magnitude
@@ -477,10 +522,11 @@ final class CaptionOverlayCompositor: NSObject, AVVideoCompositing, @unchecked S
             .paragraphStyle: paragraphStyle
         ])
 
-        // Track character positions for each word
+        // Track character positions for each word using UTF-16 lengths (NSRange operates on UTF-16)
         var charOffset = 0
         for (i, word) in words.enumerated() {
-            let range = NSRange(location: charOffset, length: word.count)
+            let utf16Len = (word as NSString).length
+            let range = NSRange(location: charOffset, length: utf16Len)
 
             if i < activeWordIndex {
                 // Already revealed — full color
@@ -493,7 +539,7 @@ final class CaptionOverlayCompositor: NSObject, AVVideoCompositing, @unchecked S
                 attributed.addAttribute(.foregroundColor, value: dimColor, range: range)
             }
 
-            charOffset += word.count + 1 // +1 for space
+            charOffset += utf16Len + 1 // +1 for space separator
         }
 
         // Shadow pass
@@ -501,7 +547,7 @@ final class CaptionOverlayCompositor: NSObject, AVVideoCompositing, @unchecked S
         shadowAttributed.addAttribute(
             .foregroundColor,
             value: theme.shadowColor.uiColor,
-            range: NSRange(location: 0, length: fullText.count)
+            range: NSRange(location: 0, length: (fullText as NSString).length)
         )
         let shadowOffset: CGFloat = 2
         let shadowRect = textRect.offsetBy(dx: shadowOffset, dy: shadowOffset)
@@ -549,7 +595,13 @@ final class CaptionOverlayCompositor: NSObject, AVVideoCompositing, @unchecked S
         theme: TemplateConfig.CaptionTheme,
         context: CGContext
     ) {
-        // Calculate x position of active word
+        // Only draw highlight for single-line captions to avoid position miscalculation
+        let fullText = words.joined(separator: " ")
+        let singleLineSize = (fullText as NSString).size(withAttributes: [.font: font])
+
+        // If text wraps to multiple lines, skip the highlight box (karaoke colors still work)
+        guard singleLineSize.width <= maxWidth else { return }
+
         let prefix = words[0..<activeIndex].joined(separator: " ")
         let prefixWithSpace = prefix.isEmpty ? "" : prefix + " "
         let activeWord = words[activeIndex]
@@ -562,15 +614,7 @@ final class CaptionOverlayCompositor: NSObject, AVVideoCompositing, @unchecked S
 
         var highlightX: CGFloat
         if config.alignment == .center {
-            // Center-aligned: calculate from center
-            let fullText = words.joined(separator: " ")
-            let fullSize = (fullText as NSString).boundingRect(
-                with: CGSize(width: maxWidth, height: .greatestFiniteMagnitude),
-                options: [.usesLineFragmentOrigin],
-                attributes: [.font: font],
-                context: nil
-            )
-            let textStartX = textRect.midX - fullSize.width / 2
+            let textStartX = textRect.midX - singleLineSize.width / 2
             highlightX = textStartX + prefixSize.width - padH
         } else {
             highlightX = textRect.origin.x + prefixSize.width - padH
@@ -598,6 +642,11 @@ final class CaptionOverlayCompositor: NSObject, AVVideoCompositing, @unchecked S
         highlightColor: UIColor,
         context: CGContext
     ) {
+        // Only draw glow for single-line captions
+        let fullText = words.joined(separator: " ")
+        let singleLineSize = (fullText as NSString).size(withAttributes: [.font: font])
+        guard singleLineSize.width <= maxWidth else { return }
+
         let prefix = words[0..<activeIndex].joined(separator: " ")
         let prefixWithSpace = prefix.isEmpty ? "" : prefix + " "
         let activeWord = words[activeIndex]
@@ -607,19 +656,11 @@ final class CaptionOverlayCompositor: NSObject, AVVideoCompositing, @unchecked S
 
         var glowX: CGFloat
         if config.alignment == .center {
-            let fullText = words.joined(separator: " ")
-            let fullSize = (fullText as NSString).boundingRect(
-                with: CGSize(width: maxWidth, height: .greatestFiniteMagnitude),
-                options: [.usesLineFragmentOrigin],
-                attributes: [.font: font],
-                context: nil
-            )
-            glowX = textRect.midX - fullSize.width / 2 + prefixSize.width
+            glowX = textRect.midX - singleLineSize.width / 2 + prefixSize.width
         } else {
             glowX = textRect.origin.x + prefixSize.width
         }
 
-        // Draw multiple passes with increasing blur for glow effect
         let glowRect = CGRect(
             x: glowX - 8,
             y: textRect.origin.y - 6,
@@ -684,9 +725,9 @@ final class CaptionOverlayCompositor: NSObject, AVVideoCompositing, @unchecked S
                 fontSize: 48,
                 fontWeight: .bold,
                 textColor: theme.defaultTextColor.uiColor,
-                hasBackground: false,
-                backgroundColor: .clear,
-                cornerRadius: 0,
+                hasBackground: true,
+                backgroundColor: UIColor.black.withAlphaComponent(0.55),
+                cornerRadius: 6,
                 alignment: .center
             )
         case .minimalWellness:
@@ -694,9 +735,9 @@ final class CaptionOverlayCompositor: NSObject, AVVideoCompositing, @unchecked S
                 fontSize: 38,
                 fontWeight: .medium,
                 textColor: theme.defaultTextColor.uiColor,
-                hasBackground: false,
-                backgroundColor: .clear,
-                cornerRadius: 0,
+                hasBackground: true,
+                backgroundColor: UIColor.black.withAlphaComponent(0.45),
+                cornerRadius: 6,
                 alignment: .center
             )
         }
@@ -717,6 +758,7 @@ final class CaptionCompositionInstruction: NSObject, AVVideoCompositionInstructi
     let colorGrade: TemplateConfig.ColorGrade
     let captionTheme: TemplateConfig.CaptionTheme
     let renderSize: CGSize
+    let showWatermark: Bool
 
     init(
         timeRange: CMTimeRange,
@@ -725,7 +767,8 @@ final class CaptionCompositionInstruction: NSObject, AVVideoCompositionInstructi
         editDecisions: [EditDecision] = [],
         colorGrade: TemplateConfig.ColorGrade = .none,
         captionTheme: TemplateConfig.CaptionTheme = .premiumGold,
-        renderSize: CGSize
+        renderSize: CGSize,
+        showWatermark: Bool = false
     ) {
         self.timeRange = timeRange
         self.requiredSourceTrackIDs = [NSNumber(value: sourceTrackID)]
@@ -734,6 +777,7 @@ final class CaptionCompositionInstruction: NSObject, AVVideoCompositionInstructi
         self.colorGrade = colorGrade
         self.captionTheme = captionTheme
         self.renderSize = renderSize
+        self.showWatermark = showWatermark
         super.init()
     }
 }

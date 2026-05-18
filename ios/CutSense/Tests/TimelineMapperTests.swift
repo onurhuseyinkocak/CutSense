@@ -371,6 +371,32 @@ struct TimelineMapperTests {
         // Time in 5th cut region (14-15) should be nil
         #expect(TimelineMapper.mapToClean(14.5, mapping: mapping) == nil)
     }
+
+    // MARK: - Empty mapping passthrough
+
+    @Test("remapCaptions passes through unchanged when mapping is empty (no cuts)")
+    func remapCaptionsEmptyMapping() {
+        let captions = [
+            makeCaption(start: 1, end: 3, text: "first"),
+            makeCaption(start: 5, end: 8, text: "second"),
+        ]
+        let remapped = TimelineMapper.remapCaptions(captions, mapping: [])
+        #expect(remapped.count == 2, "Empty mapping must pass all captions through")
+        #expect(remapped[0].startTime == 1)
+        #expect(remapped[1].startTime == 5)
+    }
+
+    @Test("remapEditDecisions passes through unchanged when mapping is empty")
+    func remapEditDecisionsEmptyMapping() {
+        let edits = [
+            makeEdit(time: 2),
+            makeEdit(time: 7),
+        ]
+        let remapped = TimelineMapper.remapEditDecisions(edits, mapping: [])
+        #expect(remapped.count == 2, "Empty mapping must pass all edits through")
+        #expect(remapped[0].time == 2)
+        #expect(remapped[1].time == 7)
+    }
 }
 
 @Suite("CaptionReadabilityGuard — UUID uniqueness and split behavior")

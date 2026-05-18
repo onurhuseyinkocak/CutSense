@@ -114,7 +114,9 @@ enum CleanTimelineBuilder {
         let mainTrackIDs: Set<CMPersistentTrackID> = [timeline.audioTrack.trackID]
         let baseMix = AudioMixService.createMix(for: timeline.composition, template: template, mainTrackIDs: mainTrackIDs)
 
-        // Add fade-out at end
+        // Add fade-out at end (skip if timeline too short)
+        let durationSeconds = CMTimeGetSeconds(timeline.totalDuration)
+        guard durationSeconds > 0.5 else { return baseMix }
         let fadeOutStart = CMTimeSubtract(
             timeline.totalDuration,
             CMTime(seconds: 0.5, preferredTimescale: 600)

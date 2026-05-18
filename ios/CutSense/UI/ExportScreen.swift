@@ -13,6 +13,9 @@ struct ExportScreen: View {
     @Environment(AuthManager.self) private var authManager
     @Environment(\.dismiss) private var dismiss
     @State private var didSave = false
+    @State private var isSaving = false
+    @State private var showPaywall = false
+    private var store: SubscriptionManager { .shared }
 
     init(
         sourceURL: URL,
@@ -63,18 +66,26 @@ struct ExportScreen: View {
                 ToolbarItem(placement: .topBarLeading) {
                     Button("Close") { dismiss() }
                         .foregroundStyle(.gray)
+                        .disabled(exportService.isExporting || isSaving)
                 }
             }
             .onChange(of: exportService.exportedURL != nil) { _, isDone in
                 if isDone {
                     UINotificationFeedbackGenerator().notificationOccurred(.success)
+                    store.recordExport()
                     // Auto-save to Photos
-                    if let url = exportService.exportedURL, !didSave {
+                    if let url = exportService.exportedURL, !didSave, !isSaving {
+                        isSaving = true
                         Task {
-                            didSave = await exportService.saveToPhotos(url: url)
+                            let saved = await exportService.saveToPhotos(url: url)
+                            isSaving = false
+                            didSave = saved
                         }
                     }
                 }
+            }
+            .sheet(isPresented: $showPaywall) {
+                PaywallScreen()
             }
         }
     }
@@ -124,14 +135,29 @@ struct ExportScreen: View {
                 .clipShape(RoundedRectangle(cornerRadius: 8))
             }
 
+            // Free tier export counter
+            if !store.isPro {
+                HStack(spacing: 6) {
+                    Image(systemName: "film")
+                        .foregroundStyle(.yellow)
+                    Text("\(store.remainingFreeExports) free export\(store.remainingFreeExports == 1 ? "" : "s") left this month")
+                        .font(.caption)
+                        .foregroundStyle(.gray)
+                }
+            }
+
             Button {
-                Task { await startExport() }
+                if store.canExport {
+                    Task { await startExport() }
+                } else {
+                    showPaywall = true
+                }
             } label: {
-                Text("Start Export")
+                Text(store.canExport ? "Start Export" : "Upgrade to Export")
                     .fontWeight(.semibold)
                     .frame(maxWidth: .infinity)
                     .padding()
-                    .background(hasCriticalFailures ? Color.gray : .white)
+                    .background(hasCriticalFailures ? Color.gray : (store.canExport ? .white : .yellow))
                     .foregroundStyle(hasCriticalFailures ? .white.opacity(0.5) : .black)
                     .clipShape(RoundedRectangle(cornerRadius: 12))
             }
@@ -205,11 +231,11 @@ struct ExportScreen: View {
 
     private func completedView(url: URL) -> some View {
         VStack(spacing: 20) {
-            Image(systemName: didSave ? "checkmark.seal.fill" : "checkmark.circle.fill")
+            Image(systemName: didSave ? "checkmark.seal.fill" : (isSaving ? "arrow.down.circle.fill" : "checkmark.circle.fill"))
                 .font(.system(size: 48))
                 .foregroundStyle(didSave ? .green : .white)
 
-            Text(didSave ? "Saved to Photos!" : "Saving to Photos...")
+            Text(didSave ? "Saved to Photos!" : (isSaving ? "Saving to Photos..." : "Export Complete"))
                 .font(.title3)
                 .foregroundStyle(.white)
 
@@ -248,13 +274,14 @@ struct ExportScreen: View {
             Button("Done") { dismiss() }
                 .foregroundStyle(.gray)
                 .padding(.top, 8)
+                .disabled(isSaving)
         }
     }
 
     private func startExport() async {
-        // Update status to exporting
-        let userId = authManager.currentUser?.id
-        if userId != nil {
+        // Update status to exporting (skip DB ops if no auth user, e.g. DEBUG mode)
+        let userId = authManager.effectiveUserId
+        if let userId {
             try? await PipelineRepository().updateProjectStatus(projectId, status: .exporting)
         }
 

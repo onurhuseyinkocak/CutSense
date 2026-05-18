@@ -119,7 +119,7 @@ struct RoughCutReviewScreen: View {
                             showTemplateSelection = true
                             Task {
                                 let pipeline = PipelineRepository()
-                                if let userId = authManager.currentUser?.id {
+                                if let userId = authManager.effectiveUserId {
                                     try? await pipeline.deleteRoughCutDecisions(projectId: projectId)
                                     try? await pipeline.saveRoughCutDecisions(
                                         projectId: projectId,
@@ -323,7 +323,7 @@ struct RoughCutReviewScreen: View {
     }
 
     private func saveFeedback(_ decision: RoughCutDecision, userAction: String) {
-        guard let userId = authManager.currentUser?.id,
+        guard let userId = authManager.effectiveUserId,
               let text = decision.linkedTranscriptText else { return }
         Task {
             try? await PipelineRepository().saveAiFeedback(

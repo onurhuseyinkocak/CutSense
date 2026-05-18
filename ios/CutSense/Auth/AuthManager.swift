@@ -6,10 +6,25 @@ import AuthenticationServices
 @MainActor
 @Observable
 final class AuthManager {
+    #if DEBUG
+    var isAuthenticated = true
+    var isLoading = false
+    #else
     var isAuthenticated = false
     var isLoading = true
+    #endif
     var currentUser: User?
     var errorMessage: String?
+
+    /// Returns userId for DB operations. In DEBUG, returns a fixed UUID when no user is signed in.
+    var effectiveUserId: UUID? {
+        if let id = currentUser?.id { return id }
+        #if DEBUG
+        return UUID(uuidString: "00000000-0000-0000-0000-000000000001")!
+        #else
+        return nil
+        #endif
+    }
 
     func restoreSession() async {
         defer { isLoading = false }

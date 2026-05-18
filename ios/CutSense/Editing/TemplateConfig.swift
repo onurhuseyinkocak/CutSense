@@ -77,7 +77,7 @@ struct TemplateConfig: Sendable, Codable {
 
         static let premiumGold = CaptionTheme(
             karaokeHighlight: CaptionColor(r: 1.0, g: 0.84, b: 0.0, a: 1.0),     // Gold
-            karaokeDim: CaptionColor(r: 0.7, g: 0.7, b: 0.7, a: 0.5),
+            karaokeDim: CaptionColor(r: 0.7, g: 0.7, b: 0.7, a: 0.7),
             wordHighlightBg: CaptionColor(r: 1.0, g: 0.84, b: 0.0, a: 0.2),
             hookTextColor: .white,
             hookBgColor: CaptionColor(r: 0.15, g: 0.15, b: 0.15, a: 0.85),        // Dark charcoal
@@ -88,7 +88,7 @@ struct TemplateConfig: Sendable, Codable {
 
         static let neonViral = CaptionTheme(
             karaokeHighlight: CaptionColor(r: 0.0, g: 1.0, b: 0.8, a: 1.0),      // Neon cyan-green
-            karaokeDim: CaptionColor(r: 0.6, g: 0.6, b: 0.6, a: 0.4),
+            karaokeDim: CaptionColor(r: 0.6, g: 0.6, b: 0.6, a: 0.65),
             wordHighlightBg: CaptionColor(r: 0.0, g: 1.0, b: 0.8, a: 0.25),
             hookTextColor: .white,
             hookBgColor: CaptionColor(r: 1.0, g: 0.15, b: 0.3, a: 0.9),          // Hot pink-red
@@ -99,7 +99,7 @@ struct TemplateConfig: Sendable, Codable {
 
         static let monoClean = CaptionTheme(
             karaokeHighlight: .white,
-            karaokeDim: CaptionColor(r: 0.5, g: 0.5, b: 0.5, a: 0.45),
+            karaokeDim: CaptionColor(r: 0.5, g: 0.5, b: 0.5, a: 0.65),
             wordHighlightBg: CaptionColor(r: 1.0, g: 1.0, b: 1.0, a: 0.12),
             hookTextColor: .white,
             hookBgColor: CaptionColor(r: 0.1, g: 0.1, b: 0.1, a: 0.7),
@@ -110,7 +110,7 @@ struct TemplateConfig: Sendable, Codable {
 
         static let warmCinematic = CaptionTheme(
             karaokeHighlight: CaptionColor(r: 1.0, g: 0.72, b: 0.3, a: 1.0),   // Warm amber
-            karaokeDim: CaptionColor(r: 0.6, g: 0.55, b: 0.45, a: 0.45),
+            karaokeDim: CaptionColor(r: 0.6, g: 0.55, b: 0.45, a: 0.65),
             wordHighlightBg: CaptionColor(r: 1.0, g: 0.72, b: 0.3, a: 0.18),
             hookTextColor: CaptionColor(r: 1.0, g: 0.95, b: 0.85, a: 1.0),     // Warm white
             hookBgColor: CaptionColor(r: 0.12, g: 0.08, b: 0.04, a: 0.85),     // Dark sepia
@@ -121,7 +121,7 @@ struct TemplateConfig: Sendable, Codable {
 
         static let podcastQuote = CaptionTheme(
             karaokeHighlight: CaptionColor(r: 0.4, g: 0.75, b: 1.0, a: 1.0),   // Soft blue
-            karaokeDim: CaptionColor(r: 0.55, g: 0.55, b: 0.55, a: 0.4),
+            karaokeDim: CaptionColor(r: 0.55, g: 0.55, b: 0.55, a: 0.65),
             wordHighlightBg: CaptionColor(r: 0.4, g: 0.75, b: 1.0, a: 0.15),
             hookTextColor: .white,
             hookBgColor: CaptionColor(r: 0.08, g: 0.08, b: 0.12, a: 0.9),      // Deep navy

@@ -41,7 +41,10 @@ enum TimelineMapper {
 
     /// Remap captions from source to clean timeline coordinates
     static func remapCaptions(_ captions: [CaptionSegment], mapping: [Segment]) -> [CaptionSegment] {
-        captions.compactMap { caption in
+        // Empty mapping means no cuts were made — all captions pass through unchanged
+        if mapping.isEmpty { return captions }
+
+        return captions.compactMap { caption in
             guard let cleanStart = mapToClean(caption.startTime, mapping: mapping) else { return nil }
             // For endTime, clamp to segment boundary if it slightly overshoots
             let cleanEnd = mapToClean(caption.endTime, mapping: mapping)
@@ -57,7 +60,9 @@ enum TimelineMapper {
 
     /// Remap edit decisions from source to clean timeline coordinates
     static func remapEditDecisions(_ decisions: [EditDecision], mapping: [Segment]) -> [EditDecision] {
-        decisions.compactMap { decision in
+        if mapping.isEmpty { return decisions }
+
+        return decisions.compactMap { decision in
             guard let cleanTime = mapToClean(decision.time, mapping: mapping) else { return nil }
             return EditDecision(
                 time: cleanTime,

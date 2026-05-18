@@ -341,7 +341,7 @@ struct AnalysisScreen: View {
             }
             // Auto-start analysis when screen appears (user already tapped Analyze)
             guard viewModel.roughCutResult == nil && !viewModel.isAnalyzing && viewModel.errorMessage == nil else { return }
-            guard let userId = authManager.currentUser?.id else { return }
+            guard let userId = authManager.effectiveUserId else { return }
             await viewModel.analyze(videoURL: videoURL, projectId: projectId, userId: userId)
         }
         .onChange(of: viewModel.roughCutResult != nil) { _, isDone in
@@ -373,7 +373,7 @@ struct AnalysisScreen: View {
                 .foregroundStyle(.white)
 
             Button {
-                guard let userId = authManager.currentUser?.id else { return }
+                guard let userId = authManager.effectiveUserId else { return }
                 Task { await viewModel.analyze(videoURL: videoURL, projectId: projectId, userId: userId) }
             } label: {
                 Text("Start Analysis")
@@ -590,7 +590,7 @@ struct AnalysisScreen: View {
                 .padding(.horizontal, 32)
 
             Button("Retry") {
-                guard let userId = authManager.currentUser?.id else { return }
+                guard let userId = authManager.effectiveUserId else { return }
                 Task { await viewModel.analyze(videoURL: videoURL, projectId: projectId, userId: userId) }
             }
             .foregroundStyle(.white)

@@ -8,6 +8,9 @@ struct CutSenseApp: App {
         WindowGroup {
             RootView()
                 .environment(authManager)
+                .task {
+                    await SubscriptionManager.shared.checkSubscriptionStatus()
+                }
                 .onOpenURL { url in
                     guard url.pathExtension == "cutsensetemplate" else { return }
                     let count = CustomTemplateStore.shared.importFile(at: url)
