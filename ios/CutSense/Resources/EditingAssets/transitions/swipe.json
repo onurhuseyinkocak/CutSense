@@ -1,0 +1,7 @@
+{
+  "id": "transition_swipe",
+  "displayName": "Swipe",
+  "style": "whipPan",
+  "duration": 0.20,
+  "intensity": "medium"
+}

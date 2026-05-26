@@ -16,7 +16,10 @@ final class ProjectsViewModel {
         do {
             projects = try await repository.fetchProjects(userId: userId)
         } catch {
-            errorMessage = error.localizedDescription
+            #if DEBUG
+            print("[Projects] fetch failed: \(error)")
+            #endif
+            errorMessage = "Projeler yüklenemedi. İnternet bağlantınızı kontrol edin."
         }
     }
 
@@ -26,7 +29,10 @@ final class ProjectsViewModel {
             projects.insert(project, at: 0)
             return project
         } catch {
-            errorMessage = error.localizedDescription
+            #if DEBUG
+            print("[Projects] create failed: \(error)")
+            #endif
+            errorMessage = "Proje oluşturulamadı. Lütfen tekrar deneyin."
             return nil
         }
     }
@@ -36,7 +42,18 @@ final class ProjectsViewModel {
             try await repository.deleteProject(projectId: project.id, localVideoPath: project.localProjectPath)
             projects.removeAll { $0.id == project.id }
         } catch {
-            errorMessage = error.localizedDescription
+            #if DEBUG
+            print("[Projects] delete failed: \(error)")
+            #endif
+            errorMessage = "Proje silinemedi. Lütfen tekrar deneyin."
+        }
+    }
+
+    func replaceProject(_ project: Project) {
+        if let index = projects.firstIndex(where: { $0.id == project.id }) {
+            projects[index] = project
+        } else {
+            projects.insert(project, at: 0)
         }
     }
 }
@@ -68,6 +85,15 @@ struct ProjectsScreen: View {
                     emptyState
                 } else {
                     projectList
+                }
+
+                if let errorMessage = currentErrorMessage {
+                    VStack {
+                        ErrorBanner(message: errorMessage)
+                            .padding(.horizontal)
+                            .padding(.top)
+                        Spacer()
+                    }
                 }
             }
             .navigationTitle("CutSense")
@@ -125,19 +151,30 @@ struct ProjectsScreen: View {
 
         await importService.importVideo(from: item)
         guard let videoURL = importService.importedVideoURL else { return }
+        guard let metadata = importService.metadata else {
+            viewModel.errorMessage = "Video bilgileri okunamadı. Lütfen farklı bir dosya deneyin."
+            return
+        }
         guard let userId = authManager.effectiveUserId else { return }
 
         // Auto-create project with date-based title
-        let formatter = DateFormatter()
-        formatter.dateFormat = "MMM d, HH:mm"
-        let title = "Video \(formatter.string(from: Date()))"
+        let title = "Video \(Date().formatted(.dateTime.month(.abbreviated).day().hour().minute()))"
 
-        guard let project = await viewModel.createProject(userId: userId, title: title) else { return }
+        guard var project = await viewModel.createProject(userId: userId, title: title) else { return }
 
-        // Save video path to project
+        // Save import metadata locally first; cloud sync is best-effort.
         let pipeline = PipelineRepository()
-        try? await pipeline.updateProjectStatus(project.id, status: .imported)
-        try? await pipeline.updateProjectLocalPath(projectId: project.id, path: videoURL.path)
+        try? await pipeline.updateProjectImportMetadata(
+            projectId: project.id,
+            path: videoURL.path,
+            metadata: metadata
+        )
+
+        project.status = .imported
+        project.localProjectPath = videoURL.path
+        project.sourceFileName = videoURL.lastPathComponent
+        project.originalDuration = metadata.duration
+        viewModel.replaceProject(project)
 
         activeProject = project
         activeVideoURL = videoURL
@@ -201,6 +238,10 @@ struct ProjectsScreen: View {
         }
         .listStyle(.plain)
         .scrollContentBackground(.hidden)
+    }
+
+    private var currentErrorMessage: String? {
+        importService.errorMessage ?? viewModel.errorMessage
     }
 }
 

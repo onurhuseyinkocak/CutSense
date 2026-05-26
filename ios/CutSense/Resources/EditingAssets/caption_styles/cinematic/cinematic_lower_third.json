@@ -1,0 +1,9 @@
+{
+  "id": "caption_cinematic_lower_third",
+  "displayName": "Cinematic Lower Third",
+  "category": "cinematic",
+  "style": "premium_lower_third",
+  "placement": "lowerThird",
+  "animation": "slowFadeSlide",
+  "safeZone": { "top": 120, "bottom": 220, "horizontal": 80 }
+}

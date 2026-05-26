@@ -23,10 +23,37 @@ struct TimelineMapperTests {
         )
     }
 
+    private func makeDecision(start: Double, end: Double, action: CutAction) -> RoughCutDecision {
+        RoughCutDecision(
+            startTime: start, endTime: end, action: action,
+            reason: "test", confidence: 0.8,
+            linkedTranscriptText: nil,
+            requiresReview: action == .reviewRequired
+        )
+    }
+
     private func makeCaption(start: Double, end: Double, text: String = "test") -> CaptionSegment {
         CaptionSegment(
             startTime: start, endTime: end, text: text,
             role: .regular, style: .boldCenterViral
+        )
+    }
+
+    private func makeCaption(
+        start: Double,
+        end: Double,
+        text: String,
+        wordTimings: [(word: String, start: Double, duration: Double)],
+        sceneBehavior: CaptionSceneBehavior = .none
+    ) -> CaptionSegment {
+        CaptionSegment(
+            startTime: start,
+            endTime: end,
+            text: text,
+            role: .regular,
+            style: .boldCenterViral,
+            sceneBehavior: sceneBehavior,
+            wordTimings: wordTimings
         )
     }
 
@@ -78,6 +105,40 @@ struct TimelineMapperTests {
         #expect(mapping[1].cleanStart == 4) // 6-2 = 4s from first keep
     }
 
+    @Test("buildMapping includes review and replacement decisions that remain on timeline")
+    func buildMappingIncludesTimelineIncludedActions() {
+        let decisions = [
+            makeCut(start: 0, end: 1),
+            makeDecision(start: 1, end: 4, action: .reviewRequired),
+            makeCut(start: 4, end: 5),
+            makeDecision(start: 5, end: 7, action: .replaceWithBetterTake),
+        ]
+
+        let mapping = TimelineMapper.buildMapping(from: decisions)
+
+        #expect(mapping.count == 2)
+        #expect(mapping[0].sourceStart == 1)
+        #expect(mapping[0].sourceEnd == 4)
+        #expect(mapping[0].cleanStart == 0)
+        #expect(mapping[1].sourceStart == 5)
+        #expect(mapping[1].sourceEnd == 7)
+        #expect(mapping[1].cleanStart == 3)
+    }
+
+    @Test("buildMapping coalesces tiny gaps exactly like clean timeline construction")
+    func buildMappingCoalescesTinyGaps() {
+        let decisions = [
+            makeKeep(start: 0, end: 2),
+            makeKeep(start: 2.03, end: 4),
+        ]
+
+        let mapping = TimelineMapper.buildMapping(from: decisions)
+
+        #expect(mapping.count == 1)
+        #expect(abs(mapping[0].sourceEnd - 4) < 0.001)
+        #expect(abs((TimelineMapper.mapToClean(3, mapping: mapping) ?? -1) - 3) < 0.001)
+    }
+
     @Test("buildMapping sorts keeps by startTime regardless of input order")
     func buildMappingSortsKeeps() {
         let decisions = [
@@ -103,7 +164,7 @@ struct TimelineMapperTests {
 
     @Test("buildMapping empty decisions produces empty mapping")
     func buildMappingEmpty() {
-        let mapping = TimelineMapper.buildMapping(from: [])
+        let mapping = TimelineMapper.buildMapping(from: [RoughCutDecision]())
         #expect(mapping.isEmpty)
     }
 
@@ -251,6 +312,59 @@ struct TimelineMapperTests {
         #expect(remapped[0].endTime >= 3.1) // at least minimum gap enforced
     }
 
+    @Test("remapCaptions clips captions to the included source range")
+    func remapCaptionsClipsToIncludedRange() {
+        let decisions = [
+            makeCut(start: 0, end: 1),
+            makeKeep(start: 1, end: 3),
+        ]
+        let mapping = TimelineMapper.buildMapping(from: decisions)
+
+        let captions = [makeCaption(start: 0.5, end: 2, text: "partial")]
+        let remapped = TimelineMapper.remapCaptions(captions, mapping: mapping)
+
+        #expect(remapped.count == 1)
+        #expect(remapped[0].startTime == 0)
+        #expect(remapped[0].endTime == 1)
+    }
+
+    @Test("remapCaptions splits captions across multiple included ranges")
+    func remapCaptionsSplitsAcrossIncludedRanges() {
+        let decisions = [
+            makeKeep(start: 0, end: 2),
+            makeCut(start: 2, end: 4),
+            makeKeep(start: 4, end: 6),
+        ]
+        let mapping = TimelineMapper.buildMapping(from: decisions)
+        let caption = makeCaption(
+            start: 1,
+            end: 5,
+            text: "one cut two",
+            wordTimings: [
+                (word: "one", start: 1.1, duration: 0.4),
+                (word: "cut", start: 2.4, duration: 0.5),
+                (word: "two", start: 4.2, duration: 0.5),
+            ],
+            sceneBehavior: .hookImpact
+        )
+
+        let remapped = TimelineMapper.remapCaptions([caption], mapping: mapping)
+
+        #expect(remapped.count == 2)
+        #expect(remapped[0].text == "one")
+        #expect(remapped[0].startTime == 1)
+        #expect(remapped[0].endTime == 2)
+        #expect(remapped[0].wordTimings.first?.start == 1.1)
+        #expect(remapped[0].sceneBehavior == .hookImpact)
+
+        #expect(remapped[1].text == "two")
+        #expect(remapped[1].startTime == 2)
+        #expect(remapped[1].endTime == 3)
+        #expect(remapped[1].wordTimings.first?.start == 2.2)
+        #expect(remapped[1].sceneBehavior == .none)
+        #expect(!remapped.contains { $0.text.contains("cut") })
+    }
+
     @Test("remapCaptions enforces minimum 0.1s duration")
     func remapCaptionsMinDuration() {
         let decisions = [makeKeep(start: 0, end: 10)]
@@ -279,6 +393,97 @@ struct TimelineMapperTests {
         #expect(remapped[0].role == .hook)
         #expect(remapped[0].style == .hookImpact)
         #expect(remapped[0].sceneBehavior == .hookImpact)
+    }
+
+    @Test("remapCaptions repairs raw ASR word timings to corrected display text")
+    func remapCaptionsPreservesCorrectedDisplayText() {
+        let decisions = [makeKeep(start: 0, end: 10)]
+        let mapping = TimelineMapper.buildMapping(from: decisions)
+        let caption = makeCaption(
+            start: 1,
+            end: 4,
+            text: "Vibe Coding Turkey kurdum",
+            wordTimings: [
+                (word: "BAP", start: 1.0, duration: 0.4),
+                (word: "Holding", start: 1.4, duration: 0.4),
+                (word: "Turkey", start: 1.8, duration: 0.4),
+                (word: "kurdum", start: 2.2, duration: 0.4),
+            ]
+        )
+
+        let remapped = TimelineMapper.remapCaptions([caption], mapping: mapping)
+
+        #expect(remapped.count == 1)
+        #expect(remapped[0].text == "Vibe Coding Turkey kurdum")
+        #expect(remapped[0].wordTimings.map(\.word).joined(separator: " ") == "Vibe Coding Turkey kurdum")
+    }
+
+    @Test("remapCaptions slices corrected display text across cut without reverting to raw ASR")
+    func remapCaptionsSlicesCorrectedTextAcrossCut() {
+        let decisions = [
+            makeKeep(start: 0, end: 2),
+            makeCut(start: 2, end: 4),
+            makeKeep(start: 4, end: 6),
+        ]
+        let mapping = TimelineMapper.buildMapping(from: decisions)
+        let caption = makeCaption(
+            start: 0.5,
+            end: 5.5,
+            text: "Vibe Coding Turkey kurdum birlikte",
+            wordTimings: [
+                (word: "BAP", start: 0.6, duration: 0.4),
+                (word: "Holding", start: 1.2, duration: 0.4),
+                (word: "Turkey", start: 2.5, duration: 0.4),
+                (word: "kurdum", start: 4.2, duration: 0.4),
+                (word: "birlikte", start: 5.0, duration: 0.4),
+            ]
+        )
+
+        let remapped = TimelineMapper.remapCaptions([caption], mapping: mapping)
+
+        #expect(remapped.count == 2)
+        #expect(remapped[0].text == "Vibe Coding")
+        #expect(remapped[1].text == "kurdum birlikte")
+        #expect(!remapped.contains { $0.text.localizedStandardContains("BAP") })
+        #expect(!remapped.contains { $0.text.localizedStandardContains("Holding") })
+        #expect(remapped[0].wordTimings.map(\.word).joined(separator: " ") == "Vibe Coding")
+        #expect(remapped[1].wordTimings.map(\.word).joined(separator: " ") == "kurdum birlikte")
+    }
+
+    @Test("remapTranscription preserves semantic word timings across clean timeline cuts")
+    func remapTranscriptionPreservesSemanticTimings() {
+        let mapping = TimelineMapper.buildMapping(from: [
+            makeKeep(start: 0, end: 2),
+            makeKeep(start: 5, end: 9),
+        ])
+        var segment = TranscriptSegment(
+            startTime: 4.5,
+            endTime: 8.5,
+            text: "click generate and the result appears",
+            confidence: 0.94,
+            segmentType: .contentSentence
+        )
+        segment.wordTimings = [
+            (word: "click", start: 5.10, duration: 0.18),
+            (word: "generate", start: 5.50, duration: 0.24),
+            (word: "and", start: 6.00, duration: 0.12),
+            (word: "the", start: 6.40, duration: 0.10),
+            (word: "result", start: 7.00, duration: 0.22),
+            (word: "appears", start: 7.30, duration: 0.24),
+        ]
+        let transcription = TranscriptionResult(
+            fullText: segment.text,
+            segments: [segment],
+            language: "en-US",
+            overallConfidence: 0.94
+        )
+
+        let remapped = TimelineMapper.remapTranscription(transcription, mapping: mapping)
+
+        #expect(remapped.segments.count == 1)
+        #expect(remapped.segments[0].text == "click generate and the result appears")
+        #expect(abs((remapped.segments[0].wordTimings.first?.start ?? 0) - 2.10) < 0.001)
+        #expect(abs((remapped.segments[0].wordTimings.first { $0.word == "result" }?.start ?? 0) - 4.00) < 0.001)
     }
 
     // MARK: - remapEditDecisions
@@ -320,6 +525,147 @@ struct TimelineMapperTests {
 
         let remapped = TimelineMapper.remapEditDecisions(edits, mapping: mapping)
         #expect(remapped.count == 2)
+    }
+
+    @Test("remapEditDecisions preserves leading transition effects that start in a cut gap")
+    func remapEditDecisionsPreservesLeadingTransitionEffects() {
+        let decisions = [
+            makeKeep(start: 0, end: 3),
+            makeCut(start: 3, end: 4.32),
+            makeKeep(start: 4.32, end: 7.41),
+        ]
+        let mapping = TimelineMapper.buildMapping(from: decisions)
+
+        let transitionWhoosh = EditDecision(
+            time: 4.20,
+            duration: 0.35,
+            type: .sfx,
+            reason: "Transition whoosh",
+            intensity: 0.65
+        )
+        let whipZoom = EditDecision(
+            time: 4.24,
+            duration: 0.45,
+            type: .zoom,
+            reason: "Transition whip zoom",
+            intensity: 0.75
+        )
+
+        let remapped = TimelineMapper.remapEditDecisions([transitionWhoosh, whipZoom], mapping: mapping)
+
+        #expect(remapped.count == 2)
+        #expect(abs(remapped[0].time - 2.88) < 0.001)
+        #expect(abs(remapped[1].time - 2.92) < 0.001)
+    }
+
+    @Test("remapEditDecisions clips effects at kept segment end")
+    func remapEditDecisionsClipsEffectsAtKeptSegmentEnd() {
+        let decisions = [
+            makeKeep(start: 0, end: 3),
+            makeCut(start: 3, end: 5),
+            makeKeep(start: 5, end: 8),
+        ]
+        let mapping = TimelineMapper.buildMapping(from: decisions)
+        let edit = EditDecision(
+            time: 2.8,
+            duration: 1.0,
+            type: .zoom,
+            reason: "Tech reveal zoom",
+            intensity: 0.5
+        )
+
+        let remapped = TimelineMapper.remapEditDecisions([edit], mapping: mapping)
+
+        #expect(remapped.count == 1)
+        #expect(abs(remapped[0].time - 2.8) < 0.001)
+        #expect(abs(remapped[0].duration - 0.2) < 0.001)
+    }
+
+    @Test("remapEditDecisions anchors hook intro effects after leading silence trim")
+    func remapEditDecisionsAnchorsHookIntroEffectsAfterLeadingSilenceTrim() {
+        let decisions = [
+            makeCut(start: 0, end: 1),
+            makeKeep(start: 1, end: 4),
+        ]
+        let mapping = TimelineMapper.buildMapping(from: decisions)
+
+        let hookZoom = EditDecision(
+            time: 0,
+            duration: 0.8,
+            type: .zoom,
+            reason: "Hook push-pull zoom",
+            intensity: 1
+        )
+        let hookImpact = EditDecision(
+            time: 0.05,
+            duration: 0.22,
+            type: .sfx,
+            reason: "Hook impact SFX",
+            intensity: 0.8
+        )
+
+        let remapped = TimelineMapper.remapEditDecisions([hookZoom, hookImpact], mapping: mapping)
+
+        #expect(remapped.count == 2)
+        #expect(remapped.contains { $0.reason == "Hook push-pull zoom" && abs($0.time) < 0.001 })
+        #expect(remapped.contains { $0.reason == "Hook impact SFX" && abs($0.time - 0.05) < 0.001 })
+    }
+
+    @Test("remapEditDecisions still drops effects fully inside cut gaps")
+    func remapEditDecisionsDropsEffectsFullyInsideCutGaps() {
+        let decisions = [
+            makeKeep(start: 0, end: 3),
+            makeCut(start: 3, end: 6),
+            makeKeep(start: 6, end: 9),
+        ]
+        let mapping = TimelineMapper.buildMapping(from: decisions)
+
+        let edit = EditDecision(
+            time: 4,
+            duration: 0.25,
+            type: .sfx,
+            reason: "Cut-region artifact",
+            intensity: 0.7
+        )
+
+        let remapped = TimelineMapper.remapEditDecisions([edit], mapping: mapping)
+        #expect(remapped.isEmpty)
+    }
+
+    @Test("exportReadyCaptions drops unreadable remap fragments")
+    func exportReadyCaptionsDropsUnreadableFragments() {
+        let captions = [
+            CaptionSegment(
+                startTime: 0,
+                endTime: 0.22,
+                text: "too fast",
+                role: .regular,
+                style: .focusStatement,
+                wordTimings: [
+                    (word: "too", start: 0.02, duration: 0.05),
+                    (word: "fast", start: 0.12, duration: 0.06)
+                ]
+            ),
+            CaptionSegment(
+                startTime: 0.5,
+                endTime: 1.3,
+                text: "readable caption",
+                role: .regular,
+                style: .focusStatement,
+                wordTimings: [
+                    (word: "readable", start: 0.52, duration: 0.22),
+                    (word: "caption", start: 0.82, duration: 0.22)
+                ]
+            )
+        ]
+
+        let ready = TimelineMapper.exportReadyCaptions(captions, totalDuration: 1.5)
+
+        #expect(ready.count == 1)
+        #expect(ready[0].text == "readable caption")
+        #expect(ready[0].wordTimings.allSatisfy { timing in
+            timing.start >= ready[0].startTime && timing.start + timing.duration <= ready[0].endTime
+        })
     }
 
     @Test("remapEditDecisions preserves duration, type, reason, intensity")
@@ -570,6 +916,31 @@ struct ResolveOverlapsTests {
         #expect(result[1].endTime == 5) // clamped to c.start
         #expect(result[2].endTime == 8) // unchanged
     }
+
+    @Test("Corrected display text survives overlap clamping when timings are raw ASR")
+    func correctedDisplayTextSurvivesOverlapClamp() {
+        let captions = [
+            CaptionSegment(
+                startTime: 0,
+                endTime: 3,
+                text: "MVP'ye çevirebilsinler",
+                role: .regular,
+                style: .boldCenterViral,
+                wordTimings: [
+                    (word: "VP", start: 0.1, duration: 0.2),
+                    (word: "'ye", start: 0.3, duration: 0.2),
+                    (word: "çevir", start: 0.5, duration: 0.2),
+                    (word: "bil", start: 0.7, duration: 0.2),
+                    (word: "sinler", start: 0.9, duration: 0.2),
+                ]
+            ),
+            makeCaption(start: 2, end: 4, text: "next"),
+        ]
+
+        let result = TimelineMapper.resolveOverlaps(captions)
+
+        #expect(result[0].text == "MVP'ye çevirebilsinler")
+    }
 }
 
 // MARK: - cleanDuration computation
@@ -605,18 +976,18 @@ struct CleanDurationTests {
         #expect(abs(result.cleanDuration - keepSum) < 0.001, "cleanDuration must equal sum of keep segment durations")
     }
 
-    @Test("cleanDuration excludes reviewRequired segments")
-    func cleanDurationExcludesReview() {
-        // Manually construct a result with review segments to verify
+    @Test("cleanDuration includes reviewRequired segments because they remain on timeline")
+    func cleanDurationIncludesReview() {
         let decisions = [
             RoughCutDecision(startTime: 0, endTime: 5, action: .keep, reason: "", confidence: 0.9, linkedTranscriptText: nil, requiresReview: false),
             RoughCutDecision(startTime: 5, endTime: 8, action: .reviewRequired, reason: "", confidence: 0.5, linkedTranscriptText: nil, requiresReview: true),
             RoughCutDecision(startTime: 8, endTime: 12, action: .keep, reason: "", confidence: 0.9, linkedTranscriptText: nil, requiresReview: false),
         ]
-        let keepSegments = decisions.filter { $0.action == .keep }
-        let cleanDuration = keepSegments.reduce(0.0) { $0 + ($1.endTime - $1.startTime) }
-        // Keep: 5s + 4s = 9s. NOT 12s (which would include review segment)
-        #expect(cleanDuration == 9)
+        let cleanDuration = TimelineRangeNormalizer
+            .includedRanges(from: decisions, assetDuration: 12)
+            .reduce(0.0) { $0 + $1.duration }
+
+        #expect(cleanDuration == 12)
     }
 }
 
@@ -776,18 +1147,18 @@ struct SegmentTypeRoutingTests {
     func restartSegmentsCut() {
         // Restarts auto-cut only when aiConfidence >= 0.85
         let segments = [
-            TranscriptSegment(startTime: 0, endTime: 3, text: "So today we", confidence: 0.9, segmentType: .suspectedRestart, aiConfidence: 0.90),
+            TranscriptSegment(startTime: 0, endTime: 3, text: "Today we discuss", confidence: 0.9, segmentType: .suspectedRestart, aiConfidence: 0.90),
             TranscriptSegment(startTime: 3, endTime: 7, text: "Today we discuss Swift", confidence: 0.9, segmentType: .speech),
         ]
-        let transcription = TranscriptionResult(fullText: "So today we Today we discuss Swift", segments: segments, language: "en", overallConfidence: 0.8)
+        let transcription = TranscriptionResult(fullText: "Today we discuss Today we discuss Swift", segments: segments, language: "en", overallConfidence: 0.8)
         let result = RoughCutDecisionEngine.generateDecisions(transcription: transcription, audioAnalysis: makeAudio(duration: 7))
 
-        let restartDecisions = result.decisions.filter { $0.linkedTranscriptText == "So today we" }
+        let restartDecisions = result.decisions.filter { $0.linkedTranscriptText == "Today we discuss" }
         #expect(!restartDecisions.isEmpty)
         #expect(restartDecisions.allSatisfy { $0.action == .cut })
     }
 
-    @Test("Suspected duplicate segments produce cut with review")
+    @Test("Suspected duplicate segments produce confident cut when adjacent duplicate evidence is strong")
     func duplicateSegmentsReview() {
         let segments = [
             TranscriptSegment(startTime: 0, endTime: 4, text: "Swift is great", confidence: 0.9, segmentType: .speech),
@@ -799,7 +1170,7 @@ struct SegmentTypeRoutingTests {
         let dupDecisions = result.decisions.filter { $0.linkedTranscriptText == "Swift is great" && $0.startTime == 4 }
         #expect(!dupDecisions.isEmpty)
         #expect(dupDecisions.allSatisfy { $0.action == .cut })
-        #expect(dupDecisions.allSatisfy { $0.requiresReview == true })
+        #expect(dupDecisions.allSatisfy { $0.requiresReview == false })
     }
 
     @Test("Content sentence segments are kept")

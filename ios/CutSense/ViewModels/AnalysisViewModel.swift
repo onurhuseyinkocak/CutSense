@@ -57,10 +57,64 @@ final class AnalysisViewModel {
 
     private let transcriptionService = SpeechTranscriptionService()
 
+    func restoreArtifacts(projectId: UUID, expectedVideoURL: URL) -> Bool {
+        guard let snapshot = PipelineArtifactStore.load(projectId: projectId) else {
+            return false
+        }
+
+        if !snapshot.matchesSourceVideo(expectedVideoURL) {
+            return false
+        }
+
+        guard let cachedTranscript = snapshot.transcriptionResult,
+              let roughCut = snapshot.roughCutResult else {
+            return false
+        }
+        let restoredAudio = snapshot.audioAnalysis?.domainValue
+        let transcript = (try? TranscriptionValidator.validated(
+            TranscriptPostProcessor.corrected(cachedTranscript)
+        )) ?? cachedTranscript
+        let didRepairCachedTranscript = transcript.fullText != cachedTranscript.fullText
+
+        PipelineDiagnostics.record(
+            projectId: projectId,
+            stage: .roughCut,
+            status: .completed,
+            source: .cache,
+            message: "analysis restored from local artifact cache",
+            artifactCount: roughCut.decisions.count,
+            metadata: [
+                "transcriptSegments": "\(transcript.segments.count)",
+                "sourceVideoPath": snapshot.sourceVideoPath ?? "",
+                "audioSegments": "\(snapshot.audioAnalysis?.segments.count ?? 0)",
+                "transcriptRepaired": "\(didRepairCachedTranscript)"
+            ]
+        )
+
+        transcriptionResult = transcript
+        roughCutResult = roughCut
+        audioResult = restoredAudio
+        audioQualityReport = restoredAudio.map { Self.audioQualityReport(for: $0) }
+        usedSmartAnalysis = true
+        currentStep = max(0, steps.count - 1)
+        errorMessage = nil
+        if didRepairCachedTranscript {
+            try? PipelineArtifactStore.saveAnalysis(
+                projectId: projectId,
+                sourceVideoURL: expectedVideoURL,
+                transcription: transcript,
+                roughCut: roughCut,
+                audioAnalysis: restoredAudio
+            )
+        }
+        return true
+    }
+
     func analyze(videoURL: URL, projectId: UUID, userId: UUID) async {
         isAnalyzing = true
         errorMessage = nil
         analysisDiff = nil
+        var currentFailureStage = PipelineStage.audioAnalyzed
         defer { isAnalyzing = false }
 
         do {
@@ -72,29 +126,90 @@ final class AnalysisViewModel {
 
             // Step 1: Audio analysis
             currentStep = 0
+            currentFailureStage = .audioAnalyzed
+            let audioStart = Date()
+            PipelineDiagnostics.record(
+                projectId: projectId,
+                stage: .audioAnalyzed,
+                status: .running,
+                source: .live,
+                message: "audio analysis started"
+            )
+            #if DEBUG
+            print("[Analyze] >> AudioAnalysisService.analyze CALL")
+            #endif
             audioResult = try await AudioAnalysisService.analyze(url: videoURL)
+            if let audioResult {
+                PipelineDiagnostics.record(
+                    projectId: projectId,
+                    stage: .audioAnalyzed,
+                    status: .completed,
+                    source: .live,
+                    message: "audio analysis completed",
+                    artifactCount: audioResult.segments.count,
+                    durationSeconds: Date().timeIntervalSince(audioStart),
+                    metadata: [
+                        "duration": "\(audioResult.duration)",
+                        "silenceCount": "\(audioResult.silenceIntervals.count)"
+                    ]
+                )
+            }
+            #if DEBUG
+            print("[Analyze] << AudioAnalysisService.analyze RETURN segments=\(audioResult?.segments.count ?? -1) silences=\(audioResult?.silenceIntervals.count ?? -1) duration=\(audioResult?.duration ?? -1)")
+            #endif
 
             // Run audio quality guard from analysis metadata
             if let audio = audioResult {
-                // Approximate quality from analysis metadata
-                let peakLinear = Float(audio.peakEnergy)
-                let avgLinear = Float(audio.averageEnergy)
-                let peakDB = peakLinear > 0 ? 20 * log10(peakLinear) : -Float.infinity
-                let avgDB = avgLinear > 0 ? 20 * log10(avgLinear) : -Float.infinity
-                let dynamicRange = peakDB - avgDB
-                audioQualityReport = AudioQualityGuard.QualityReport(
-                    peakDB: peakDB,
-                    averageDB: avgDB,
-                    isClipping: peakDB > -1.0,
-                    isTooQuiet: avgDB < -30.0,
-                    dynamicRange: dynamicRange,
-                    passed: peakDB <= -1.0 && avgDB >= -30.0 && dynamicRange >= 6.0
-                )
+                #if DEBUG
+                print("[Analyze] >> quality guard peak=\(audio.peakEnergy) avg=\(audio.averageEnergy)")
+                #endif
+                audioQualityReport = Self.audioQualityReport(for: audio)
+                #if DEBUG
+                print("[Analyze] << quality guard DONE")
+                #endif
             }
 
             // Step 2: Transcription
+            #if DEBUG
+            print("[Analyze] >> step=1 setting")
+            #endif
             currentStep = 1
+            currentFailureStage = .transcribed
+            let transcriptionStart = Date()
+            PipelineDiagnostics.record(
+                projectId: projectId,
+                stage: .transcribed,
+                status: .running,
+                source: .live,
+                message: "speech transcription started"
+            )
+            #if DEBUG
+            print("[Analyze] >> Transcribe CALL")
+            #endif
             transcriptionResult = try await transcriptionService.transcribe(url: videoURL)
+            if let transcriptionResult {
+                let partialRecognition = transcriptionResult.recognitionStatus.isPartial
+                PipelineDiagnostics.record(
+                    projectId: projectId,
+                    stage: .transcribed,
+                    status: partialRecognition ? .failed : .completed,
+                    source: .live,
+                    message: partialRecognition
+                        ? "speech transcription returned \(transcriptionResult.recognitionStatus.rawValue)"
+                        : "speech transcription completed",
+                    artifactCount: transcriptionResult.segments.count,
+                    durationSeconds: Date().timeIntervalSince(transcriptionStart),
+                    metadata: [
+                        "language": transcriptionResult.language,
+                        "overallConfidence": "\(transcriptionResult.overallConfidence)",
+                        "rawOverallConfidence": "\(transcriptionResult.qualityConfidence)",
+                        "recognitionStatus": transcriptionResult.recognitionStatus.rawValue
+                    ]
+                )
+            }
+            #if DEBUG
+            print("[Analyze] << Transcribe RETURN segments=\(transcriptionResult?.segments.count ?? -1)")
+            #endif
 
             guard let audio = audioResult, var transcript = transcriptionResult else {
                 errorMessage = "Analysis failed: missing audio or transcript data."
@@ -103,9 +218,19 @@ final class AnalysisViewModel {
 
             // Step 3+4: Smart analysis (LLM on iOS 26+, heuristics fallback)
             currentStep = 2
+            currentFailureStage = .smartAnalyzed
             liveClassifications = []
             classifiedCount = 0
             totalSegmentsToClassify = transcript.segments.count
+            let smartStart = Date()
+            PipelineDiagnostics.record(
+                projectId: projectId,
+                stage: .smartAnalyzed,
+                status: .running,
+                source: .live,
+                message: "smart transcript analysis started",
+                artifactCount: transcript.segments.count
+            )
 
             // Fetch user's past AI feedback for few-shot learning
             let feedback = (try? await PipelineRepository().fetchRecentAiFeedback(userId: userId)) ?? []
@@ -136,42 +261,115 @@ final class AnalysisViewModel {
                 fullText: transcript.fullText,
                 segments: smartResult.cleanedSegments,
                 language: transcript.language,
-                overallConfidence: transcript.overallConfidence
+                overallConfidence: transcript.overallConfidence,
+                rawOverallConfidence: transcript.rawOverallConfidence,
+                recognitionStatus: transcript.recognitionStatus
             )
+            transcript = TranscriptPostProcessor.corrected(transcript)
+            transcript = try TranscriptionValidator.validated(transcript)
             transcriptionResult = transcript
+            PipelineDiagnostics.record(
+                projectId: projectId,
+                stage: .smartAnalyzed,
+                status: .completed,
+                source: .live,
+                message: "smart transcript analysis completed",
+                artifactCount: transcript.segments.count,
+                durationSeconds: Date().timeIntervalSince(smartStart),
+                metadata: [
+                    "takeGroups": "\(smartResult.takeGroups.count)",
+                    "fillersRemoved": "\(smartResult.fillersRemoved)",
+                    "analysisMode": smartResult.mode.rawValue,
+                    "fallbackReason": smartResult.fallbackReason ?? ""
+                ]
+            )
 
             currentStep = 3
-            takeGroups = smartResult.takeGroups
-
-            // Step 5: Rough cut decisions
-            currentStep = 4
-            var roughCut = RoughCutDecisionEngine.generateDecisions(
+            currentFailureStage = .roughCut
+            takeGroups = TakeDetectionEngine.detectTakeGroups(segments: transcript.segments)
+            let timelinePlan = TechInfluencerTimelineAnalyzer.analyze(
                 transcription: transcript,
                 audioAnalysis: audio
             )
+            PipelineDiagnostics.record(
+                projectId: projectId,
+                stage: .timelineAnalyzed,
+                status: .completed,
+                source: .live,
+                message: "tech timeline analysis completed before rough cut",
+                artifactCount: timelinePlan.events.count,
+                metadata: [
+                    "events": timelinePlan.events.map(\.kind.rawValue).joined(separator: ","),
+                    "anchors": timelinePlan.events.map { event in
+                        event.anchorTime.formatted(.number.precision(.fractionLength(2)))
+                    }.joined(separator: ","),
+                    "reasons": timelinePlan.events.map(\.reason).joined(separator: " | ")
+                ]
+            )
 
-            // Apply take group results — cut non-best takes
-            if !takeGroups.isEmpty {
-                roughCut = RoughCutDecisionEngine.applyTakeGroups(takeGroups, to: roughCut)
-            }
+            // Step 5: Rough cut decisions
+            currentStep = 4
+            let roughCutStart = Date()
+            PipelineDiagnostics.record(
+                projectId: projectId,
+                stage: .roughCut,
+                status: .running,
+                source: .live,
+                message: "rough cut generation started"
+            )
+            let roughCut = RoughCutDecisionEngine.generateTechInfluencerDecisions(
+                transcription: transcript,
+                audioAnalysis: audio,
+                takeGroups: takeGroups,
+                timelinePlan: timelinePlan
+            )
             roughCutResult = roughCut
+            PipelineDiagnostics.record(
+                projectId: projectId,
+                stage: .roughCut,
+                status: .completed,
+                source: .live,
+                message: "rough cut generation completed",
+                artifactCount: roughCut.decisions.count,
+                durationSeconds: Date().timeIntervalSince(roughCutStart),
+                metadata: [
+                    "cleanDuration": "\(roughCut.cleanDuration)",
+                    "cutCount": "\(roughCut.cutSegments.count)",
+                    "reviewCount": "\(roughCut.reviewSegments.count)"
+                ]
+            )
 
             // Step 6: Verify coherence
             currentStep = 5
+            let qualityStart = Date()
             if let roughCut = roughCutResult {
-                let keptTexts = roughCut.keepSegments.compactMap { decision -> TranscriptSegment? in
-                    transcript.segments.first { seg in
-                        abs(seg.startTime - decision.startTime) < 0.1
-                    }
-                }
+                let includedDecisions = roughCut.decisions.filter { $0.isTimelineIncluded }
+                let keptTexts = MeaningPreservationEngine.keptSpeechSegments(
+                    from: transcript,
+                    roughCut: roughCut
+                )
 
                 meaningResult = MeaningPreservationEngine.verify(
                     keptSegments: keptTexts,
-                    allSegments: transcript.segments
+                    allSegments: transcript.segments.filter(Self.isSpeechLike)
                 )
 
                 continuityResult = ContinuityChecker.check(
-                    keptDecisions: roughCut.keepSegments
+                    keptDecisions: includedDecisions
+                )
+                PipelineDiagnostics.record(
+                    projectId: projectId,
+                    stage: .roughCut,
+                    status: .completed,
+                    source: .live,
+                    message: "rough cut continuity/meaning preflight completed",
+                    artifactCount: includedDecisions.count,
+                    durationSeconds: Date().timeIntervalSince(qualityStart),
+                    metadata: [
+                        "continuityScore": "\(continuityResult?.overallScore ?? 0)",
+                        "meaningScore": "\(meaningResult?.overallScore ?? 0)",
+                        "meaningCoherent": "\(meaningResult?.isCoherent ?? false)"
+                    ]
                 )
             }
 
@@ -180,11 +378,53 @@ final class AnalysisViewModel {
                 analysisDiff = computeDiff(previous: prev, newDecisions: roughCut.decisions)
             }
 
-            // Save all analysis data to DB
+            do {
+                try PipelineArtifactStore.saveAnalysis(
+                    projectId: projectId,
+                    sourceVideoURL: videoURL,
+                    transcription: transcript,
+                    roughCut: roughCut,
+                    audioAnalysis: audioResult
+                )
+            } catch {
+                #if DEBUG
+                print("[CutSense] Local pipeline artifact save failed: \(error.localizedDescription)")
+                #endif
+            }
+
+            // Save all analysis data to DB (cloud-only; local mode short-circuits)
             await saveAnalysisData(projectId: projectId, userId: userId)
         } catch {
-            errorMessage = error.localizedDescription
+            #if DEBUG
+            print("[Analyze] FAILED: \(error)")
+            #endif
+            PipelineDiagnostics.record(
+                projectId: projectId,
+                stage: currentFailureStage,
+                status: .failed,
+                source: .live,
+                message: error.localizedDescription,
+                metadata: ["currentStep": "\(currentStep)"]
+            )
+            if let localized = (error as? LocalizedError)?.errorDescription {
+                errorMessage = localized
+            } else {
+                errorMessage = "Analiz başarısız oldu. Lütfen tekrar deneyin."
+            }
             try? await PipelineRepository().updateProjectStatus(projectId, status: .failed)
+        }
+    }
+
+    private static func audioQualityReport(for audio: AudioAnalysisResult) -> AudioQualityGuard.QualityReport {
+        AudioQualityGuard.analyze(audioAnalysis: audio)
+    }
+
+    private static func isSpeechLike(_ segment: TranscriptSegment) -> Bool {
+        switch segment.segmentType {
+        case .speech, .contentSentence, .suspectedRestart, .suspectedDuplicate:
+            return true
+        case .silence, .filler, .editCommand:
+            return false
         }
     }
 
@@ -249,6 +489,23 @@ final class AnalysisViewModel {
     // MARK: - Re-analysis Diff
 
     private func loadPreviousDecisions(projectId: UUID) async {
+        if let localResult = PipelineArtifactStore.load(projectId: projectId)?.roughCutResult {
+            var classMap: [String: String] = [:]
+            for decision in localResult.decisions {
+                if let text = decision.linkedTranscriptText {
+                    classMap[text] = decision.action.rawValue
+                }
+            }
+            previousDecisionSummary = DecisionSummary(
+                keepCount: localResult.keepSegments.count,
+                cutCount: localResult.cutSegments.count,
+                reviewCount: localResult.reviewSegments.count,
+                totalSegments: localResult.decisions.count,
+                classificationMap: classMap
+            )
+            return
+        }
+
         do {
             guard let oldResult = try await PipelineRepository().fetchRoughCutDecisions(projectId: projectId) else {
                 previousDecisionSummary = nil

@@ -35,21 +35,44 @@ struct PaywallScreen: View {
                         VStack(alignment: .leading, spacing: 14) {
                             featureRow("Unlimited exports per month", icon: "infinity")
                             featureRow("No watermark on videos", icon: "xmark.rectangle")
-                            featureRow("All templates included", icon: "rectangle.stack.fill")
-                            featureRow("Priority processing", icon: "bolt.fill")
+                            featureRow("Premium captions and sound design", icon: "waveform")
+                            featureRow("Tech influencer edit style", icon: "bolt.fill")
                             featureRow("100% on-device — your data stays yours", icon: "lock.shield.fill")
                         }
                         .padding(.horizontal, 8)
 
                         // Products
-                        if store.products.isEmpty {
-                            ProgressView().tint(.white)
-                        } else {
+                        if !store.products.isEmpty {
                             VStack(spacing: 12) {
                                 ForEach(store.products.sorted { $0.price < $1.price }, id: \.id) { product in
                                     productButton(product)
                                 }
                             }
+                        } else {
+                            switch store.productLoadState {
+                            case .idle, .loading, .loaded:
+                                ProgressView().tint(.white)
+                            case .failed(let message):
+                                VStack(spacing: 12) {
+                                    Text(message)
+                                        .font(.caption)
+                                        .foregroundStyle(.red)
+                                        .multilineTextAlignment(.center)
+
+                                    Button("Retry", systemImage: "arrow.clockwise") {
+                                        Task { await store.loadProducts() }
+                                    }
+                                    .buttonStyle(.borderedProminent)
+                                }
+                            }
+                        }
+
+                        if let productLoadError = store.productLoadState.errorMessage,
+                           !store.products.isEmpty {
+                            Text(productLoadError)
+                                .font(.caption)
+                                .foregroundStyle(.orange)
+                                .multilineTextAlignment(.center)
                         }
 
                         if let error = errorMessage {
@@ -62,8 +85,14 @@ struct PaywallScreen: View {
                         VStack(spacing: 8) {
                             Button("Restore Purchases") {
                                 Task {
-                                    await store.restorePurchases()
-                                    if store.isPro { dismiss() }
+                                    switch await store.restorePurchases() {
+                                    case .restored:
+                                        dismiss()
+                                    case .noActiveSubscription:
+                                        errorMessage = "No active subscription was found for this Apple ID."
+                                    case .failed(let message):
+                                        errorMessage = message
+                                    }
                                 }
                             }
                             .font(.caption)

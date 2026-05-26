@@ -1,0 +1,10 @@
+{
+  "id": "fx_chromatic_micro_glitch",
+  "displayName": "Tech Glitch",
+  "type": "visualEffect",
+  "category": "chromatic_aberration",
+  "intensity": "medium",
+  "bestForPresets": ["tech_influencer"],
+  "moodTags": ["tech", "futuristic", "glitch"],
+  "renderHint": "chromaticOffset"
+}

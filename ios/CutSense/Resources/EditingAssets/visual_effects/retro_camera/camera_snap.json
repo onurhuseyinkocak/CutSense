@@ -1,0 +1,10 @@
+{
+  "id": "fx_camera_snap",
+  "displayName": "Camera Snap",
+  "type": "visualEffect",
+  "category": "retro_camera",
+  "intensity": "medium",
+  "bestForPresets": ["tech_influencer", "influencer"],
+  "moodTags": ["camera", "creator", "fast"],
+  "renderHint": "flashSnap"
+}

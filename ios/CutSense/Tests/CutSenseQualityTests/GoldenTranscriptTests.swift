@@ -212,12 +212,18 @@ struct GoldenTranscriptTests {
         #expect(zoomCount <= 8, "Max 8 zooms in 10 seconds (got \(zoomCount))")
         #expect(flashCount <= 5, "Max 5 flashes in 10 seconds (got \(flashCount))")
 
-        // No stacked impact+whoosh at same timestamp
+        // Layered whoosh + impact is intentional; only duplicate same-lane spam should be blocked.
         let sfxDecisions = editPlan.decisions.filter { $0.type == .sfx }
         for sfx in sfxDecisions {
-            let sameTimeSfx = sfxDecisions.filter { abs($0.time - sfx.time) < 0.1 && $0.reason != sfx.reason }
-            #expect(sameTimeSfx.isEmpty,
-                    "No stacked SFX at same timestamp (\(sfx.time)s)")
+            let sameTimeSameLane = sfxDecisions.filter { other in
+                other.id != sfx.id &&
+                    abs(other.time - sfx.time) < 0.1 &&
+                    SFXAssetManager.sound(for: other) == SFXAssetManager.sound(for: sfx)
+            }
+            #expect(
+                sameTimeSameLane.isEmpty,
+                "No duplicate same-lane SFX at same timestamp (\(sfx.time)s)"
+            )
         }
     }
 }

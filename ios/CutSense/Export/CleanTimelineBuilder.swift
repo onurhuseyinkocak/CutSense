@@ -1,29 +1,34 @@
 import AVFoundation
+import CoreGraphics
 
 struct CleanTimeline: @unchecked Sendable {
     let composition: AVMutableComposition
     let videoTrack: AVMutableCompositionTrack
     let audioTrack: AVMutableCompositionTrack
     let totalDuration: CMTime
+    let sourceRanges: [TimelineRange]
+    let sourceTransform: CGAffineTransform
 }
 
 enum CleanTimelineBuilder {
     enum TimelineError: Error, LocalizedError {
         case noVideoTrack
         case noAudioTrack
+        case noIncludedRanges
         case insertFailed(String)
 
         var errorDescription: String? {
             switch self {
             case .noVideoTrack: "Source video has no video track."
             case .noAudioTrack: "Source video has no audio track."
+            case .noIncludedRanges: "No timeline-included ranges were produced from rough cut decisions."
             case .insertFailed(let msg): "Timeline insert failed: \(msg)"
             }
         }
     }
 
-    /// Audio crossfade duration at cut boundaries
-    private static let crossfadeDuration: Double = 0.05
+    /// Audio crossfade duration at cut boundaries (increased from 0.05s to reduce stutter perception)
+    private static let crossfadeDuration: Double = 0.15
 
     static func build(
         from sourceURL: URL,
@@ -33,6 +38,8 @@ enum CleanTimelineBuilder {
 
         let videoTracks = try await asset.loadTracks(withMediaType: .video)
         let audioTracks = try await asset.loadTracks(withMediaType: .audio)
+        let duration = try await asset.load(.duration)
+        let durationSeconds = CMTimeGetSeconds(duration)
 
         guard let sourceVideoTrack = videoTracks.first else {
             throw TimelineError.noVideoTrack
@@ -58,32 +65,39 @@ enum CleanTimelineBuilder {
         let transform = try await sourceVideoTrack.load(.preferredTransform)
         compVideoTrack.preferredTransform = transform
 
-        // Get keep segments, sorted by time
-        let keepSegments = decisions
-            .filter { $0.action == .keep }
-            .sorted { $0.startTime < $1.startTime }
+        let includedRanges = TimelineRangeNormalizer.includedRanges(
+            from: decisions,
+            assetDuration: durationSeconds
+        )
 
-        guard !keepSegments.isEmpty else {
-            // If no explicit keep segments, keep entire video
-            let duration = try await asset.load(.duration)
+        guard !includedRanges.isEmpty else {
+            guard decisions.isEmpty else {
+                throw TimelineError.noIncludedRanges
+            }
+
             let timeRange = CMTimeRange(start: .zero, duration: duration)
             try compVideoTrack.insertTimeRange(timeRange, of: sourceVideoTrack, at: .zero)
             if let sourceAudioTrack = audioTracks.first {
                 try compAudioTrack.insertTimeRange(timeRange, of: sourceAudioTrack, at: .zero)
             }
+            let sourceRanges = durationSeconds.isFinite && durationSeconds > 0
+                ? [TimelineRange(startTime: 0, endTime: durationSeconds)]
+                : []
             return CleanTimeline(
                 composition: composition,
                 videoTrack: compVideoTrack,
                 audioTrack: compAudioTrack,
-                totalDuration: duration
+                totalDuration: duration,
+                sourceRanges: sourceRanges,
+                sourceTransform: transform
             )
         }
 
         var insertTime = CMTime.zero
 
-        for segment in keepSegments {
-            let startCM = CMTime(seconds: segment.startTime, preferredTimescale: 600)
-            let endCM = CMTime(seconds: segment.endTime, preferredTimescale: 600)
+        for range in includedRanges {
+            let startCM = CMTime(seconds: range.startTime, preferredTimescale: 600)
+            let endCM = CMTime(seconds: range.endTime, preferredTimescale: 600)
             let timeRange = CMTimeRange(start: startCM, end: endCM)
 
             do {
@@ -101,7 +115,9 @@ enum CleanTimelineBuilder {
             composition: composition,
             videoTrack: compVideoTrack,
             audioTrack: compAudioTrack,
-            totalDuration: insertTime
+            totalDuration: insertTime,
+            sourceRanges: includedRanges,
+            sourceTransform: transform
         )
     }
 
@@ -137,5 +153,33 @@ enum CleanTimelineBuilder {
         }
 
         return baseMix
+    }
+
+    /// Merge adjacent keep decisions whose gap is below `maxGap` seconds. Removes the tiny
+    /// sample-boundary jolts that AVFoundation produces when inserting back-to-back ranges.
+    /// Preserves all other metadata from the FIRST decision in each coalesced run.
+    static func coalesceTinyGaps(_ keeps: [RoughCutDecision], maxGap: Double) -> [RoughCutDecision] {
+        guard keeps.count > 1 else { return keeps }
+        var result: [RoughCutDecision] = []
+        var current = keeps[0]
+        for next in keeps.dropFirst() {
+            if next.startTime - current.endTime <= maxGap {
+                // Extend current to absorb next (and any silence between)
+                current = RoughCutDecision(
+                    startTime: current.startTime,
+                    endTime: max(current.endTime, next.endTime),
+                    action: .keep,
+                    reason: current.reason,
+                    confidence: min(current.confidence, next.confidence),
+                    linkedTranscriptText: current.linkedTranscriptText,
+                    requiresReview: current.requiresReview || next.requiresReview
+                )
+            } else {
+                result.append(current)
+                current = next
+            }
+        }
+        result.append(current)
+        return result
     }
 }

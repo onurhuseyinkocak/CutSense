@@ -19,6 +19,31 @@ enum MeaningPreservationEngine {
         case high
     }
 
+    static func keptSpeechSegments(
+        from transcription: TranscriptionResult,
+        roughCut: RoughCutResult
+    ) -> [TranscriptSegment] {
+        let includedRanges = TimelineRangeNormalizer.includedRanges(
+            from: roughCut.decisions,
+            assetDuration: roughCut.originalDuration
+        )
+        let ranges = includedRanges.isEmpty && roughCut.decisions.isEmpty
+            ? [TimelineRange(startTime: 0, endTime: roughCut.originalDuration)]
+            : includedRanges
+
+        return transcription.segments.filter { segment in
+            guard isSpeechLike(segment), segment.endTime > segment.startTime else {
+                return false
+            }
+
+            let duration = segment.endTime - segment.startTime
+            let overlap = ranges.reduce(0.0) { total, range in
+                total + max(0, min(segment.endTime, range.endTime) - max(segment.startTime, range.startTime))
+            }
+            return overlap >= min(0.12, duration * 0.50) || overlap / duration >= 0.45
+        }
+    }
+
     /// Verify that kept segments form a coherent narrative
     static func verify(
         keptSegments: [TranscriptSegment],
@@ -109,5 +134,14 @@ enum MeaningPreservationEngine {
             issues: issues,
             overallScore: min(score, 100)
         )
+    }
+
+    private static func isSpeechLike(_ segment: TranscriptSegment) -> Bool {
+        switch segment.segmentType {
+        case .speech, .contentSentence, .suspectedRestart, .suspectedDuplicate:
+            return true
+        case .silence, .filler, .editCommand:
+            return false
+        }
     }
 }

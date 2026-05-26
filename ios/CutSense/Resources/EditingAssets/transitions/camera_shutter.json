@@ -1,0 +1,7 @@
+{
+  "id": "transition_camera_shutter",
+  "displayName": "Camera Shutter",
+  "style": "flash",
+  "duration": 0.16,
+  "intensity": "medium"
+}

@@ -9,7 +9,8 @@ struct EditScreen: View {
     @State private var analysisVM = AnalysisViewModel()
     @State private var captionVM = CaptionPreviewViewModel()
     @State private var exportService = ExportService()
-    @State private var selectedTemplate: TemplateConfig? = TemplateConfig.all.first
+    @State private var selectedTemplate: TemplateConfig? = .techInfluencer
+    @State private var didUserSelectTemplate = false
     @State private var phase: EditPhase = .analyzing
     @State private var showRoughCutDetail = false
     @State private var showPaywall = false
@@ -17,6 +18,8 @@ struct EditScreen: View {
     @State private var isSaving = false
     @State private var isExportPressed = false
     @State private var selectedTemplateForAnimation: UUID?
+    @State private var activeExportRunId: UUID?
+    @State private var reviewBlockerMessage: String?
     private var store: SubscriptionManager { .shared }
 
     enum EditPhase {
@@ -35,6 +38,7 @@ struct EditScreen: View {
             VStack(spacing: 0) {
                 // Compact video preview
                 VideoPlayerView(url: exportedURL ?? videoURL)
+                    .id((exportedURL ?? videoURL).standardizedFileURL.absoluteString)
                     .frame(height: 300)
                     .clipShape(RoundedRectangle(cornerRadius: 12))
                     .padding(.horizontal, 12)
@@ -66,13 +70,7 @@ struct EditScreen: View {
         .navigationBarTitleDisplayMode(.inline)
         .toolbarColorScheme(.dark, for: .navigationBar)
         .task {
-            guard let userId = authManager.effectiveUserId else { return }
-            await analysisVM.analyze(videoURL: videoURL, projectId: projectId, userId: userId)
-            if analysisVM.roughCutResult != nil {
-                phase = .ready
-            } else if let error = analysisVM.errorMessage {
-                phase = .failed(error)
-            }
+            await loadOrAnalyze()
         }
     }
 
@@ -158,6 +156,16 @@ struct EditScreen: View {
                 .background(Color.white.opacity(0.05))
                 .clipShape(RoundedRectangle(cornerRadius: 12))
                 .padding(.horizontal)
+
+                if let reviewNotice = reviewNoticeText(for: result) {
+                    ReviewRequiredBanner(
+                        message: reviewNotice,
+                        action: {
+                            showRoughCutDetail = true
+                        }
+                    )
+                    .padding(.horizontal)
+                }
             }
 
             // Optional: fine-tune rough cut
@@ -217,14 +225,21 @@ struct EditScreen: View {
                     .foregroundStyle(.gray)
             }
         }
-        .sheet(isPresented: $showRoughCutDetail) {
+        .sheet(
+            isPresented: $showRoughCutDetail,
+            onDismiss: {
+                if analysisVM.roughCutResult?.reviewSegments.isEmpty == true {
+                    reviewBlockerMessage = nil
+                }
+            }
+        ) {
             if analysisVM.roughCutResult != nil,
                let transcript = analysisVM.transcriptionResult {
                 NavigationStack {
                     RoughCutReviewScreen(
                         roughCut: Binding(
                             get: { self.analysisVM.roughCutResult! },
-                            set: { self.analysisVM.roughCutResult = $0 }
+                            set: { self.applyReviewedRoughCut($0) }
                         ),
                         transcription: transcript,
                         videoURL: videoURL,
@@ -244,6 +259,21 @@ struct EditScreen: View {
         }
     }
 
+    private func reviewNoticeText(for result: RoughCutResult) -> String? {
+        if !result.reviewSegments.isEmpty {
+            return "\(result.reviewSegments.count) uncertain cut decision(s) need review before export."
+        }
+        return reviewBlockerMessage
+    }
+
+    private func applyReviewedRoughCut(_ roughCut: RoughCutResult) {
+        analysisVM.roughCutResult = roughCut
+        captionVM.invalidate()
+        if roughCut.reviewSegments.isEmpty {
+            reviewBlockerMessage = nil
+        }
+    }
+
     private func templatePill(_ template: TemplateConfig) -> some View {
         let isSelected = selectedTemplate?.id == template.id
         @GestureState var isPressing = false
@@ -251,6 +281,8 @@ struct EditScreen: View {
         return Button {
             withAnimation(.easeInOut(duration: 0.15)) {
                 selectedTemplate = template
+                didUserSelectTemplate = true
+                captionVM.invalidate()
                 HapticEngine.select()
             }
         } label: {
@@ -312,7 +344,9 @@ struct EditScreen: View {
                 .foregroundStyle(.gray)
 
             Button("Cancel") {
+                activeExportRunId = nil
                 exportService.cancelExport()
+                exportService = ExportService()
                 phase = .ready
             }
             .foregroundStyle(.red)
@@ -380,12 +414,8 @@ struct EditScreen: View {
                     phase = .ready
                 } else {
                     phase = .analyzing
-                    guard let userId = authManager.effectiveUserId else { return }
                     Task {
-                        await analysisVM.analyze(videoURL: videoURL, projectId: projectId, userId: userId)
-                        if analysisVM.roughCutResult != nil {
-                            phase = .ready
-                        }
+                        await loadOrAnalyze(useCachedArtifacts: false)
                     }
                 }
             } label: {
@@ -409,44 +439,164 @@ struct EditScreen: View {
               let transcript = analysisVM.transcriptionResult,
               let template = selectedTemplate else { return }
 
+        let includedRanges = TimelineRangeNormalizer.includedRanges(
+            from: roughCut.decisions,
+            assetDuration: roughCut.originalDuration
+        )
+        guard !includedRanges.isEmpty || roughCut.decisions.isEmpty else {
+            phase = .failed("Rough cut removed every segment. Fine-tune cuts and restore at least one segment before exporting.")
+            return
+        }
+
+        await store.checkSubscriptionStatus()
         guard store.canExport else {
             showPaywall = true
             return
         }
 
+        guard roughCut.reviewSegments.isEmpty else {
+            promptCutReviewBeforeExport(
+                roughCut: roughCut,
+                failedChecks: "Review required"
+            )
+            return
+        }
+
+        let runId = UUID()
+        activeExportRunId = runId
+        defer {
+            if activeExportRunId == runId {
+                activeExportRunId = nil
+            }
+        }
+
         // Phase: generating captions
         phase = .generatingCaptions
-        await captionVM.generate(
-            transcription: transcript,
-            roughCut: roughCut,
-            template: template
-        )
-
-        // Save caption data
-        if let userId = authManager.effectiveUserId {
-            await captionVM.saveCaptionData(
-                projectId: projectId,
-                userId: userId,
-                templateName: template.name
+        let restoredCaptionArtifacts = !CutSenseDebugRuntime.forcePipelineExecution
+            && captionVM.restoreArtifacts(projectId: projectId, template: template)
+        if !restoredCaptionArtifacts {
+            await captionVM.generate(
+                transcription: transcript,
+                roughCut: roughCut,
+                template: template,
+                audioQuality: analysisVM.audioQualityReport,
+                projectId: projectId
             )
+            guard isActiveExportRun(runId) else { return }
+
+            // Save caption data
+            if let userId = authManager.effectiveUserId {
+                await captionVM.saveCaptionData(
+                    projectId: projectId,
+                    userId: userId,
+                    template: template
+                )
+            }
+        } else {
+            captionVM.evaluateQuality(
+                transcription: transcript,
+                roughCut: roughCut,
+                template: template,
+                audioQuality: analysisVM.audioQualityReport,
+                projectId: projectId
+            )
+        }
+        guard isActiveExportRun(runId) else { return }
+
+        guard let report = captionVM.qualityReport else {
+            PipelineDiagnostics.record(
+                projectId: projectId,
+                stage: .exported,
+                status: .failed,
+                source: .export,
+                message: "export blocked because quality gate did not produce a report"
+            )
+            phase = .failed("Export quality check failed: missing quality report")
+            return
+        }
+
+        if !report.passed {
+            let failedChecks = report.failedChecks.map(\.name).joined(separator: ", ")
+            let failedCheckDetails = report.failedChecks.map { "\($0.name): \($0.detail)" }.joined(separator: " | ")
+            PipelineDiagnostics.record(
+                projectId: projectId,
+                stage: .exported,
+                status: .failed,
+                source: .export,
+                message: "export blocked by quality gate",
+                metadata: [
+                    "score": "\(report.score)",
+                    "failedChecks": failedChecks,
+                    "failedCheckDetails": failedCheckDetails
+                ]
+            )
+            if report.failedChecks.contains(where: { $0.name == "Review required" }) {
+                promptCutReviewBeforeExport(
+                    roughCut: roughCut,
+                    failedChecks: failedChecks
+                )
+            } else {
+                phase = .failed("Export quality check failed: \(failedChecks)")
+            }
+            return
         }
 
         // Phase: exporting
+        await store.checkSubscriptionStatus()
+        guard store.canExport else {
+            showPaywall = true
+            return
+        }
+        let isProEntitled = store.isPro
+
         phase = .exporting
+        let exportStart = Date()
+        PipelineDiagnostics.record(
+            projectId: projectId,
+            stage: .exported,
+            status: .running,
+            source: .export,
+            message: "export started from edit screen",
+            metadata: [
+                "template": template.id,
+                "debugProOverride": "\(CutSenseDebugRuntime.forceProEntitlement)"
+            ]
+        )
 
         if authManager.effectiveUserId != nil {
             try? await PipelineRepository().updateProjectStatus(projectId, status: .exporting)
         }
+        guard isActiveExportRun(runId) else { return }
 
         let url = await exportService.exportWithPipeline(
             sourceURL: videoURL,
             decisions: roughCut.decisions,
             captions: captionVM.captions,
             template: template,
-            editPlan: captionVM.editPlan
+            editPlan: captionVM.editPlan,
+            isProEntitled: isProEntitled
         )
+        guard isActiveExportRun(runId) else { return }
 
         if let url {
+            let fileSize = try? FileManager.default.attributesOfItem(atPath: url.path)[.size] as? Int64
+            let verification = exportService.lastVerificationReport
+            PipelineDiagnostics.record(
+                projectId: projectId,
+                stage: .exported,
+                status: .completed,
+                source: .export,
+                message: "export completed from edit screen",
+                artifactCount: 1,
+                durationSeconds: Date().timeIntervalSince(exportStart),
+                metadata: [
+                    "fileSizeBytes": "\(fileSize ?? 0)",
+                    "outputPath": url.path,
+                    "postExportVerified": "\(verification?.passed ?? false)",
+                    "postExportFailures": verification?.failureSummary ?? "",
+                    "resolution": verification?.resolution ?? ""
+                ]
+            )
             phase = .done(url)
             UINotificationFeedbackGenerator().notificationOccurred(.success)
             store.recordExport()
@@ -458,33 +608,170 @@ struct EditScreen: View {
 
             // Save export record
             if let userId = authManager.effectiveUserId {
-                await saveExportRecord(userId: userId, fileURL: url)
+                await saveExportRecord(
+                    userId: userId,
+                    fileURL: url,
+                    qualityReport: captionVM.qualityReport,
+                    verificationReport: verification
+                )
             }
         } else {
+            PipelineDiagnostics.record(
+                projectId: projectId,
+                stage: .exported,
+                status: .failed,
+                source: .export,
+                message: exportService.errorMessage ?? "export failed from edit screen",
+                durationSeconds: Date().timeIntervalSince(exportStart)
+            )
             phase = .failed(exportService.errorMessage ?? "Export failed")
         }
     }
 
-    private func saveExportRecord(userId: UUID, fileURL: URL) async {
+    private func isActiveExportRun(_ runId: UUID) -> Bool {
+        activeExportRunId == runId
+    }
+
+    private func promptCutReviewBeforeExport(roughCut: RoughCutResult, failedChecks: String) {
+        reviewBlockerMessage = "\(roughCut.reviewSegments.count) uncertain cut decision(s) need review before export."
+        PipelineDiagnostics.record(
+            projectId: projectId,
+            stage: .exported,
+            status: .failed,
+            source: .export,
+            message: "export waiting for rough cut review",
+            metadata: [
+                "reviewCount": "\(roughCut.reviewSegments.count)",
+                "failedChecks": failedChecks
+            ]
+        )
+        phase = .ready
+        showRoughCutDetail = true
+    }
+
+    private func loadOrAnalyze(useCachedArtifacts: Bool = true) async {
+        guard let userId = authManager.effectiveUserId else {
+            phase = .failed("User session unavailable.")
+            return
+        }
+
+        let shouldUseCache = useCachedArtifacts && !CutSenseDebugRuntime.forcePipelineExecution
+        if shouldUseCache,
+           analysisVM.restoreArtifacts(projectId: projectId, expectedVideoURL: videoURL) {
+            await applyAutonomousTemplateSelection()
+            phase = .ready
+            return
+        }
+
+        if CutSenseDebugRuntime.forcePipelineExecution {
+            PipelineDiagnostics.record(
+                projectId: projectId,
+                stage: .imported,
+                status: .running,
+                source: .live,
+                message: "debug forced live pipeline execution; cache bypassed"
+            )
+        }
+
+        await analysisVM.analyze(videoURL: videoURL, projectId: projectId, userId: userId)
+        if analysisVM.roughCutResult != nil {
+            await applyAutonomousTemplateSelection()
+            phase = .ready
+        } else if let error = analysisVM.errorMessage {
+            phase = .failed(error)
+        } else {
+            phase = .failed("Analysis did not produce a rough cut.")
+        }
+    }
+
+    private func applyAutonomousTemplateSelection() async {
+        guard !didUserSelectTemplate,
+              let transcript = analysisVM.transcriptionResult,
+              let roughCut = analysisVM.roughCutResult,
+              let audio = analysisVM.audioResult else {
+            return
+        }
+
+        guard let selection = await TemplateRecommendationEngine.selectAutonomousTemplate(
+            transcription: transcript,
+            roughCut: roughCut,
+            audio: audio,
+            sourceURL: videoURL
+        ) else { return }
+
+        let previousTemplateId = selectedTemplate?.id
+        selectedTemplate = selection.template
+        if previousTemplateId != selection.template.id {
+            captionVM.invalidate()
+        }
+
+        PipelineDiagnostics.record(
+            projectId: projectId,
+            stage: .templateSelected,
+            status: .completed,
+            source: .live,
+            message: "autonomous template selected",
+            metadata: [
+                "template": selection.template.id,
+                "reason": selection.recommendation.reason,
+                "score": selection.recommendation.score.formatted(.number.precision(.fractionLength(1))),
+                "confidence": selection.recommendation.confidence.formatted(.number.precision(.fractionLength(2))),
+                "intensityLevel": selection.intensityLevel.formatted(.number.precision(.fractionLength(2)))
+            ]
+        )
+    }
+
+    private func saveExportRecord(
+        userId: UUID,
+        fileURL: URL,
+        qualityReport: QualityReport?,
+        verificationReport: ExportVerificationReport?
+    ) async {
         let pipeline = PipelineRepository()
+        let fileSize = try? FileManager.default.attributesOfItem(atPath: fileURL.path)[.size] as? Int64
+        let asset = AVURLAsset(url: fileURL)
+        let exportDuration = try? await asset.load(.duration)
+        let durationSecs = verificationReport?.duration ?? exportDuration.map { CMTimeGetSeconds($0) }
+        let resolution = verificationReport?.resolution
+
         do {
-            let fileSize = try? FileManager.default.attributesOfItem(atPath: fileURL.path)[.size] as? Int64
-            let asset = AVURLAsset(url: fileURL)
-            let exportDuration = try? await asset.load(.duration)
-            let durationSecs = exportDuration.map { CMTimeGetSeconds($0) }
+            try PipelineArtifactStore.saveExport(
+                projectId: projectId,
+                fileURL: fileURL,
+                duration: durationSecs,
+                resolution: resolution,
+                templateName: selectedTemplate?.name,
+                fileSizeBytes: fileSize,
+                qualityReport: qualityReport,
+                verificationReport: verificationReport
+            )
+        } catch {
+            #if DEBUG
+            print("[CutSense] Local export artifact save failed: \(error.localizedDescription)")
+            #endif
+        }
+
+        do {
             try await pipeline.saveExport(
                 projectId: projectId,
                 userId: userId,
                 localFileName: fileURL.lastPathComponent,
                 duration: durationSecs,
-                resolution: "1080x1920",
+                resolution: resolution,
                 templateName: selectedTemplate?.name,
                 fileSizeBytes: fileSize
             )
+        } catch {
+            #if DEBUG
+            print("[CutSense] Cloud export record save failed: \(error.localizedDescription)")
+            #endif
+        }
+
+        do {
             try await pipeline.updateProjectStatus(projectId, status: .exported)
         } catch {
             #if DEBUG
-            print("[CutSense] DB save after export failed: \(error.localizedDescription)")
+            print("[CutSense] Export status update failed: \(error.localizedDescription)")
             #endif
         }
     }
@@ -514,5 +801,39 @@ struct EditScreen: View {
         let mins = Int(seconds) / 60
         let secs = Int(seconds) % 60
         return String(format: "%d:%02d", mins, secs)
+    }
+}
+
+private struct ReviewRequiredBanner: View {
+    let message: String
+    let action: () -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(alignment: .top, spacing: 10) {
+                Image(systemName: "eye.trianglebadge.exclamationmark")
+                    .foregroundStyle(.yellow)
+
+                Text(message)
+                    .font(.subheadline)
+                    .foregroundStyle(.white)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
+
+            Button("Review Cuts", systemImage: "eye", action: action)
+                .font(.caption.bold())
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 10)
+                .background(Color.yellow.opacity(0.16))
+                .foregroundStyle(.yellow)
+                .clipShape(.rect(cornerRadius: 8))
+        }
+        .padding()
+        .background(Color.yellow.opacity(0.06))
+        .overlay(
+            RoundedRectangle(cornerRadius: 12)
+                .stroke(Color.yellow.opacity(0.25), lineWidth: 1)
+        )
+        .clipShape(.rect(cornerRadius: 12))
     }
 }

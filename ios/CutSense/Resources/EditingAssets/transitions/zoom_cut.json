@@ -1,0 +1,7 @@
+{
+  "id": "transition_zoom_cut",
+  "displayName": "Zoom Cut",
+  "style": "whipPan",
+  "duration": 0.18,
+  "intensity": "high"
+}

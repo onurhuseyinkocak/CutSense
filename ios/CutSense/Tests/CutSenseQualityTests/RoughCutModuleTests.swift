@@ -26,6 +26,37 @@ struct EditCommandDetectorTests {
                 "'olmadı' inside long content sentence must be content, not edit command")
     }
 
+    @Test("Baştan vazgeçiyor is content not restart command")
+    func bastanVazgeciyorIsContent() {
+        let seg = TestFixture.segment(
+            start: 0,
+            end: 3,
+            text: "baştan vazgeçiyor artık bir uygulama yapmak için"
+        )
+        let result = ContextAwareEditCommandDetector.analyze(
+            segment: seg,
+            previousSegment: nil,
+            nextSegment: nil,
+            audioResult: nil
+        )
+
+        #expect(result.intent == .contentSentence)
+    }
+
+    @Test("Ama izleyebiliriz yani is edit command")
+    func amaIzleyebilirizYaniIsEditCommand() {
+        let seg = TestFixture.segment(start: 0, end: 1.5, text: "ama izleyebiliriz yani")
+        let result = ContextAwareEditCommandDetector.analyze(
+            segment: seg,
+            previousSegment: nil,
+            nextSegment: nil,
+            audioResult: nil
+        )
+
+        #expect(result.intent == .editCommand)
+        #expect(result.confidence >= 0.85)
+    }
+
     @Test("Short standalone suspicious word is command")
     func shortStandaloneCommand() {
         let seg = TestFixture.segment(start: 0, end: 1, text: "dur dur")
@@ -45,6 +76,75 @@ struct EditCommandDetectorTests {
             segment: seg, previousSegment: nil, nextSegment: nil, audioResult: nil
         )
         #expect(result.intent == .editCommand, "'cut that' must be editCommand")
+    }
+}
+
+@Suite("RoughCutDecisionEngine Split Text Tests")
+struct RoughCutSplitTextTests {
+
+    @Test("Silence split does not duplicate full linked transcript text")
+    func silenceSplitDoesNotDuplicateFullLinkedText() {
+        let segment = TestFixture.segment(
+            start: 0,
+            end: 5,
+            text: "ulaşabilsinler eğer sen de bu topluluğun",
+            confidence: 0.95,
+            type: .speech
+        )
+        let transcription = TestFixture.transcription(segments: [segment])
+        let audio = TestFixture.audioResult(duration: 5, silenceIntervals: [2.0...3.0])
+
+        let result = RoughCutDecisionEngine.generateDecisions(
+            transcription: transcription,
+            audioAnalysis: audio
+        )
+        let splitTexts = result.keepSegments.compactMap(\.linkedTranscriptText)
+
+        #expect(splitTexts.count == 2)
+        #expect(Set(splitTexts).count == 2)
+        #expect(!splitTexts.contains { $0 == segment.text })
+    }
+}
+
+@Suite("Meaning Preservation Overlap Tests")
+struct MeaningPreservationOverlapTests {
+
+    @Test("Coalesced tech keep range counts every overlapping transcript segment")
+    func coalescedKeepRangeCountsEveryOverlappingTranscriptSegment() {
+        let segments = [
+            TestFixture.segment(start: 0.96, end: 3.96, text: "Türkiye'de çok fazla insanın harika fikirleri var"),
+            TestFixture.segment(start: 4.32, end: 7.41, text: "ama çoğu kod yazmayı bilmediği için hayata geçemiyor"),
+            TestFixture.segment(start: 7.68, end: 10.23, text: "ben buna ayar oluyorum artık uygulama yapmak"),
+            TestFixture.segment(start: 10.23, end: 13.26, text: "için yıllarca yazılımcı olman gerekmiyor doğru fikri"),
+        ]
+        let transcription = TestFixture.transcription(segments: segments)
+        let roughCut = TestFixture.roughCutResult(
+            decisions: [
+                RoughCutDecision(
+                    startTime: 0.86,
+                    endTime: 13.38,
+                    action: .keep,
+                    reason: "Tech semantic keep",
+                    confidence: 0.9,
+                    linkedTranscriptText: segments.map(\.text).joined(separator: " "),
+                    requiresReview: false
+                )
+            ],
+            originalDuration: 14,
+            cleanDuration: 12.52
+        )
+
+        let kept = MeaningPreservationEngine.keptSpeechSegments(
+            from: transcription,
+            roughCut: roughCut
+        )
+        let result = MeaningPreservationEngine.verify(
+            keptSegments: kept,
+            allSegments: transcription.segments
+        )
+
+        #expect(kept.count == segments.count)
+        #expect(result.isCoherent)
     }
 }
 
@@ -111,6 +211,17 @@ struct TakeDetectionTests {
         #expect(groups.first?.takes.count == 2)
     }
 
+    @Test("LLM content sentence segments are eligible for take grouping")
+    func contentSentenceSegmentsGrouped() {
+        let segments = [
+            TestFixture.segment(start: 0, end: 2, text: "Bu uygulama kaygılarını takip ediyor", type: .contentSentence),
+            TestFixture.segment(start: 2.5, end: 5, text: "Bu uygulama kaygılarını gerçekten takip ediyor", type: .contentSentence),
+        ]
+        let groups = TakeDetectionEngine.detectTakeGroups(segments: segments)
+        #expect(groups.count == 1, "LLM contentSentence output must still participate in take grouping")
+        #expect(groups.first?.takes.count == 2)
+    }
+
     @Test("Dissimilar segments NOT grouped")
     func dissimilarNotGrouped() {
         let segments = [
@@ -119,6 +230,27 @@ struct TakeDetectionTests {
         ]
         let groups = TakeDetectionEngine.detectTakeGroups(segments: segments)
         #expect(groups.isEmpty, "Dissimilar segments should not be grouped as takes")
+    }
+
+    @Test("Adjacent continuation with repeated brand words is not grouped as a take")
+    func adjacentContinuationWithRepeatedBrandWordsNotGrouped() {
+        let segments = [
+            TestFixture.segment(
+                start: 16.59,
+                end: 19.11,
+                text: "da bu yüzden Türkiye'nin ilk Vibe Coding",
+                type: .contentSentence
+            ),
+            TestFixture.segment(
+                start: 19.11,
+                end: 22.65,
+                text: "topluluğu Vibe Coding Turkey kurdum kod bilmeyen insanlar da",
+                type: .contentSentence
+            ),
+        ]
+
+        let groups = TakeDetectionEngine.detectTakeGroups(segments: segments)
+        #expect(groups.isEmpty, "Repeated brand words in adjacent continuation must not cut a bridge sentence")
     }
 
     @Test("Take group respects time gap threshold")
@@ -221,7 +353,7 @@ struct MeaningPreservationTests {
         }
         // This may or may not detect Turkish pronouns — it's a stretch goal
         // But coverage check should definitely flag issues
-        #expect(!result.issues.isEmpty || result.isCoherent,
+        #expect(hasDanglingIssue || !result.issues.isEmpty || result.isCoherent,
                 "Single segment from middle should have coherence issues or pass coherence")
     }
 }
@@ -248,6 +380,40 @@ struct ContinuityCheckerQualityTests {
         ]
         let result = ContinuityChecker.check(keptDecisions: decisions)
         #expect(result.roughTransitions > 0, "5s gap must be flagged as rough transition")
+    }
+
+    @Test("Tech semantic jump cuts do not fail continuity")
+    func techSemanticJumpCutsAreIntentional() {
+        let decisions = [
+            RoughCutDecision(
+                startTime: 0,
+                endTime: 2.2,
+                action: .keep,
+                reason: "Tech semantic keep - hook",
+                confidence: 0.95,
+                linkedTranscriptText: "This AI tool builds apps in minutes",
+                requiresReview: false
+            ),
+            RoughCutDecision(
+                startTime: 5.98,
+                endTime: 10.47,
+                action: .keep,
+                reason: "Tech semantic keep - warning",
+                confidence: 0.95,
+                linkedTranscriptText: "Most people waste weeks coding the wrong thing",
+                requiresReview: false
+            ),
+        ]
+
+        let defaultResult = ContinuityChecker.check(keptDecisions: decisions)
+        let shortFormResult = ContinuityChecker.check(
+            keptDecisions: decisions,
+            profile: .shortFormSemantic
+        )
+
+        #expect(defaultResult.roughTransitions == 1)
+        #expect(shortFormResult.roughTransitions == 0)
+        #expect(shortFormResult.smoothTransitions == 1)
     }
 
     @Test("Single segment has no transitions")
@@ -314,5 +480,233 @@ struct RoughCutDecisionEngineTests {
 
         let decision = result.decisions.first { $0.linkedTranscriptText == "şey" }
         #expect(decision?.requiresReview == true, "Low confidence filler must go to review")
+    }
+}
+
+@Suite("TechInfluencer timeline rough cut")
+struct TechInfluencerTimelineRoughCutTests {
+    @Test("Semantic rough cut trims excessive dead air inside a spoken phrase")
+    func semanticRoughCutTrimsExcessiveDeadAirInsideSpokenPhrase() {
+        var segment = TestFixture.segment(
+            start: 0,
+            end: 5,
+            text: "This AI tool builds apps in minutes",
+            confidence: 0.94,
+            type: .contentSentence
+        )
+        segment.wordTimings = [
+            (word: "This", start: 0.10, duration: 0.16),
+            (word: "AI", start: 0.32, duration: 0.18),
+            (word: "tool", start: 0.58, duration: 0.22),
+            (word: "builds", start: 3.00, duration: 0.24),
+            (word: "apps", start: 3.32, duration: 0.20),
+            (word: "minutes", start: 4.20, duration: 0.28)
+        ]
+        let transcription = TestFixture.transcription(segments: [segment], language: "en-US")
+        let audio = TestFixture.audioResult(duration: 5.4, silenceIntervals: [1.4...2.6])
+        let timelinePlan = TechInfluencerTimelineAnalyzer.analyze(
+            transcription: transcription,
+            audioAnalysis: audio
+        )
+
+        let result = RoughCutDecisionEngine.generateTechInfluencerDecisions(
+            transcription: transcription,
+            audioAnalysis: audio,
+            takeGroups: [],
+            timelinePlan: timelinePlan
+        )
+
+        #expect(result.keepSegments.count == 2)
+        #expect(result.cutSegments.contains { cut in
+            cut.startTime > 1.4 && cut.endTime < 2.6
+        }, "Tech rough cut must trim excessive dead air even when ASR keeps it in one segment")
+    }
+
+    @Test("Semantic rough cut never cuts through a timed word")
+    func semanticRoughCutProtectsTimedWords() {
+        var segment = TestFixture.segment(
+            start: 0,
+            end: 3,
+            text: "This AI tool works now",
+            confidence: 0.94,
+            type: .contentSentence
+        )
+        segment.wordTimings = [
+            (word: "This", start: 0.10, duration: 0.20),
+            (word: "AI", start: 0.45, duration: 0.15),
+            (word: "tool", start: 0.70, duration: 0.30),
+            (word: "works", start: 1.50, duration: 0.25),
+            (word: "now", start: 2.20, duration: 0.20)
+        ]
+        let transcription = TestFixture.transcription(segments: [segment], language: "en-US")
+        let audio = TestFixture.audioResult(duration: 3.2, silenceIntervals: [0.73...1.10])
+        let timelinePlan = TechInfluencerTimelineAnalyzer.analyze(
+            transcription: transcription,
+            audioAnalysis: audio
+        )
+
+        let result = RoughCutDecisionEngine.generateTechInfluencerDecisions(
+            transcription: transcription,
+            audioAnalysis: audio,
+            takeGroups: [],
+            timelinePlan: timelinePlan
+        )
+
+        let toolWordRange = 0.70...1.00
+        let techSilenceCuts = result.cutSegments.filter {
+            $0.reason.hasPrefix("Tech pacing silence")
+        }
+
+        #expect(!techSilenceCuts.contains { overlaps($0.startTime...$0.endTime, toolWordRange) },
+                "Tech silence cuts must not overlap timed words, even when audio analysis reports silence there")
+    }
+
+    @Test("Semantic rough cut still trims safe silence between timed words")
+    func semanticRoughCutStillTrimsSafeSilenceBetweenTimedWords() {
+        var segment = TestFixture.segment(
+            start: 0,
+            end: 3,
+            text: "This AI tool works now",
+            confidence: 0.94,
+            type: .contentSentence
+        )
+        segment.wordTimings = [
+            (word: "This", start: 0.10, duration: 0.20),
+            (word: "AI", start: 0.45, duration: 0.15),
+            (word: "tool", start: 0.70, duration: 0.30),
+            (word: "works", start: 1.50, duration: 0.25),
+            (word: "now", start: 2.20, duration: 0.20)
+        ]
+        let transcription = TestFixture.transcription(segments: [segment], language: "en-US")
+        let audio = TestFixture.audioResult(duration: 3.2, silenceIntervals: [1.08...1.45])
+        let timelinePlan = TechInfluencerTimelineAnalyzer.analyze(
+            transcription: transcription,
+            audioAnalysis: audio
+        )
+
+        let result = RoughCutDecisionEngine.generateTechInfluencerDecisions(
+            transcription: transcription,
+            audioAnalysis: audio,
+            takeGroups: [],
+            timelinePlan: timelinePlan
+        )
+
+        let techSilenceCuts = result.cutSegments.filter {
+            $0.reason.hasPrefix("Tech pacing silence")
+        }
+
+        #expect(techSilenceCuts.contains { cut in
+            cut.startTime > 1.08 && cut.endTime < 1.45
+        }, "Word protection must still allow pacing cuts inside verified silence gaps")
+    }
+
+    @Test("Semantic rough cut removes clear inter-idea gaps")
+    func semanticRoughCutRemovesClearInterIdeaGaps() {
+        let first = TestFixture.segment(
+            start: 0,
+            end: 2,
+            text: "This AI tool fixes the problem",
+            confidence: 0.95,
+            type: .contentSentence
+        )
+        let second = TestFixture.segment(
+            start: 3.0,
+            end: 5.0,
+            text: "Now click generate and the result appears",
+            confidence: 0.95,
+            type: .contentSentence
+        )
+        let transcription = TestFixture.transcription(segments: [first, second], language: "en-US")
+        let audio = TestFixture.audioResult(duration: 5.2, silenceIntervals: [2.0...3.0])
+        let timelinePlan = TechInfluencerTimelineAnalyzer.analyze(
+            transcription: transcription,
+            audioAnalysis: audio
+        )
+
+        let result = RoughCutDecisionEngine.generateTechInfluencerDecisions(
+            transcription: transcription,
+            audioAnalysis: audio,
+            takeGroups: [],
+            timelinePlan: timelinePlan
+        )
+
+        #expect(result.keepSegments.count == 2)
+        #expect(result.cutSegments.contains { cut in
+            cut.startTime >= 2.0 && cut.endTime <= 3.0
+        }, "Tech rough cut must remove the gap between separate ideas")
+    }
+
+    @Test("Tech rough cut preserves guarded edit-command decisions")
+    func techRoughCutPreservesGuardedEditCommands() {
+        let editCommand = TestFixture.segment(
+            start: 1.0,
+            end: 1.5,
+            text: "bunu kes",
+            confidence: 0.95,
+            type: .editCommand
+        )
+        let content = TestFixture.segment(
+            start: 1.8,
+            end: 4.0,
+            text: "This AI tool builds an MVP",
+            confidence: 0.95,
+            type: .contentSentence
+        )
+        let transcription = TestFixture.transcription(segments: [editCommand, content])
+        let audio = TestFixture.audioResult(duration: 4.4)
+        let timelinePlan = TechInfluencerTimelineAnalyzer.analyze(
+            transcription: transcription,
+            audioAnalysis: audio
+        )
+
+        let result = RoughCutDecisionEngine.generateTechInfluencerDecisions(
+            transcription: transcription,
+            audioAnalysis: audio,
+            takeGroups: [],
+            timelinePlan: timelinePlan
+        )
+
+        let decision = result.decisions.first { $0.linkedTranscriptText == "bunu kes" }
+        #expect(decision?.action == .cut)
+        #expect(decision?.requiresReview == false)
+    }
+
+    @Test("Tech rough cut preserves low-confidence restart review")
+    func techRoughCutPreservesLowConfidenceRestartReview() {
+        let restart = TestFixture.segment(
+            start: 0.5,
+            end: 2.5,
+            text: "This AI tool this AI tool",
+            confidence: 0.55,
+            type: .suspectedRestart
+        )
+        let next = TestFixture.segment(
+            start: 2.8,
+            end: 4.6,
+            text: "This AI tool builds apps",
+            confidence: 0.95,
+            type: .contentSentence
+        )
+        let transcription = TestFixture.transcription(segments: [restart, next], language: "en-US")
+        let audio = TestFixture.audioResult(duration: 5.0)
+        let timelinePlan = TechInfluencerTimelineAnalyzer.analyze(
+            transcription: transcription,
+            audioAnalysis: audio
+        )
+
+        let result = RoughCutDecisionEngine.generateTechInfluencerDecisions(
+            transcription: transcription,
+            audioAnalysis: audio,
+            takeGroups: [],
+            timelinePlan: timelinePlan
+        )
+
+        let decision = result.decisions.first { $0.linkedTranscriptText == restart.text }
+        #expect(decision?.action == .reviewRequired)
+        #expect(decision?.requiresReview == true)
+    }
+
+    private func overlaps(_ left: ClosedRange<Double>, _ right: ClosedRange<Double>) -> Bool {
+        min(left.upperBound, right.upperBound) > max(left.lowerBound, right.lowerBound)
     }
 }

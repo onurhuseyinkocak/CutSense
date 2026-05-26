@@ -1,0 +1,7 @@
+{
+  "id": "transition_fade",
+  "displayName": "Fade",
+  "style": "dip",
+  "duration": 0.28,
+  "intensity": "low"
+}

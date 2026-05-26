@@ -1,0 +1,10 @@
+{
+  "id": "fx_subtle_film_grain",
+  "displayName": "Subtle Film Grain",
+  "type": "visualEffect",
+  "category": "film_grain",
+  "intensity": "low",
+  "bestForPresets": ["cinematic"],
+  "moodTags": ["cinematic", "premium", "texture"],
+  "renderHint": "grainOverlay"
+}

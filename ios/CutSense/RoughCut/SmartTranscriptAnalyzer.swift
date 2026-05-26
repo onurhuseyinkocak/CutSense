@@ -7,12 +7,19 @@ import FoundationModels
 /// Replaces heuristic substring matching with semantic understanding.
 /// Falls back to existing engines on iOS < 26.
 enum SmartTranscriptAnalyzer {
+    enum AnalysisMode: String, Sendable {
+        case foundationModels = "foundation_models"
+        case heuristicFallback = "heuristic_fallback"
+    }
+
     struct AnalysisOutput: Sendable {
         let cleanedSegments: [TranscriptSegment]
         let takeGroups: [TakeGroup]
         let fillersRemoved: Int
         let restartsDetected: Int
         let duplicatesDetected: Int
+        let mode: AnalysisMode
+        let fallbackReason: String?
     }
 
     struct ClassificationProgress: Sendable {
@@ -29,26 +36,68 @@ enum SmartTranscriptAnalyzer {
         userFeedback: [AiFeedbackRow] = [],
         onProgress: (@MainActor @Sendable (ClassificationProgress) -> Void)? = nil
     ) async -> AnalysisOutput {
+        #if DEBUG
+        if CutSenseDebugRuntime.forceHeuristicSmartAnalysis {
+            return analyzeWithHeuristics(
+                segments: segments,
+                audioAnalysis: audioAnalysis,
+                fallbackReason: "debug forced heuristic smart analysis"
+            )
+        }
+
+        guard CutSenseDebugRuntime.enableFoundationModelsSmartAnalysis else {
+            return analyzeWithHeuristics(
+                segments: segments,
+                audioAnalysis: audioAnalysis,
+                fallbackReason: "Foundation Models smart analysis disabled by default after real-device timeout"
+            )
+        }
+        #else
+        return analyzeWithHeuristics(
+            segments: segments,
+            audioAnalysis: audioAnalysis,
+            fallbackReason: "Foundation Models smart analysis disabled until bounded real-device runtime is proven"
+        )
+        #endif
+
         #if canImport(FoundationModels)
         if #available(iOS 26, *) {
             do {
-                return try await analyzeWithLLM(segments: segments, audioAnalysis: audioAnalysis, userFeedback: userFeedback, onProgress: onProgress)
+                return try await withTimeout(
+                    for: llmTimeout(forSegmentCount: segments.count)
+                ) {
+                    try await analyzeWithLLM(
+                        segments: segments,
+                        audioAnalysis: audioAnalysis,
+                        userFeedback: userFeedback,
+                        onProgress: onProgress
+                    )
+                }
             } catch {
                 #if DEBUG
                 print("[CutSense] LLM analysis failed, falling back to heuristics: \(error.localizedDescription)")
                 #endif
-                return analyzeWithHeuristics(segments: segments, audioAnalysis: audioAnalysis)
+                return analyzeWithHeuristics(
+                    segments: segments,
+                    audioAnalysis: audioAnalysis,
+                    fallbackReason: error.localizedDescription
+                )
             }
         }
         #endif
-        return analyzeWithHeuristics(segments: segments, audioAnalysis: audioAnalysis)
+        return analyzeWithHeuristics(
+            segments: segments,
+            audioAnalysis: audioAnalysis,
+            fallbackReason: nil
+        )
     }
 
     // MARK: - Heuristic Fallback
 
     private static func analyzeWithHeuristics(
         segments: [TranscriptSegment],
-        audioAnalysis: AudioAnalysisResult
+        audioAnalysis: AudioAnalysisResult,
+        fallbackReason: String?
     ) -> AnalysisOutput {
         let cleanup = TranscriptCleanupAnalyzer.analyze(segments)
         let takeGroups = TakeDetectionEngine.detectTakeGroups(segments: cleanup.segments)
@@ -57,7 +106,9 @@ enum SmartTranscriptAnalyzer {
             takeGroups: takeGroups,
             fillersRemoved: cleanup.fillersRemoved,
             restartsDetected: cleanup.restartsDetected,
-            duplicatesDetected: cleanup.duplicatesDetected
+            duplicatesDetected: cleanup.duplicatesDetected,
+            mode: .heuristicFallback,
+            fallbackReason: fallbackReason
         )
     }
 }
@@ -67,6 +118,49 @@ enum SmartTranscriptAnalyzer {
 #if canImport(FoundationModels)
 @available(iOS 26, *)
 extension SmartTranscriptAnalyzer {
+    private struct FoundationModelsTimeoutError: LocalizedError {
+        let seconds: Int
+
+        var errorDescription: String? {
+            "Foundation Models analysis timed out after \(seconds) seconds."
+        }
+    }
+
+    private final class TimeoutCoordinator<Output: Sendable>: @unchecked Sendable {
+        private let lock = NSLock()
+        private var continuation: CheckedContinuation<Output, any Error>?
+        private var result: Result<Output, any Error>?
+        private var didFinish = false
+
+        func register(_ continuation: CheckedContinuation<Output, any Error>) {
+            lock.lock()
+            if let result {
+                lock.unlock()
+                continuation.resume(with: result)
+                return
+            }
+            self.continuation = continuation
+            lock.unlock()
+        }
+
+        func finish(_ result: Result<Output, any Error>) {
+            lock.lock()
+            guard !didFinish else {
+                lock.unlock()
+                return
+            }
+            didFinish = true
+            if let continuation {
+                self.continuation = nil
+                lock.unlock()
+                continuation.resume(with: result)
+            } else {
+                self.result = result
+                lock.unlock()
+            }
+        }
+    }
+
     @Generable
     enum SegmentIntent: String, Sendable {
         case content
@@ -101,7 +195,15 @@ extension SmartTranscriptAnalyzer {
         onProgress: (@MainActor @Sendable (ClassificationProgress) -> Void)?
     ) async throws -> AnalysisOutput {
         guard !segments.isEmpty else {
-            return AnalysisOutput(cleanedSegments: [], takeGroups: [], fillersRemoved: 0, restartsDetected: 0, duplicatesDetected: 0)
+            return AnalysisOutput(
+                cleanedSegments: [],
+                takeGroups: [],
+                fillersRemoved: 0,
+                restartsDetected: 0,
+                duplicatesDetected: 0,
+                mode: .foundationModels,
+                fallbackReason: nil
+            )
         }
 
         let fullPrompt = buildSystemPromptWithFeedback(userFeedback)
@@ -129,7 +231,7 @@ extension SmartTranscriptAnalyzer {
 
                 for try await snapshot in stream {
                     if let partialResults = snapshot.content.results {
-                        let currentCount = partialResults.count
+                        let currentCount = min(partialResults.count, batch.count)
                         // Report newly completed classifications
                         while lastSeenCount < currentCount {
                             let partial = partialResults[lastSeenCount]
@@ -147,7 +249,7 @@ extension SmartTranscriptAnalyzer {
                             lastSeenCount += 1
                         }
                         // Keep updating final results from the latest complete snapshot
-                        finalResults = partialResults.compactMap { partial in
+                        finalResults = partialResults.prefix(batch.count).compactMap { partial in
                             guard let intent = partial.intent else { return nil }
                             return SegmentClassification(
                                 intent: intent,
@@ -160,7 +262,7 @@ extension SmartTranscriptAnalyzer {
 
                 // Pad to match batch size
                 while finalResults.count < batch.count {
-                    finalResults.append(SegmentClassification(intent: .content, confidence: 1.0, reason: "Default: keep (LLM did not classify)"))
+                    finalResults.append(SegmentClassification(intent: .content, confidence: 0.5, reason: "Review: LLM did not classify"))
                 }
                 allClassifications.append(contentsOf: finalResults.prefix(batch.count))
             } else {
@@ -171,13 +273,62 @@ extension SmartTranscriptAnalyzer {
                 )
                 var batchResults = response.content.results
                 while batchResults.count < batch.count {
-                    batchResults.append(SegmentClassification(intent: .content, confidence: 1.0, reason: "Default: keep (LLM did not classify)"))
+                    batchResults.append(SegmentClassification(intent: .content, confidence: 0.5, reason: "Review: LLM did not classify"))
                 }
                 allClassifications.append(contentsOf: batchResults.prefix(batch.count))
             }
         }
 
         return buildOutput(segments: segments, classifications: allClassifications, audioAnalysis: audioAnalysis)
+    }
+
+    private static func llmTimeout(forSegmentCount segmentCount: Int) -> Duration {
+        let seconds = min(max(segmentCount * 2, 12), 45)
+        return .seconds(seconds)
+    }
+
+    private static func withTimeout<Output: Sendable>(
+        for duration: Duration,
+        operation: @Sendable @escaping () async throws -> Output
+    ) async throws -> Output {
+        let coordinator = TimeoutCoordinator<Output>()
+        let operationTask = Task {
+            do {
+                let output = try await operation()
+                coordinator.finish(.success(output))
+            } catch {
+                coordinator.finish(.failure(error))
+            }
+        }
+
+        let timeoutTask = Task {
+            do {
+                try await Task.sleep(for: duration)
+                operationTask.cancel()
+                coordinator.finish(.failure(FoundationModelsTimeoutError(seconds: durationSeconds(duration))))
+            } catch {
+                // Timeout task was cancelled because the operation completed first.
+            }
+        }
+
+        return try await withTaskCancellationHandler {
+            try await withCheckedThrowingContinuation { continuation in
+                coordinator.register(continuation)
+            }
+        } onCancel: {
+            operationTask.cancel()
+            timeoutTask.cancel()
+            coordinator.finish(.failure(CancellationError()))
+        }
+    }
+
+    private static func durationSeconds(_ duration: Duration) -> Int {
+        let components = duration.components
+        let seconds = components.seconds
+        if components.attoseconds > 0 {
+            return Int(seconds) + 1
+        }
+        return Int(seconds)
     }
 
     private static var systemPrompt: String {
@@ -236,7 +387,9 @@ extension SmartTranscriptAnalyzer {
         var lines: [String] = ["Classify each segment:\n"]
         for (i, seg) in segments.enumerated() {
             let idx = offset + i + 1
-            lines.append("[\(idx)] [\(String(format: "%.1f", seg.startTime))s-\(String(format: "%.1f", seg.endTime))s] \"\(seg.text)\"")
+            let start = seg.startTime.formatted(.number.precision(.fractionLength(1)))
+            let end = seg.endTime.formatted(.number.precision(.fractionLength(1)))
+            lines.append("[\(idx)] [\(start)s-\(end)s] \"\(seg.text)\"")
         }
         return lines.joined(separator: "\n")
     }
@@ -261,7 +414,7 @@ extension SmartTranscriptAnalyzer {
                 modified.segmentType = .filler
                 fillersRemoved += 1
             case .editCommand:
-                modified.segmentType = .filler
+                modified.segmentType = .editCommand
                 fillersRemoved += 1
             case .restart:
                 modified.segmentType = .suspectedRestart
@@ -283,7 +436,9 @@ extension SmartTranscriptAnalyzer {
             takeGroups: takeGroups,
             fillersRemoved: fillersRemoved,
             restartsDetected: restartsDetected,
-            duplicatesDetected: duplicatesDetected
+            duplicatesDetected: duplicatesDetected,
+            mode: .foundationModels,
+            fallbackReason: nil
         )
     }
 }

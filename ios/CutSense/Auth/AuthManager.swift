@@ -7,8 +7,8 @@ import AuthenticationServices
 @Observable
 final class AuthManager {
     #if DEBUG
-    var isAuthenticated = true
-    var isLoading = false
+    var isAuthenticated = false
+    var isLoading = true
     #else
     var isAuthenticated = false
     var isLoading = true
@@ -16,14 +16,25 @@ final class AuthManager {
     var currentUser: User?
     var errorMessage: String?
 
-    /// Returns userId for DB operations. In DEBUG, returns a fixed UUID when no user is signed in.
+    /// User id for the pipeline. Real Supabase id when signed in (including anon sessions);
+    /// otherwise a stable LOCAL-only UUID stored in UserDefaults so the pipeline can persist
+    /// locally without auth. Cloud writes against this local id will fail RLS — that's fine,
+    /// LocalProjectStore catches them.
     var effectiveUserId: UUID? {
         if let id = currentUser?.id { return id }
-        #if DEBUG
-        return UUID(uuidString: "00000000-0000-0000-0000-000000000001")!
-        #else
-        return nil
-        #endif
+        return Self.localFallbackUserId
+    }
+
+    /// Persisted local-only user id used as a last resort when no auth is available.
+    private static var localFallbackUserId: UUID {
+        let key = "cutsense_local_user_id"
+        if let stored = UserDefaults.standard.string(forKey: key),
+           let uuid = UUID(uuidString: stored) {
+            return uuid
+        }
+        let new = UUID()
+        UserDefaults.standard.set(new.uuidString, forKey: key)
+        return new
     }
 
     func restoreSession() async {
@@ -45,10 +56,32 @@ final class AuthManager {
             }
             currentUser = session.user
             isAuthenticated = true
+            #if DEBUG
+            print("[Auth] Restored session userId=\(session.user.id)")
+            #endif
+            return
         } catch {
-            isAuthenticated = false
-            currentUser = nil
+            #if DEBUG
+            print("[Auth] No session to restore: \(error)")
+            #endif
         }
+
+        #if DEBUG
+        // Dev convenience: auto sign in anonymously so the pipeline can persist
+        // to Supabase (RLS policies require a valid auth.uid()).
+        do {
+            let session = try await supabase.auth.signInAnonymously()
+            currentUser = session.user
+            isAuthenticated = true
+            print("[Auth] Anonymous sign-in OK userId=\(session.user.id)")
+            return
+        } catch {
+            print("[Auth] Anonymous sign-in failed: \(error)")
+        }
+        #endif
+
+        isAuthenticated = false
+        currentUser = nil
     }
 
     func signInWithEmail(_ email: String, password: String) async {
@@ -58,7 +91,10 @@ final class AuthManager {
             currentUser = session.user
             isAuthenticated = true
         } catch {
-            errorMessage = error.localizedDescription
+            #if DEBUG
+            print("[Auth] Sign-in failed: \(error)")
+            #endif
+            errorMessage = "Giriş başarısız. E-posta ve şifrenizi kontrol edip tekrar deneyin."
         }
     }
 
@@ -70,10 +106,13 @@ final class AuthManager {
                 currentUser = session.user
                 isAuthenticated = true
             } else {
-                errorMessage = "Check your email to confirm your account."
+                errorMessage = "Hesabınızı onaylamak için e-postanızı kontrol edin."
             }
         } catch {
-            errorMessage = error.localizedDescription
+            #if DEBUG
+            print("[Auth] Sign-up failed: \(error)")
+            #endif
+            errorMessage = "Kayıt başarısız. Lütfen tekrar deneyin."
         }
     }
 
@@ -81,7 +120,7 @@ final class AuthManager {
         errorMessage = nil
         guard let identityToken = credential.identityToken,
               let tokenString = String(data: identityToken, encoding: .utf8) else {
-            errorMessage = "Failed to get Apple identity token."
+            errorMessage = "Apple ile giriş başarısız. Lütfen tekrar deneyin."
             return
         }
         do {
@@ -94,7 +133,10 @@ final class AuthManager {
             currentUser = session.user
             isAuthenticated = true
         } catch {
-            errorMessage = error.localizedDescription
+            #if DEBUG
+            print("[Auth] Apple sign-in failed: \(error)")
+            #endif
+            errorMessage = "Apple ile giriş başarısız. Lütfen tekrar deneyin."
         }
     }
 

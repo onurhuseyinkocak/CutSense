@@ -1,0 +1,7 @@
+{
+  "id": "transition_cross_dissolve",
+  "displayName": "Cross Dissolve",
+  "style": "crossDissolve",
+  "duration": 0.24,
+  "intensity": "low"
+}

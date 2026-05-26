@@ -48,8 +48,9 @@ jobs:
 
       - name: Build & Test
         run: |
+          set -o pipefail
           xcodebuild test \
-            -scheme CutSenseTests \
+            -scheme CutSense \
             -destination 'platform=iOS Simulator,name=iPhone 16 Pro' \
             -clonedSourcePackagesDirPath .spm-cache \
             CODE_SIGNING_ALLOWED=NO \
@@ -134,6 +135,7 @@ jobs:
           API_KEY_ID: ${{ secrets.ASC_KEY_ID }}
           API_KEY_ISSUER: ${{ secrets.ASC_ISSUER_ID }}
         run: |
+          set -o pipefail
           xcodebuild archive \
             -scheme CutSense \
             -archivePath $RUNNER_TEMP/CutSense.xcarchive \
@@ -150,6 +152,7 @@ jobs:
           API_KEY_ID: ${{ secrets.ASC_KEY_ID }}
           API_KEY_ISSUER: ${{ secrets.ASC_ISSUER_ID }}
         run: |
+          set -o pipefail
           xcodebuild -exportArchive \
             -archivePath $RUNNER_TEMP/CutSense.xcarchive \
             -exportOptionsPlist ExportOptions.plist \

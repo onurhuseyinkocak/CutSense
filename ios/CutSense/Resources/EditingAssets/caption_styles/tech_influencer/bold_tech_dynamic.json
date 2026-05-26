@@ -1,0 +1,9 @@
+{
+  "id": "caption_bold_tech_dynamic",
+  "displayName": "Bold Tech Dynamic",
+  "category": "tech_influencer",
+  "style": "bold_center_viral",
+  "placement": "dynamicLowerMid",
+  "animation": "punchWordHighlight",
+  "safeZone": { "top": 120, "bottom": 220, "horizontal": 80 }
+}

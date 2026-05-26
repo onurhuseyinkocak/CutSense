@@ -1,5 +1,25 @@
 import StoreKit
 
+enum ProductLoadState: Equatable, Sendable {
+    case idle
+    case loading
+    case loaded
+    case failed(String)
+
+    var errorMessage: String? {
+        if case .failed(let message) = self {
+            return message
+        }
+        return nil
+    }
+}
+
+enum RestorePurchaseResult: Equatable, Sendable {
+    case restored
+    case noActiveSubscription
+    case failed(String)
+}
+
 @MainActor
 @Observable
 final class SubscriptionManager {
@@ -10,11 +30,8 @@ final class SubscriptionManager {
     static let yearlyID = "com.cutsense.app.pro.yearly"
 
     private(set) var products: [Product] = []
-    #if DEBUG
-    private(set) var isPro = true
-    #else
-    private(set) var isPro = false
-    #endif
+    private(set) var productLoadState: ProductLoadState = .idle
+    private(set) var hasActiveSubscription = false
     private(set) var currentSubscription: StoreKit.Transaction?
 
     /// Monthly export count for free tier (resets each calendar month)
@@ -43,12 +60,26 @@ final class SubscriptionManager {
     // MARK: - Public API
 
     func loadProducts() async {
+        productLoadState = .loading
         do {
-            products = try await Product.products(for: [
+            let loadedProducts = try await Product.products(for: [
                 Self.weeklyID,
                 Self.yearlyID
             ])
+            products = loadedProducts
+
+            let loadedIDs = Set(loadedProducts.map(\.id))
+            let missingIDs = [Self.weeklyID, Self.yearlyID].filter { !loadedIDs.contains($0) }
+            if loadedProducts.isEmpty {
+                productLoadState = .failed("Subscription products are unavailable. Check your connection and try again.")
+            } else if !missingIDs.isEmpty {
+                productLoadState = .failed("Some subscription options are unavailable. Try again later.")
+            } else {
+                productLoadState = .loaded
+            }
         } catch {
+            products = []
+            productLoadState = .failed("Could not load subscription products. Check your connection and try again.")
             #if DEBUG
             print("[Store] Failed to load products: \(error)")
             #endif
@@ -73,37 +104,42 @@ final class SubscriptionManager {
         }
     }
 
-    func restorePurchases() async {
-        try? await AppStore.sync()
+    func restorePurchases() async -> RestorePurchaseResult {
+        do {
+            try await AppStore.sync()
+        } catch {
+            return .failed("Could not restore purchases. Check your connection and try again.")
+        }
         await checkSubscriptionStatus()
+        return isPro ? .restored : .noActiveSubscription
     }
 
     func checkSubscriptionStatus() async {
-        var foundActive = false
+        var activeSubscription: StoreKit.Transaction?
         for await result in StoreKit.Transaction.currentEntitlements {
             if let transaction = try? result.payloadValue {
                 if transaction.productID == Self.weeklyID || transaction.productID == Self.yearlyID {
-                    if transaction.revocationDate == nil {
-                        foundActive = true
-                        currentSubscription = transaction
+                    let isUnexpired = transaction.expirationDate.map { $0 > Date() } ?? true
+                    if transaction.revocationDate == nil && isUnexpired {
+                        activeSubscription = transaction
                     }
                 }
             }
         }
-        isPro = foundActive
-        if !foundActive {
-            currentSubscription = nil
-        }
+        currentSubscription = activeSubscription
+        hasActiveSubscription = activeSubscription != nil
     }
 
-    /// Whether user can export (pro = always, free = under limit)
-    var canExport: Bool {
-        isPro || exportsThisMonth < Self.freeExportLimit
+    /// Whether user can export.
+    var isPro: Bool {
+        hasActiveSubscription || CutSenseDebugRuntime.forceProEntitlement
     }
 
-    /// Remaining free exports this month
+    var canExport: Bool { isPro || exportsThisMonth < Self.freeExportLimit }
+
     var remainingFreeExports: Int {
-        max(0, Self.freeExportLimit - exportsThisMonth)
+        guard !isPro else { return Int.max }
+        return max(0, Self.freeExportLimit - exportsThisMonth)
     }
 
     /// Call after successful export

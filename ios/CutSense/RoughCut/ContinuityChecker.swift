@@ -1,6 +1,11 @@
 import Foundation
 
 enum ContinuityChecker {
+    enum Profile: Sendable {
+        case sourceTimeline
+        case shortFormSemantic
+    }
+
     struct ContinuityResult: Sendable {
         let transitions: [TransitionCheck]
         let smoothTransitions: Int
@@ -21,8 +26,13 @@ enum ContinuityChecker {
     private static let naturalGapThreshold: Double = 0.5
     /// Gap that definitely needs a transition effect
     private static let roughGapThreshold: Double = 2.0
+    /// Source gaps are expected in shorts when both sides are intentional semantic keep ranges.
+    private static let shortFormSemanticJumpThreshold: Double = 8.0
 
-    static func check(keptDecisions: [RoughCutDecision]) -> ContinuityResult {
+    static func check(
+        keptDecisions: [RoughCutDecision],
+        profile: Profile = .sourceTimeline
+    ) -> ContinuityResult {
         guard keptDecisions.count > 1 else {
             return ContinuityResult(
                 transitions: [],
@@ -53,6 +63,11 @@ enum ContinuityChecker {
                 isSmooth = true
                 suggestion = "Consider audio crossfade (\(String(format: "%.1f", gap))s gap)"
                 smooth += 1
+            } else if profile == .shortFormSemantic,
+                      isIntentionalShortFormJump(from: prev, to: curr, gap: gap) {
+                isSmooth = true
+                suggestion = "Intentional short-form semantic jump cut"
+                smooth += 1
             } else {
                 isSmooth = false
                 suggestion = "Large gap (\(String(format: "%.1f", gap))s) — add transition or J-cut"
@@ -77,5 +92,22 @@ enum ContinuityChecker {
             roughTransitions: rough,
             overallScore: score
         )
+    }
+
+    private static func isIntentionalShortFormJump(
+        from previous: RoughCutDecision,
+        to current: RoughCutDecision,
+        gap: Double
+    ) -> Bool {
+        gap <= shortFormSemanticJumpThreshold
+            && !previous.requiresReview
+            && !current.requiresReview
+            && isTechSemanticKeep(previous)
+            && isTechSemanticKeep(current)
+    }
+
+    private static func isTechSemanticKeep(_ decision: RoughCutDecision) -> Bool {
+        decision.action == .keep
+            && decision.reason.localizedStandardContains("Tech semantic keep")
     }
 }

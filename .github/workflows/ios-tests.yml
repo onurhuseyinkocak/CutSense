@@ -55,8 +55,9 @@ jobs:
 
       - name: Build & Test
         run: |
+          set -o pipefail
           xcodebuild test \
-            -scheme CutSenseTests \
+            -scheme CutSense \
             -destination 'platform=iOS Simulator,name=iPhone 16 Pro' \
             -clonedSourcePackagesDirPath .spm-cache \
             -resultBundlePath TestResults.xcresult \

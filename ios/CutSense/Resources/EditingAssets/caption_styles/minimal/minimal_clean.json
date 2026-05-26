@@ -1,0 +1,9 @@
+{
+  "id": "caption_minimal_clean",
+  "displayName": "Minimal Clean",
+  "category": "minimal",
+  "style": "minimal_wellness",
+  "placement": "lowerThird",
+  "animation": "cleanFade",
+  "safeZone": { "top": 120, "bottom": 220, "horizontal": 80 }
+}

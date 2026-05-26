@@ -1,0 +1,24 @@
+{
+  "id": "tech_influencer",
+  "displayName": "Tech Influencer",
+  "identity": ["sharp", "black futuristic", "creator/product demo", "high clarity"],
+  "captionStyleAssetID": "caption_bold_tech_dynamic",
+  "sfxAssetIDs": [
+    "mixkit_flying_fast_swoosh_1469",
+    "mixkit_modern_technology_select_3124",
+    "mixkit_message_pop_alert_2354",
+    "mixkit_small_electric_glitch_2595",
+    "mixkit_short_space_stutter_intro_riser_1144",
+    "mixkit_camera_shutter_click_1133"
+  ],
+  "visualEffectAssetIDs": [
+    "fx_chromatic_micro_glitch",
+    "fx_blur_highlight",
+    "fx_camera_snap",
+    "fx_controlled_speed_ramp"
+  ],
+  "musicAssetID": "mixkit_sci_fi_score_464",
+  "transitionAssetIDs": ["transition_swipe", "transition_zoom_cut", "transition_camera_shutter"],
+  "pacing": "fast_controlled",
+  "export": { "aspectRatio": "9:16", "width": 1080, "height": 1920 }
+}

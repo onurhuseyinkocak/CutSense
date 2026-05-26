@@ -107,7 +107,7 @@ struct PipelineIntegrationTests {
                 }
             }
 
-            let blockBuffer = try audioData.withUnsafeMutableBytes { raw -> CMBlockBuffer in
+            let blockBuffer = audioData.withUnsafeMutableBytes { raw -> CMBlockBuffer in
                 var blockBuf: CMBlockBuffer?
                 CMBlockBufferCreateWithMemoryBlock(
                     allocator: nil, memoryBlock: raw.baseAddress, blockLength: bufferSize,

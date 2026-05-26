@@ -1,0 +1,10 @@
+{
+  "id": "fx_slow_zoom",
+  "displayName": "Slow Zoom",
+  "type": "visualEffect",
+  "category": "camera_motion",
+  "intensity": "low",
+  "bestForPresets": ["cinematic"],
+  "moodTags": ["camera", "smooth", "premium"],
+  "renderHint": "slowPush"
+}

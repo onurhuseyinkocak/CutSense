@@ -1,4 +1,5 @@
 import AVFoundation
+import AVKit
 import SwiftUI
 
 struct VideoPlayerView: UIViewControllerRepresentable {
@@ -8,7 +9,7 @@ struct VideoPlayerView: UIViewControllerRepresentable {
 
     func makeUIViewController(context: Context) -> AVPlayerViewController {
         let controller = AVPlayerViewController()
-        controller.player = AVPlayer(url: url)
+        controller.player = Self.configuredPlayer(for: url)
         controller.showsPlaybackControls = true
         controller.allowsPictureInPicturePlayback = false
         controller.view.backgroundColor = .black
@@ -19,15 +20,33 @@ struct VideoPlayerView: UIViewControllerRepresentable {
     func updateUIViewController(_ controller: AVPlayerViewController, context: Context) {
         guard context.coordinator.currentURL != url else { return }
         context.coordinator.currentURL = url
-        controller.player = AVPlayer(url: url)
+        controller.player = Self.configuredPlayer(for: url)
+    }
+
+    private static func configuredPlayer(for url: URL) -> AVPlayer {
+        activatePlaybackSession()
+        let player = AVPlayer(url: url)
+        player.isMuted = false
+        player.volume = 1
+        return player
+    }
+
+    private static func activatePlaybackSession() {
+        do {
+            let session = AVAudioSession.sharedInstance()
+            try session.setCategory(.playback, mode: .moviePlayback)
+            try session.setActive(true)
+        } catch {
+            #if DEBUG
+            print("[CutSense] Preview audio session failed: \(error.localizedDescription)")
+            #endif
+        }
     }
 
     final class Coordinator {
         var currentURL: URL?
     }
 }
-
-import AVKit
 
 struct VideoThumbnailView: View {
     let url: URL

@@ -6,29 +6,21 @@ struct RootView: View {
 
     var body: some View {
         Group {
-            #if DEBUG
-            // Bypass auth + onboarding in DEBUG builds for simulator testing
-            ProjectsScreen()
-            #else
             if !hasSeenOnboarding {
                 OnboardingScreen()
             } else if authManager.isLoading {
                 LoadingView()
-            } else if authManager.isAuthenticated {
-                ProjectsScreen()
             } else {
-                AuthScreen()
+                // App is fully usable in "local mode" even without auth. AuthScreen is
+                // only opened when the user explicitly chooses to sign in (e.g. from
+                // AccountScreen) so cloud sync becomes available.
+                ProjectsScreen()
             }
-            #endif
         }
         .task(id: hasSeenOnboarding) {
-            #if DEBUG
-            // Skip session restore in debug — no Supabase needed
-            #else
             if hasSeenOnboarding {
                 await authManager.restoreSession()
             }
-            #endif
         }
     }
 }

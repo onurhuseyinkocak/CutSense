@@ -1,0 +1,358 @@
+================================================================================
+CUTSENSE TEMPLATE SYSTEM AUDIT — PREQUEL-LEVEL COMPLETENESS
+================================================================================
+
+EXECUTIVE SUMMARY
+Templates: 15 current, strong foundation, missing strategic categories
+Assessment: 6.2/10 — Good technical depth, moderate user choice gap
+
+================================================================================
+DETAILED SCORES
+================================================================================
+
+1. NUMBER AND VARIETY OF TEMPLATES (Current: 15)
+   SCORE: 7/10
+   
+   Current Count Breakdown:
+   - Low intensity (subtle):      5 templates (Premium Founder, Podcast, Faded Summer, Golden Hour, Raw Authentic)
+   - Medium intensity (balanced):  6 templates (Clean Expert, Cinematic, Retro VHS, Tropical Pop, Moody, Ice Cold)
+   - High intensity (aggressive):  4 templates (Viral Caption, Dark Academy, Neon Nights, Film Noir)
+   
+   Variety Assessment:
+   ✓ Well-distributed across intensity levels
+   ✓ Good genre coverage (founder, podcast, editorial, cinematic, retro, neon)
+   ✗ Prequel/CapCut offer 30-50+ templates; CutSense is lean
+   ✗ Missing strategic content buckets (Gaming, ASMR, Music, Horror)
+   
+   Benchmark vs Prequel:
+   Prequel ~45 templates | CutSense 15 | CapCut ~60+ | Industry norm: 25-40 minimum
+   
+   Recommendation: Add 10-15 more to reach competitive parity
+
+---
+
+2. COLOR GRADE QUALITY PER TEMPLATE
+   SCORE: 8/10
+   
+   Grading Sophistication:
+   ✓ All templates use 6-parameter color grading system (sat, bright, contrast, warmth, vignette, grain)
+   ✓ Physically realistic ranges (0.3-1.4 saturation, -0.2 to +0.2 warmth)
+   ✓ Strong cinematic practices:
+     - Retro VHS: 1.3 sat, 0.25 grain (authentic)
+     - Film Noir: 0.3 sat, 0.2 grain, 1.3 contrast (noir signature)
+     - Cinematic Storyteller: 0.92 sat, 0.15 grain (standard)
+   
+   Unique Strengths:
+   ✓ Film Noir uses extreme desaturation (0.3) with high contrast (1.3)
+   ✓ Neon Nights uses cool warmth (-0.15) for digital aesthetic
+   ✓ Golden Hour uses pronounced warmth (0.2) for sunset effect
+   ✓ Vignette range (0.0-0.5) adds optical depth
+   
+   Weaknesses:
+   ✗ Some templates lack grain when they should have it:
+     - Viral Caption: 0 grain (should be 0.08+)
+     - Tropical Pop: 0.05 grain (should be 0.1+)
+     - Clean Expert: 0 grain (intentional, but consider 0.02 for depth)
+   ✗ No LUT (look-up table) system for advanced colorists
+   ✗ No color wheel/HSL per-channel control (shadow/midtone/highlight split)
+   
+   Recommendation: Add grain to 3 templates; consider LUT system for premium
+
+---
+
+3. CAPTION THEME MATCHING PER TEMPLATE
+   SCORE: 6/10
+   
+   Current Theme Count: 9 unique (should be 12+)
+   Theme Reuse (Problematic):
+   
+   premiumGold:     3 templates (Premium Founder, Retro VHS, Moody Editorial)
+   cyberpunkNeon:   3 templates (Dark Academy, Neon Nights, Tropical Pop) ← OVER-REUSED
+   podcastQuote:    3 templates (Podcast Highlights, Ice Cold, Raw Authentic) ← OVER-REUSED
+   warmCinematic:   2 templates (Cinematic Storyteller, Golden Hour)
+   
+   Unique Themes Used Only Once:
+   ✓ neonViral (Viral Caption)
+   ✓ monoClean (Clean Expert)
+   ✓ softPastel (Faded Summer)
+   ✓ boldImpact (Film Noir)
+   
+   Theme Quality:
+   ✓ Each theme has distinct karaoke highlight (glow enabled on 2 themes)
+   ✓ Proper dim states for unrevealed words
+   ✓ Hook and body text colors differentiated
+   
+   Weaknesses:
+   ✗ Neon Nights and Tropical Pop both use cyberpunkNeon — confusing
+   ✗ No RGB/multi-color themes (e.g., color-per-word cycling)
+   ✗ No animated gradient themes (trendy in Prequel)
+   ✗ Only 2 themes use glow effect (modern TikTok standard)
+   
+   Recommendation: Create 4 dedicated themes; swap Tropical Pop to use neonViral; add glow to 2-3 more
+
+---
+
+4. SFX VOLUME CONFIGURATION PER TEMPLATE
+   SCORE: 7/10
+   
+   Configuration Analysis:
+   Template              BGM    SFX    Ratio   Assessment
+   ─────────────────────────────────────────────────────────
+   premium_founder      0.08   0.15   1.88x   ✓ Professional
+   viral_caption        0.15   0.30   2.00x   ✓ Punchy
+   clean_expert         0.05   0.10   2.00x   ✓ Subtle
+   cinematic_storyteller 0.10  0.12   1.20x   ✓ Dialogue-heavy
+   podcast_highlights   0.03   0.08   2.67x   ✓ Minimal
+   retro_vhs            0.12   0.40   3.33x   ✓ SFX-driven
+   dark_academy         0.06   0.25   4.17x   ✓ Dramatic
+   neon_nights          0.18   0.55   3.06x   ✓ Club-ready
+   faded_summer         0.09   0.20   2.22x   ✓ Balanced
+   film_noir            0.05   0.35   7.00x   ✗ EXTREME (dialogue invisible)
+   tropical_pop         0.14   0.45   3.21x   ✓ Energetic
+   moody_editorial      0.08   0.28   3.50x   ✓ Mood-first
+   golden_hour          0.10   0.32   3.20x   ✓ Lifestyle
+   ice_cold             0.07   0.30   4.29x   ✓ Tech-forward
+   raw_authentic        0.04   0.15   3.75x   ✓ Minimal
+   
+   Strengths:
+   ✓ Film Noir stands out with SFX dominance (7.0x ratio)
+   ✓ Podcast Highlights ultralow (0.03 BGM) protects speech
+   ✓ Neon Nights highest absolute (0.55) for dance/music
+   ✓ Clean Expert lowest SFX (0.10) for focus
+   
+   Weaknesses:
+   ✗ Film Noir (7.0x) may drown out dialogue in real exports
+   ✗ No per-role SFX tuning (hook SFX vs transition SFX vary by template)
+   ✗ No frequency masking (low-end SFX competing with voice bass)
+   ✗ No stem-based control (kick/snare/hats separate)
+   
+   Recommendation: Cap Film Noir at 5.0x; add per-role SFX scaling; document film_noir caveat
+
+---
+
+5. TEMPLATE NAMING AND USER-FACING PRESENTATION
+   SCORE: 8/10
+   
+   Naming Convention:
+   ✓ snake_case (consistent, code-friendly)
+   ✓ Descriptive and memorable
+   ✓ No generic names ("Style 1", "Template 2")
+   ✓ Clear intent at a glance
+   
+   Examples That Work:
+   Premium Founder    → founder/thought leader (B2B SaaS)
+   Viral Caption      → engagement-focused (TikTok)
+   Cinematic Storyteller → narrative (long-form)
+   Film Noir          → high-contrast monochrome
+   
+   Examples That Work Less Well:
+   ✗ Faded Summer    → vague (not about time of year)
+   ✗ Dark Academy    → unclear (academic? Gothic? Moody?)
+   ✗ Ice Cold        → too abstract (new users won't know tone)
+   
+   UI Presentation in Code:
+   ✓ Template pills show in horizontal scroll
+   ✓ Name + description visible
+   ✗ No color preview swatch in pill
+   ✗ No caption theme preview
+   ✗ No example thumbnail/keyframe shown
+   
+   Recommendation: Rename 3 vague templates; add visual previews to pills
+
+---
+
+6. MISSING TEMPLATE CATEGORIES (vs Prequel/CapCut)
+   SCORE: 5/10
+   
+   AESTHETIC/MOOD BUCKETS (Missing 8):
+   
+   ✗ GLITCH           Digital error effect, cyan/magenta artifacts, fast cuts
+                      Use: Digital products, tech reviews, gaming
+                      Color: Extreme desaturation + comp-distortion + RGB shift
+                      Would need: saturation 0.5, contrast 1.4, dedicated vignette layer
+   
+   ✗ DREAMY           Soft focus, heavy blur, pastel palette, ethereal
+                      Use: Fashion, lifestyle, wellness, ASMR
+                      Color: saturation 1.1, brightness +0.1, grain 0.0, NO vignette
+                      Would pair with: softPastel theme
+   
+   ✗ GRITTY           High grain, crushed blacks, desaturated, film-like
+                      Use: Documentary, street photography, indie
+                      Color: saturation 0.6, brightness -0.05, contrast 1.15, grain 0.30+
+   
+   ✗ HIGHKEY          Bright, overexposed, blown whites, airy
+                      Use: Minimalist, product, beauty
+                      Color: brightness +0.15, saturation 0.9, contrast 0.95, vignette 0
+   
+   ✗ LOWKEY           Dark, crushed, high contrast, mysterious
+                      Use: Drama, horror, thriller, mood pieces
+                      Color: brightness -0.1, saturation 0.65, contrast 1.25, grain 0.20
+   
+   ✗ NEON NOIR        Neon + dark, cyberpunk-thriller
+                      Use: Gaming intros, future-tech, hacker/spy content
+                      Color: saturation 1.3, brightness -0.05, contrast 1.2, warmth -0.15
+   
+   ✗ RETRO 80s        VHS synth, neon pink/cyan, artifacting, tape distortion
+                      Use: Nostalgia, synthwave content
+                      Color: saturation 1.5, warmth +0.10, contrast 0.9, grain 0.25
+   
+   ✗ RETRO 90s        Lomo film, oversaturation, color shifts, analog feel
+                      Use: Throwback, indie, vintage vibes
+                      Color: saturation 1.4, brightness +0.05, contrast 1.05, grain 0.12
+   
+   CONTENT-TYPE TEMPLATES (Missing 5):
+   
+   ✗ GAMING           High contrast, RGB colors, extreme saturation
+                      BGM 0.15, SFX 0.60, caption: bold colors, glow on
+   
+   ✗ ASMR             Warm, intimate, minimal SFX, calming
+                      BGM 0.02, SFX 0.03, caption: soft pastels
+   
+   ✗ DANCE/MUSIC      Beat-synced energy, vibrant, high SFX
+                      BGM 0.20, SFX 0.50, caption: neon glow
+   
+   ✗ FASHION/BEAUTY   High contrast, cool tones, saturated makeup colors
+                      Sat 1.2, contrast 1.15, warmth -0.10
+   
+   ✗ NEWS/CURRENT     Neutral, trustworthy, minimal distraction
+                      Sat 0.95, grain 0.0, vignette 0.05, professional
+   
+   TECHNICAL TEMPLATES (Missing 4):
+   
+   ✗ SLOW MOTION      Low SFX (doesn't rush), high contrast (clarity in 24fps)
+                      BGM 0.06, SFX 0.12, sat 1.0, contrast 1.15
+   
+   ✗ FAST MOTION      Aggressive SFX, tight cuts, vibrant
+                      BGM 0.15, SFX 0.40, sat 1.25, grain 0.10
+   
+   ✗ GREEN SCREEN OPT  Strong color separation, no green bleed
+                      Sat 1.15, contrast 1.2, warmth neutral
+   
+   ✗ DARK FOOTAGE REC  Brightened, noise-reduced, grain controlled
+                      Brightness +0.08, sat 0.95, grain 0.05
+   
+   TOTAL MISSING: 17 high-impact templates
+   
+   Recommendation: Prioritize Gaming, ASMR, News, Glitch, Gritty (5 first-pass additions)
+
+---
+
+7. TEMPLATE PREVIEW CAPABILITY
+   SCORE: 4/10
+   
+   Current State in Code:
+   ✓ Template pills displayed in horizontal scroll (EditScreen.swift:195)
+   ✓ Template name shown
+   ✓ Description available (TemplateConfig.description)
+   ✓ Selection state tracked (selectedTemplate)
+   
+   MISSING CAPABILITIES:
+   
+   ✗ Live Preview Before Export
+     Users can't see template effect on actual footage before committing export
+     Status: Not implemented
+     Impact: Users guess at style; high regret/re-export rate
+   
+   ✗ Comparison Slider
+     No side-by-side before/after to judge color grade impact
+     Status: Not implemented (would need dual compositor)
+     Impact: Can't compare Premium Founder vs Moody Editorial visually
+   
+   ✗ Theme Color Swatches
+     Caption themes not shown in template pill (no color preview)
+     Status: Not implemented (only names visible)
+     Impact: Users don't know karaoke colors until export
+   
+   ✗ Caption Style Preview
+     Hook/body/keyword styles not previewed in template selection
+     Status: Not implemented
+     Impact: Surprises on export
+   
+   ✗ Keyframe Thumbnail
+     No example screenshot/frame showing template in action
+     Status: Not implemented
+     Impact: Abstract choices; users can't visualize outcome
+   
+   ✗ Template Search/Filter
+     No way to narrow 15 templates by content type or mood
+     Status: Not implemented
+     Impact: Scroll fatigue; users pick first option
+   
+   ✗ Recommended Template
+     No smart selection based on video content, duration, or detected intent
+     Status: Not implemented
+     Impact: No onboarding guidance
+   
+   IMPLEMENTATION COST ESTIMATE:
+   - Keyframe thumbnail: 2 days (compositor pre-render)
+   - Live preview: 3 days (real-time compositor on-screen)
+   - Theme swatches: 0.5 days (UI helper)
+   - Comparison slider: 2 days (dual track)
+   
+   Recommendation: Implement keyframe + theme swatches (0.5-2 days, high ROI)
+
+================================================================================
+SUMMARY SCORES
+================================================================================
+
+1. Number & Variety:            7/10   ✓ Good, lean vs Prequel (15 vs 45)
+2. Color Grade Quality:          8/10   ✓ Strong technical parameters
+3. Caption Theme Matching:       6/10   ✗ Over-reused themes, low glow count
+4. SFX Volume Configuration:     7/10   ✓ Thoughtful per-template, 1 extreme outlier
+5. Naming & Presentation:        8/10   ✓ Professional, some vague names
+6. Missing Categories:           5/10   ✗ Major gap: Gaming, ASMR, News, Glitch
+7. Preview Capability:           4/10   ✗ Critical UX gap: No live preview
+
+OVERALL SCORE:  6.2/10
+─────────────────────────────────────────────────────────
+
+COMPETITIVE TIER:  
+  Prequel:     8.5/10  (45 templates, AI preview, advanced color)
+  CapCut:      8.0/10  (60+ templates, real-time preview, trending)
+  CutSense:    6.2/10  (15 templates, no preview, strong depth)
+
+================================================================================
+ACTION PRIORITIES
+================================================================================
+
+PHASE 1 — IMMEDIATE (1-2 days):
+  1. Add missing theme swatches to template pills (UI fix)
+  2. Fix Film Noir SFX ratio (7.0x → 5.0x max)
+  3. Rename Dark Academy → "Dark Moody" (clarity)
+  4. Rename Faded Summer → "Summer Glow" (specificity)
+  5. Add grain to Viral Caption (0 → 0.08)
+  6. Dedicate theme to Tropical Pop (swap from cyberpunkNeon → custom)
+
+PHASE 2 — SHORT-TERM (3-5 days):
+  1. Implement keyframe preview (compositor thumbnail)
+  2. Add 5 strategic templates:
+     - Gaming (RGB saturation 1.5, glow theme, high SFX)
+     - ASMR (warm minimal, low SFX)
+     - News (neutral professional)
+     - Glitch (digital effect proof-of-concept)
+     - Gritty (high grain cinematic)
+  3. Implement live preview toggle (real-time compositor)
+
+PHASE 3 — MEDIUM-TERM (1-2 weeks):
+  1. Add 8-10 more templates (dreamy, 80s, 90s, fashion, slow/fast motion)
+  2. Implement template comparison slider
+  3. Add template recommendation engine based on content analysis
+  4. Create LUT system for advanced colorists (premium feature)
+
+================================================================================
+TECHNICAL DEBT / RISKS
+================================================================================
+
+✗ Film Noir BGM/SFX ratio of 7.0x may cause dialogue intelligibility issues
+  → Recommend: Cap at SFX 0.35, test export with dialogue-heavy content
+
+✗ cyberpunkNeon used 3 times (Dark Academy, Neon Nights, Tropical Pop)
+  → Recommend: Create distinct theme for Tropical Pop
+
+✗ No grain on Clean Expert (intentional) but Film Noir (0.20) may clash
+  → Recommend: Light grain (0.05) on Clean Expert for cohesion
+
+✗ Caption theme glow only enabled on 2 templates (neonViral, cyberpunkNeon)
+  → Recommend: Enable on 1-2 more high-intensity templates
+
+================================================================================

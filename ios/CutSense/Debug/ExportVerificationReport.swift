@@ -1,174 +1,282 @@
+import AVFoundation
 import Foundation
 
-/// Post-export verification report — captures all pipeline metrics for debugging.
-/// Saved as JSON to Documents/CutSense/Reports/ after each export.
 struct ExportVerificationReport: Codable, Sendable {
     let timestamp: Date
-    let videoFileName: String
+    let outputPath: String
+    let passed: Bool
+    let fileSizeBytes: Int64?
+    let duration: Double?
+    let expectedDuration: Double?
+    let durationDrift: Double?
+    let resolution: String?
+    let expectedResolution: String?
+    let codec: String?
+    let hasVideoTrack: Bool
+    let hasAudioTrack: Bool
+    let audioRMSDBFS: Double?
+    let audioPeakDBFS: Double?
+    let audioSampleCount: Int?
+    let failedChecks: [String]
 
-    // Pipeline stages
-    let transcription: TranscriptionMetrics
-    let roughCut: RoughCutMetrics
-    let captions: CaptionMetrics
-    let editPlan: EditPlanMetrics
-    let export: ExportMetrics
-    let qualityScore: Int
-
-    struct TranscriptionMetrics: Codable, Sendable {
-        let segmentCount: Int
-        let language: String
-        let averageConfidence: Float
-        let totalDuration: Double
+    var failureSummary: String {
+        failedChecks.joined(separator: ", ")
     }
 
-    struct RoughCutMetrics: Codable, Sendable {
-        let originalDuration: Double
-        let cleanDuration: Double
-        let retentionPercent: Double
-        let keepCount: Int
-        let cutCount: Int
-        let reviewCount: Int
-        let fillersRemoved: Int
-        let restartsDetected: Int
-        let duplicatesDetected: Int
+    init(
+        timestamp: Date,
+        outputPath: String,
+        passed: Bool,
+        fileSizeBytes: Int64?,
+        duration: Double?,
+        expectedDuration: Double?,
+        durationDrift: Double?,
+        resolution: String?,
+        expectedResolution: String?,
+        codec: String?,
+        hasVideoTrack: Bool,
+        hasAudioTrack: Bool,
+        audioRMSDBFS: Double? = nil,
+        audioPeakDBFS: Double? = nil,
+        audioSampleCount: Int? = nil,
+        failedChecks: [String]
+    ) {
+        self.timestamp = timestamp
+        self.outputPath = outputPath
+        self.passed = passed
+        self.fileSizeBytes = fileSizeBytes
+        self.duration = duration
+        self.expectedDuration = expectedDuration
+        self.durationDrift = durationDrift
+        self.resolution = resolution
+        self.expectedResolution = expectedResolution
+        self.codec = codec
+        self.hasVideoTrack = hasVideoTrack
+        self.hasAudioTrack = hasAudioTrack
+        self.audioRMSDBFS = audioRMSDBFS
+        self.audioPeakDBFS = audioPeakDBFS
+        self.audioSampleCount = audioSampleCount
+        self.failedChecks = failedChecks
     }
-
-    struct CaptionMetrics: Codable, Sendable {
-        let totalCaptions: Int
-        let hookCount: Int
-        let regularCount: Int
-        let conclusionCount: Int
-        let revealCount: Int
-        let keywordCount: Int
-        let averageLength: Double
-        let maxLength: Int
-        let sceneBehaviorBreakdown: [String: Int]
-    }
-
-    struct EditPlanMetrics: Codable, Sendable {
-        let totalEffects: Int
-        let sfxCount: Int
-        let zoomCount: Int
-        let shakeCount: Int
-        let flashCount: Int
-        let colorShiftCount: Int
-        let averageIntensity: Float
-        let effectsPerMinute: Double
-    }
-
-    struct ExportMetrics: Codable, Sendable {
-        let outputDuration: Double
-        let outputFileSize: Int64
-        let exportTimeSeconds: Double
-        let resolution: String
-        let codec: String
-    }
-
-    // MARK: - Save to disk
 
     func save() {
-        let fm = FileManager.default
-        let docs = fm.urls(for: .documentDirectory, in: .userDomainMask).first!
-        let reportsDir = docs.appendingPathComponent("CutSense/Reports", isDirectory: true)
+        let reportsDirectory = URL.documentsDirectory
+            .appending(path: "CutSense", directoryHint: .isDirectory)
+            .appending(path: "Reports", directoryHint: .isDirectory)
+        try? FileManager.default.createDirectory(at: reportsDirectory, withIntermediateDirectories: true)
 
-        try? fm.createDirectory(at: reportsDir, withIntermediateDirectories: true)
-
-        let formatter = DateFormatter()
-        formatter.dateFormat = "yyyy-MM-dd_HHmmss"
-        let fileName = "report_\(formatter.string(from: timestamp)).json"
-        let fileURL = reportsDir.appendingPathComponent(fileName)
-
+        let seconds = Int(timestamp.timeIntervalSince1970.rounded())
+        let fileURL = reportsDirectory.appending(path: "export_verification_\(seconds).json")
         let encoder = JSONEncoder()
         encoder.dateEncodingStrategy = .iso8601
         encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
-
-        if let data = try? encoder.encode(self) {
-            try? data.write(to: fileURL)
-            #if DEBUG
-            print("[CutSense] Report saved: \(fileURL.lastPathComponent)")
-            #endif
-        }
+        guard let data = try? encoder.encode(self) else { return }
+        try? data.write(to: fileURL, options: [.atomic])
     }
+}
 
-    // MARK: - Builder from pipeline results
+enum ExportVerifier {
+    static func verify(
+        outputURL: URL,
+        expectedDuration: Double?,
+        expectedResolution: String?,
+        minimumFileSizeBytes: Int64 = 16_384,
+        minimumAudioRMSDBFS: Double = -55,
+        minimumAudioPeakDBFS: Double = -45
+    ) async -> ExportVerificationReport {
+        let attributes = try? FileManager.default.attributesOfItem(atPath: outputURL.path)
+        let fileSize = attributes?[.size] as? Int64
+        var failedChecks: [String] = []
 
-    static func build(
-        videoFileName: String,
-        transcription: TranscriptionResult,
-        roughCut: RoughCutResult,
-        analysisOutput: SmartTranscriptAnalyzer.AnalysisOutput?,
-        captions: [CaptionSegment],
-        editPlan: EditPlan,
-        qualityReport: QualityReport,
-        outputDuration: Double,
-        outputFileSize: Int64,
-        exportTime: Double,
-        resolution: String = "1080x1920",
-        codec: String = "H.264"
-    ) -> ExportVerificationReport {
-        let captionRoles = Dictionary(grouping: captions, by: \.role)
-        let behaviors = Dictionary(grouping: captions, by: \.sceneBehavior)
-            .mapValues(\.count)
-            .reduce(into: [String: Int]()) { $0[$1.key.rawValue] = $1.value }
+        if !FileManager.default.fileExists(atPath: outputURL.path) {
+            failedChecks.append("file missing")
+        }
 
-        let effectTypes = Dictionary(grouping: editPlan.decisions, by: \.type)
+        if (fileSize ?? 0) < minimumFileSizeBytes {
+            failedChecks.append("file too small")
+        }
 
-        let avgLen = captions.isEmpty ? 0 : captions.reduce(0.0) { $0 + Double($1.text.count) } / Double(captions.count)
-        let maxLen = captions.map(\.text.count).max() ?? 0
+        let asset = AVURLAsset(url: outputURL)
+        let loadedDuration = try? await asset.load(.duration)
+        let duration = loadedDuration.map(\.seconds).flatMap { seconds in
+            seconds.isFinite && seconds > 0 ? seconds : nil
+        }
+        let videoTracks = (try? await asset.loadTracks(withMediaType: .video)) ?? []
+        let audioTracks = (try? await asset.loadTracks(withMediaType: .audio)) ?? []
+        let resolution = await resolutionString(for: videoTracks.first)
+        let codec = await codecString(for: videoTracks.first)
+        let audioLevels = await audioLevelReport(asset: asset, track: audioTracks.first)
 
-        let cleanDur = roughCut.cleanDuration
-        let epm = cleanDur > 0 ? Double(editPlan.totalEffects) / (cleanDur / 60.0) : 0
+        if duration == nil {
+            failedChecks.append("duration unreadable")
+        }
+
+        if videoTracks.isEmpty {
+            failedChecks.append("video track missing")
+        }
+
+        if audioTracks.isEmpty {
+            failedChecks.append("audio track missing")
+        } else if let audioLevels {
+            if audioLevels.rmsDBFS < minimumAudioRMSDBFS || audioLevels.peakDBFS < minimumAudioPeakDBFS {
+                failedChecks.append("audio silent")
+            }
+        } else {
+            failedChecks.append("audio unreadable")
+        }
+
+        let durationDrift: Double?
+        if let expectedDuration, let duration {
+            let drift = abs(duration - expectedDuration)
+            durationDrift = drift
+            let tolerance = max(0.75, expectedDuration * 0.04)
+            if drift > tolerance {
+                failedChecks.append("duration drift \(drift.formatted(.number.precision(.fractionLength(2))))s")
+            }
+        } else {
+            durationDrift = nil
+        }
+
+        if let expectedResolution, let resolution, expectedResolution != resolution {
+            failedChecks.append("resolution \(resolution) != expected \(expectedResolution)")
+        } else if expectedResolution != nil && resolution == nil {
+            failedChecks.append("resolution unreadable")
+        }
 
         return ExportVerificationReport(
             timestamp: Date(),
-            videoFileName: videoFileName,
-            transcription: TranscriptionMetrics(
-                segmentCount: transcription.segments.count,
-                language: transcription.language,
-                averageConfidence: transcription.overallConfidence,
-                totalDuration: transcription.segments.last?.endTime ?? 0
-            ),
-            roughCut: RoughCutMetrics(
-                originalDuration: roughCut.originalDuration,
-                cleanDuration: roughCut.cleanDuration,
-                retentionPercent: roughCut.originalDuration > 0
-                    ? (roughCut.cleanDuration / roughCut.originalDuration) * 100 : 0,
-                keepCount: roughCut.keepSegments.count,
-                cutCount: roughCut.cutSegments.count,
-                reviewCount: roughCut.reviewSegments.count,
-                fillersRemoved: analysisOutput?.fillersRemoved ?? 0,
-                restartsDetected: analysisOutput?.restartsDetected ?? 0,
-                duplicatesDetected: analysisOutput?.duplicatesDetected ?? 0
-            ),
-            captions: CaptionMetrics(
-                totalCaptions: captions.count,
-                hookCount: captionRoles[.hook]?.count ?? 0,
-                regularCount: captionRoles[.regular]?.count ?? 0,
-                conclusionCount: captionRoles[.conclusion]?.count ?? 0,
-                revealCount: captionRoles[.reveal]?.count ?? 0,
-                keywordCount: captionRoles[.keyword]?.count ?? 0,
-                averageLength: avgLen,
-                maxLength: maxLen,
-                sceneBehaviorBreakdown: behaviors
-            ),
-            editPlan: EditPlanMetrics(
-                totalEffects: editPlan.totalEffects,
-                sfxCount: effectTypes[.sfx]?.count ?? 0,
-                zoomCount: effectTypes[.zoom]?.count ?? 0,
-                shakeCount: effectTypes[.shake]?.count ?? 0,
-                flashCount: effectTypes[.flash]?.count ?? 0,
-                colorShiftCount: effectTypes[.colorShift]?.count ?? 0,
-                averageIntensity: editPlan.averageIntensity,
-                effectsPerMinute: epm
-            ),
-            export: ExportMetrics(
-                outputDuration: outputDuration,
-                outputFileSize: outputFileSize,
-                exportTimeSeconds: exportTime,
-                resolution: resolution,
-                codec: codec
-            ),
-            qualityScore: qualityReport.score
+            outputPath: outputURL.path,
+            passed: failedChecks.isEmpty,
+            fileSizeBytes: fileSize,
+            duration: duration,
+            expectedDuration: expectedDuration,
+            durationDrift: durationDrift,
+            resolution: resolution,
+            expectedResolution: expectedResolution,
+            codec: codec,
+            hasVideoTrack: !videoTracks.isEmpty,
+            hasAudioTrack: !audioTracks.isEmpty,
+            audioRMSDBFS: audioLevels?.rmsDBFS,
+            audioPeakDBFS: audioLevels?.peakDBFS,
+            audioSampleCount: audioLevels?.sampleCount,
+            failedChecks: failedChecks
         )
+    }
+
+    private struct AudioLevelReport: Sendable {
+        let rmsDBFS: Double
+        let peakDBFS: Double
+        let sampleCount: Int
+    }
+
+    private static func audioLevelReport(asset: AVURLAsset, track: AVAssetTrack?) async -> AudioLevelReport? {
+        guard let track else { return nil }
+
+        do {
+            let reader = try AVAssetReader(asset: asset)
+            let output = AVAssetReaderTrackOutput(
+                track: track,
+                outputSettings: [
+                    AVFormatIDKey: kAudioFormatLinearPCM,
+                    AVLinearPCMBitDepthKey: 16,
+                    AVLinearPCMIsFloatKey: false,
+                    AVLinearPCMIsBigEndianKey: false,
+                    AVLinearPCMIsNonInterleaved: false
+                ]
+            )
+            output.alwaysCopiesSampleData = false
+
+            guard reader.canAdd(output) else { return nil }
+            reader.add(output)
+            guard reader.startReading() else { return nil }
+
+            var sumSquares = 0.0
+            var peak = 0.0
+            var sampleCount = 0
+
+            while let sampleBuffer = output.copyNextSampleBuffer() {
+                guard let blockBuffer = CMSampleBufferGetDataBuffer(sampleBuffer) else {
+                    continue
+                }
+
+                let length = CMBlockBufferGetDataLength(blockBuffer)
+                guard length > 0 else { continue }
+
+                var data = Data(count: length)
+                let copyStatus = data.withUnsafeMutableBytes { rawBuffer -> OSStatus in
+                    guard let destination = rawBuffer.baseAddress else { return kCMBlockBufferBadPointerParameterErr }
+                    return CMBlockBufferCopyDataBytes(
+                        blockBuffer,
+                        atOffset: 0,
+                        dataLength: length,
+                        destination: destination
+                    )
+                }
+                guard copyStatus == noErr else { continue }
+
+                data.withUnsafeBytes { rawBuffer in
+                    let samples = rawBuffer.bindMemory(to: Int16.self)
+                    for sample in samples {
+                        let normalized = Double(sample) / Double(Int16.max)
+                        let magnitude = abs(normalized)
+                        peak = max(peak, magnitude)
+                        sumSquares += normalized * normalized
+                        sampleCount += 1
+                    }
+                }
+            }
+
+            guard sampleCount > 0, reader.status == .completed else {
+                return nil
+            }
+
+            let rms = sqrt(sumSquares / Double(sampleCount))
+            return AudioLevelReport(
+                rmsDBFS: dbFS(rms),
+                peakDBFS: dbFS(peak),
+                sampleCount: sampleCount
+            )
+        } catch {
+            return nil
+        }
+    }
+
+    private static func dbFS(_ amplitude: Double) -> Double {
+        guard amplitude.isFinite, amplitude > 0 else { return -120 }
+        return max(-120, 20 * log10(amplitude))
+    }
+
+    private static func resolutionString(for track: AVAssetTrack?) async -> String? {
+        guard let track,
+              let naturalSize = try? await track.load(.naturalSize),
+              let transform = try? await track.load(.preferredTransform) else {
+            return nil
+        }
+
+        let transformed = naturalSize.applying(transform)
+        let width = Int(abs(transformed.width).rounded())
+        let height = Int(abs(transformed.height).rounded())
+        return "\(width)x\(height)"
+    }
+
+    private static func codecString(for track: AVAssetTrack?) async -> String? {
+        guard let track,
+              let formatDescriptions = try? await track.load(.formatDescriptions),
+              let formatDescription = formatDescriptions.first else {
+            return nil
+        }
+
+        let code = CMFormatDescriptionGetMediaSubType(formatDescription)
+        return fourCCString(code)
+    }
+
+    private static func fourCCString(_ code: FourCharCode) -> String {
+        let bytes = [
+            UInt8((code >> 24) & 0xff),
+            UInt8((code >> 16) & 0xff),
+            UInt8((code >> 8) & 0xff),
+            UInt8(code & 0xff)
+        ].filter { $0 != 0 }
+        return String(bytes: bytes, encoding: .macOSRoman) ?? "\(code)"
     }
 }

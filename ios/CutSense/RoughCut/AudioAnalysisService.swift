@@ -8,7 +8,7 @@ struct AudioSegment: Sendable {
     let energy: Float
 }
 
-enum AudioSegmentType: String, Sendable {
+enum AudioSegmentType: String, Codable, Sendable {
     case speech
     case silence
     case lowEnergy
@@ -21,6 +21,26 @@ struct AudioAnalysisResult: Sendable {
     let averageEnergy: Float
     let peakEnergy: Float
     let duration: Double
+}
+
+enum AudioAnalysisError: Error, LocalizedError, Sendable {
+    case cannotAddAudioOutput
+    case readerStartFailed(String)
+    case readerFailed(String)
+    case noSamplesRead(duration: Double)
+
+    var errorDescription: String? {
+        switch self {
+        case .cannotAddAudioOutput:
+            "Audio analyzer could not attach the asset reader output."
+        case .readerStartFailed(let message):
+            "Audio analyzer could not start reading samples: \(message)"
+        case .readerFailed(let message):
+            "Audio analyzer failed while reading samples: \(message)"
+        case .noSamplesRead(let duration):
+            "Audio analyzer read zero samples from an audio track with duration \(duration.formatted(.number.precision(.fractionLength(2))))s."
+        }
+    }
 }
 
 enum AudioAnalysisService {
@@ -61,8 +81,13 @@ enum AudioAnalysisService {
         ]
 
         let output = AVAssetReaderTrackOutput(track: audioTrack, outputSettings: outputSettings)
+        guard reader.canAdd(output) else {
+            throw AudioAnalysisError.cannotAddAudioOutput
+        }
         reader.add(output)
-        reader.startReading()
+        guard reader.startReading() else {
+            throw AudioAnalysisError.readerStartFailed(reader.error?.localizedDescription ?? "unknown reader error")
+        }
 
         let sampleRate = 16000.0
         let windowSamples = Int(windowDuration * sampleRate)
@@ -73,7 +98,8 @@ enum AudioAnalysisService {
             let length = CMBlockBufferGetDataLength(blockBuffer)
             var data = Data(count: length)
             data.withUnsafeMutableBytes { ptr in
-                CMBlockBufferCopyDataBytes(blockBuffer, atOffset: 0, dataLength: length, destination: ptr.baseAddress!)
+                guard let baseAddress = ptr.baseAddress else { return }
+                CMBlockBufferCopyDataBytes(blockBuffer, atOffset: 0, dataLength: length, destination: baseAddress)
             }
 
             // Convert Int16 to Float
@@ -85,14 +111,16 @@ enum AudioAnalysisService {
             allSamples.append(contentsOf: floatSamples)
         }
 
+        if reader.status == .failed || reader.status == .cancelled {
+            throw AudioAnalysisError.readerFailed(reader.error?.localizedDescription ?? "\(reader.status)")
+        }
+
         guard !allSamples.isEmpty else {
-            return AudioAnalysisResult(
-                segments: [], silenceIntervals: [], averageEnergy: 0, peakEnergy: 0, duration: duration
-            )
+            throw AudioAnalysisError.noSamplesRead(duration: duration)
         }
 
         // First pass: compute RMS per window to find adaptive noise floor
-        let totalWindows = allSamples.count / windowSamples
+        let totalWindows = max(1, Int(ceil(Double(allSamples.count) / Double(windowSamples))))
         var windowRMS: [Float] = []
         windowRMS.reserveCapacity(totalWindows)
 

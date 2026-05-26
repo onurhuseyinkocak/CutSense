@@ -1,0 +1,22 @@
+{
+  "id": "cinematic",
+  "displayName": "Cinematic",
+  "identity": ["black premium cinematic", "emotional", "slow but strong", "clean"],
+  "captionStyleAssetID": "caption_cinematic_lower_third",
+  "sfxAssetIDs": [
+    "mixkit_air_woosh_1489",
+    "mixkit_cinematic_whoosh_deep_impact_1143",
+    "mixkit_cinematic_trailer_riser_790",
+    "mixkit_cinematic_heartbeat_ambience_497"
+  ],
+  "visualEffectAssetIDs": [
+    "fx_subtle_film_grain",
+    "fx_warm_light_leak",
+    "fx_subtle_gold_glow",
+    "fx_slow_zoom"
+  ],
+  "musicAssetID": "mixkit_silent_descent_614",
+  "transitionAssetIDs": ["transition_fade", "transition_cross_dissolve", "transition_soft_push"],
+  "pacing": "slow_premium",
+  "export": { "aspectRatio": "9:16", "width": 1080, "height": 1920 }
+}

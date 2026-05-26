@@ -9,6 +9,8 @@ struct CaptionSegment: Sendable, Identifiable {
     var role: CaptionRole
     var style: CaptionStyle
     var sceneBehavior: CaptionSceneBehavior
+    /// Per-word timing for accurate karaoke: [(word, startTime, duration)]
+    var wordTimings: [(word: String, start: Double, duration: Double)] = []
 
     init(
         id: UUID = UUID(),
@@ -17,7 +19,8 @@ struct CaptionSegment: Sendable, Identifiable {
         text: String,
         role: CaptionRole,
         style: CaptionStyle,
-        sceneBehavior: CaptionSceneBehavior = .none
+        sceneBehavior: CaptionSceneBehavior = .none,
+        wordTimings: [(word: String, start: Double, duration: Double)] = []
     ) {
         self.id = id
         self.startTime = startTime
@@ -26,6 +29,7 @@ struct CaptionSegment: Sendable, Identifiable {
         self.role = role
         self.style = style
         self.sceneBehavior = sceneBehavior
+        self.wordTimings = wordTimings
     }
 }
 
@@ -45,6 +49,11 @@ enum CaptionStyle: String, Codable, Sendable, CaseIterable {
     case premiumLowerThird = "premium_lower_third"
     case focusStatement = "focus_statement"
     case minimalWellness = "minimal_wellness"
+    case neonGlow = "neon_glow"
+    case elegantSerif = "elegant_serif"
+    case typewriterClean = "typewriter_clean"
+    case glitchBold = "glitch_bold"
+    case retroVHS = "retro_vhs"
 
     var displayName: String {
         switch self {
@@ -53,6 +62,11 @@ enum CaptionStyle: String, Codable, Sendable, CaseIterable {
         case .premiumLowerThird: "Lower Third"
         case .focusStatement: "Focus"
         case .minimalWellness: "Minimal"
+        case .neonGlow: "Neon Glow"
+        case .elegantSerif: "Elegant Serif"
+        case .typewriterClean: "Typewriter"
+        case .glitchBold: "Glitch Bold"
+        case .retroVHS: "Retro VHS"
         }
     }
 }

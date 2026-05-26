@@ -1,0 +1,10 @@
+{
+  "id": "fx_subtle_gold_glow",
+  "displayName": "Subtle Gold Glow",
+  "type": "visualEffect",
+  "category": "glow",
+  "intensity": "low",
+  "bestForPresets": ["cinematic", "influencer"],
+  "moodTags": ["premium", "warm", "soft"],
+  "renderHint": "warmGlowOverlay"
+}

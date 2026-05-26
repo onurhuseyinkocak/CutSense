@@ -1,0 +1,10 @@
+{
+  "id": "fx_blur_highlight",
+  "displayName": "Blur Highlight",
+  "type": "visualEffect",
+  "category": "blur",
+  "intensity": "medium",
+  "bestForPresets": ["tech_influencer", "ugc"],
+  "moodTags": ["focus", "product", "clean"],
+  "renderHint": "edgeBlur"
+}

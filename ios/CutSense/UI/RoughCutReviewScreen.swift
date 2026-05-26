@@ -227,6 +227,7 @@ struct RoughCutReviewScreen: View {
             )
         }
         roughCut = recalculate(updated)
+        persistRoughCut()
     }
 
     private func pushUndo() {
@@ -238,6 +239,7 @@ struct RoughCutReviewScreen: View {
         guard let previous = undoStack.popLast() else { return }
         redoStack.append(roughCut)
         roughCut = previous
+        persistRoughCut()
         UIImpactFeedbackGenerator(style: .medium).impactOccurred()
     }
 
@@ -245,6 +247,7 @@ struct RoughCutReviewScreen: View {
         guard let next = redoStack.popLast() else { return }
         undoStack.append(roughCut)
         roughCut = next
+        persistRoughCut()
         UIImpactFeedbackGenerator(style: .light).impactOccurred()
     }
 
@@ -265,6 +268,7 @@ struct RoughCutReviewScreen: View {
         var updated = roughCut.decisions
         updated[index] = restored
         roughCut = recalculate(updated)
+        persistRoughCut()
     }
 
     private func cutSegment(at index: Int) {
@@ -284,6 +288,34 @@ struct RoughCutReviewScreen: View {
         var updated = roughCut.decisions
         updated[index] = cut
         roughCut = recalculate(updated)
+        persistRoughCut()
+    }
+
+    private func persistRoughCut() {
+        do {
+            try PipelineArtifactStore.saveAnalysis(
+                projectId: projectId,
+                sourceVideoURL: videoURL,
+                transcription: transcription,
+                roughCut: roughCut
+            )
+            PipelineDiagnostics.record(
+                projectId: projectId,
+                stage: .roughCut,
+                status: .completed,
+                source: .userEdit,
+                message: "rough cut user edits persisted",
+                artifactCount: roughCut.decisions.count,
+                metadata: [
+                    "cleanDuration": "\(roughCut.cleanDuration)",
+                    "cutCount": "\(roughCut.cutSegments.count)"
+                ]
+            )
+        } catch {
+            #if DEBUG
+            print("[CutSense] Rough cut artifact save failed: \(error.localizedDescription)")
+            #endif
+        }
     }
 
     private func saveFeedback(_ decision: RoughCutDecision, userAction: String) {
@@ -304,7 +336,13 @@ struct RoughCutReviewScreen: View {
 
     private func recalculate(_ decisions: [RoughCutDecision]) -> RoughCutResult {
         let keepSegments = decisions.filter { $0.action == .keep }
-        let cleanDuration = keepSegments.reduce(0.0) { $0 + ($1.endTime - $1.startTime) }
+        let includedRanges = TimelineRangeNormalizer.includedRanges(
+            from: decisions,
+            assetDuration: roughCut.originalDuration
+        )
+        let cleanDuration = includedRanges.reduce(0.0) { total, range in
+            total + max(0, range.endTime - range.startTime)
+        }
 
         return RoughCutResult(
             decisions: decisions,

@@ -11,9 +11,28 @@ final class VideoImportService {
     var isImporting = false
     var errorMessage: String?
 
+    enum ImportError: LocalizedError {
+        case metadataUnavailable
+        case unsupportedDuration(Double)
+        case missingAudio
+
+        var errorDescription: String? {
+            switch self {
+            case .metadataUnavailable:
+                "Video bilgileri okunamadı. Lütfen farklı bir dosya deneyin."
+            case .unsupportedDuration:
+                "CutSense en fazla 5 dakikalık videoları analiz edebilir."
+            case .missingAudio:
+                "Bu videoda ses bulunamadı. Analiz için konuşma içeren bir video seçin."
+            }
+        }
+    }
+
     func importVideo(from item: PhotosPickerItem) async {
         isImporting = true
         errorMessage = nil
+        importedVideoURL = nil
+        metadata = nil
         defer { isImporting = false }
 
         do {
@@ -24,23 +43,39 @@ final class VideoImportService {
 
             // Move from temp to persistent app documents
             let persistentURL = try Self.persistVideo(from: movie.url)
+            guard let importedMetadata = await VideoMetadataService.extract(from: persistentURL) else {
+                try? FileManager.default.removeItem(at: persistentURL)
+                throw ImportError.metadataUnavailable
+            }
+            guard importedMetadata.isSupported else {
+                try? FileManager.default.removeItem(at: persistentURL)
+                throw ImportError.unsupportedDuration(importedMetadata.duration)
+            }
+            guard importedMetadata.hasAudio else {
+                try? FileManager.default.removeItem(at: persistentURL)
+                throw ImportError.missingAudio
+            }
+
             importedVideoURL = persistentURL
-            metadata = await VideoMetadataService.extract(from: persistentURL)
+            metadata = importedMetadata
         } catch {
-            errorMessage = error.localizedDescription
+            #if DEBUG
+            print("[VideoImport] failed: \(error)")
+            #endif
+            errorMessage = (error as? LocalizedError)?.errorDescription
+                ?? "Video yüklenemedi. Lütfen başka bir dosya deneyin."
         }
     }
 
     /// Move video from temp directory to persistent app storage
     private static func persistVideo(from tempURL: URL) throws -> URL {
-        let docsDir = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!
-        let videosDir = docsDir.appendingPathComponent("CutSense/videos", isDirectory: true)
+        let videosDir = URL.documentsDirectory
+            .appending(path: "CutSense", directoryHint: .isDirectory)
+            .appending(path: "videos", directoryHint: .isDirectory)
         try FileManager.default.createDirectory(at: videosDir, withIntermediateDirectories: true)
 
-        let destination = videosDir.appendingPathComponent(tempURL.lastPathComponent)
-        if FileManager.default.fileExists(atPath: destination.path) {
-            try FileManager.default.removeItem(at: destination)
-        }
+        let fileExtension = tempURL.pathExtension.isEmpty ? "mov" : tempURL.pathExtension
+        let destination = videosDir.appending(path: "\(UUID().uuidString).\(fileExtension)")
         try FileManager.default.moveItem(at: tempURL, to: destination)
         return destination
     }
@@ -54,13 +89,11 @@ struct VideoTransferable: Transferable {
             SentTransferredFile(movie.url)
         } importing: { received in
             let tempDir = FileManager.default.temporaryDirectory
-                .appendingPathComponent("CutSense", isDirectory: true)
+                .appending(path: "CutSense", directoryHint: .isDirectory)
             try FileManager.default.createDirectory(at: tempDir, withIntermediateDirectories: true)
 
-            let destination = tempDir.appendingPathComponent(received.file.lastPathComponent)
-            if FileManager.default.fileExists(atPath: destination.path) {
-                try FileManager.default.removeItem(at: destination)
-            }
+            let fileExtension = received.file.pathExtension.isEmpty ? "mov" : received.file.pathExtension
+            let destination = tempDir.appending(path: "\(UUID().uuidString).\(fileExtension)")
             try FileManager.default.copyItem(at: received.file, to: destination)
             return Self(url: destination)
         }

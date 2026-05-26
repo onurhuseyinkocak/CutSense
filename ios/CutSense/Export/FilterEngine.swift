@@ -2,7 +2,10 @@
 import CoreImage.CIFilterBuiltins
 
 enum FilterEngine {
-    nonisolated(unsafe) private static let ciContext = CIContext(options: [.useSoftwareRenderer: false])
+    private static let ciContext = CIContext(options: [.useSoftwareRenderer: false])
+
+    /// Shared CI context for read-only render operations across the app.
+    static var sharedCIContext: CIContext { ciContext }
 
     /// Apply template color grading to a CIImage
     static func applyGrade(_ grade: TemplateConfig.ColorGrade, to image: CIImage) -> CIImage {

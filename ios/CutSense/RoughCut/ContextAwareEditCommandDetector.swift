@@ -30,6 +30,10 @@ enum ContextAwareEditCommandDetector {
         ("yanlış söyledim", 0.85),
         ("yeniden giriyorum", 0.85),
         ("olmadı baştan", 0.90),
+        ("gene olmadı", 0.92),
+        ("yine olmadı", 0.92),
+        ("ama izleyebiliriz yani", 0.90),
+        ("izleyebiliriz yani", 0.88),
     ]
 
     // Turkish suspicious words that MAY be edit commands or MAY be content
@@ -40,7 +44,8 @@ enum ContextAwareEditCommandDetector {
     // Turkish content patterns — if these surround suspicious words, it's content
     private static let turkishContentPatterns: [String] = [
         "çünkü", "dersek", "mesela", "öğrenmek", "bazen", "önemli", "aslında",
-        "strateji", "kullanıcı", "sistem", "uygulama", "örneğin", "demek istiyorum"
+        "strateji", "kullanıcı", "sistem", "uygulama", "örneğin", "demek istiyorum",
+        "vazgeçiyor", "vazgeçmek", "vazgeçiyor artık"
     ]
 
     // Turkish filler words

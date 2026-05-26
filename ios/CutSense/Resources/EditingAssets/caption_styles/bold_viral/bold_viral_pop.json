@@ -1,0 +1,9 @@
+{
+  "id": "caption_bold_viral_pop",
+  "displayName": "Bold Viral Pop",
+  "category": "bold_viral",
+  "style": "hook_impact",
+  "placement": "centerSafe",
+  "animation": "popKaraoke",
+  "safeZone": { "top": 120, "bottom": 220, "horizontal": 80 }
+}

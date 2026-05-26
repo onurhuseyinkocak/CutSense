@@ -42,6 +42,39 @@ struct ExportPipelineE2ETests {
         ])
     }
 
+    static func syntheticTranscription(duration: Double) -> TranscriptionResult {
+        let segments = [
+            TranscriptSegment(
+                startTime: 0,
+                endTime: min(1.2, duration),
+                text: "This is the hook line",
+                confidence: 0.95,
+                segmentType: .contentSentence
+            ),
+            TranscriptSegment(
+                startTime: min(1.3, duration),
+                endTime: min(2.3, duration),
+                text: "Key insight here",
+                confidence: 0.92,
+                segmentType: .contentSentence
+            ),
+            TranscriptSegment(
+                startTime: min(2.4, duration),
+                endTime: duration,
+                text: "Follow for more",
+                confidence: 0.9,
+                segmentType: .contentSentence
+            )
+        ].filter { $0.endTime > $0.startTime }
+
+        return TranscriptionResult(
+            fullText: segments.map(\.text).joined(separator: " "),
+            segments: segments,
+            language: "en-US",
+            overallConfidence: 0.92
+        )
+    }
+
     /// Each test gets its own copy to avoid AVFoundation locking conflicts
     static func getOrCreateTestVideo() async throws -> URL {
         return try await generateTestVideo()
@@ -81,20 +114,34 @@ struct ExportPipelineE2ETests {
     // MARK: - Frame Extraction
 
     static func extractFrames(from url: URL, at times: [Double]) async throws -> [UIImage] {
-        let asset = AVURLAsset(url: url)
-        let generator = AVAssetImageGenerator(asset: asset)
-        generator.appliesPreferredTrackTransform = true
-        generator.requestedTimeToleranceBefore = CMTime(seconds: 0.05, preferredTimescale: 600)
-        generator.requestedTimeToleranceAfter = CMTime(seconds: 0.05, preferredTimescale: 600)
-        generator.maximumSize = CGSize(width: 540, height: 960)
-
         var images: [UIImage] = []
         for t in times {
-            let cmTime = CMTime(seconds: t, preferredTimescale: 600)
-            let (cgImage, _) = try await generator.image(at: cmTime)
-            images.append(UIImage(cgImage: cgImage))
+            images.append(try await extractFrame(from: url, at: t))
         }
         return images
+    }
+
+    private static func extractFrame(from url: URL, at time: Double) async throws -> UIImage {
+        var lastError: Error?
+        for attempt in 0..<3 {
+            do {
+                let asset = AVURLAsset(url: url)
+                let generator = AVAssetImageGenerator(asset: asset)
+                generator.appliesPreferredTrackTransform = true
+                generator.requestedTimeToleranceBefore = CMTime(seconds: 0.05, preferredTimescale: 600)
+                generator.requestedTimeToleranceAfter = CMTime(seconds: 0.05, preferredTimescale: 600)
+                generator.maximumSize = CGSize(width: 540, height: 960)
+                let cmTime = CMTime(seconds: time, preferredTimescale: 600)
+                let (cgImage, _) = try await generator.image(at: cmTime)
+                return UIImage(cgImage: cgImage)
+            } catch {
+                lastError = error
+                if attempt < 2 {
+                    try await Task.sleep(for: .milliseconds(250))
+                }
+            }
+        }
+        throw lastError ?? NSError(domain: "ExportPipelineE2ETests", code: -1)
     }
 
     static func saveFrames(_ images: [UIImage], templateName: String) throws -> URL {
@@ -147,6 +194,63 @@ struct ExportPipelineE2ETests {
 
         let audioTracks = try await asset.loadTracks(withMediaType: .audio)
         #expect(!audioTracks.isEmpty)
+    }
+
+    @Test("Bundled video — audio -> rough cut -> captions -> edit plan -> export")
+    @MainActor
+    func bundledVideoFullPipelineExport() async throws {
+        let sourceURL = try await Self.getOrCreateTestVideo()
+        let asset = AVURLAsset(url: sourceURL)
+        let duration = try await asset.load(.duration).seconds
+        #expect(duration > 0)
+
+        let audioResult = try await AudioAnalysisService.analyze(url: sourceURL)
+        #expect(audioResult.duration > 0)
+        #expect(!audioResult.segments.isEmpty)
+
+        let transcription = Self.syntheticTranscription(duration: duration)
+        let roughCut = RoughCutDecisionEngine.generateDecisions(
+            transcription: transcription,
+            audioAnalysis: audioResult
+        )
+        #expect(!roughCut.decisions.isEmpty)
+        #expect(roughCut.cleanDuration > 0)
+
+        let template = TemplateConfig.viralCaption
+        let captions = CaptionEngine.generateCaptions(
+            from: transcription,
+            roughCut: roughCut,
+            template: template
+        )
+        #expect(!captions.isEmpty)
+
+        let editPlan = EditDecisionEngine.generateEditPlan(
+            captions: captions,
+            roughCut: roughCut,
+            template: template
+        )
+        #expect(editPlan.averageIntensity >= 0 && editPlan.averageIntensity <= 1)
+
+        let report = QualityGateService.evaluate(
+            captions: captions,
+            editPlan: editPlan,
+            roughCut: roughCut,
+            template: template
+        )
+        #expect(report.score >= 0)
+
+        let exportService = ExportService()
+        let exportedURL = await exportService.exportWithPipeline(
+            sourceURL: sourceURL,
+            decisions: roughCut.decisions,
+            captions: captions,
+            template: template,
+            editPlan: editPlan
+        )
+
+        let outputURL = try #require(exportedURL)
+        let fileSize = (try FileManager.default.attributesOfItem(atPath: outputURL.path)[.size] as? Int64) ?? 0
+        #expect(fileSize > 10_000)
     }
 
     @Test("Premium Founder — full export + frame inspection")

@@ -1,0 +1,9 @@
+{
+  "id": "caption_cinematic_quote",
+  "displayName": "Cinematic Quote",
+  "category": "cinematic",
+  "style": "focus_statement",
+  "placement": "lowerThird",
+  "animation": "fadeHold",
+  "safeZone": { "top": 120, "bottom": 220, "horizontal": 80 }
+}

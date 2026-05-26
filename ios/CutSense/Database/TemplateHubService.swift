@@ -120,7 +120,10 @@ final class TemplateHubService {
                 .value
             templates = rows
         } catch {
-            errorMessage = error.localizedDescription
+            #if DEBUG
+            print("[TemplateHub] fetch failed: \(error)")
+            #endif
+            errorMessage = "Şablonlar yüklenemedi. İnternet bağlantınızı kontrol edin."
         }
     }
 
@@ -139,7 +142,10 @@ final class TemplateHubService {
                 .execute()
             return true
         } catch {
-            errorMessage = error.localizedDescription
+            #if DEBUG
+            print("[TemplateHub] upload failed: \(error)")
+            #endif
+            errorMessage = "Şablon yüklenemedi. Lütfen tekrar deneyin."
             return false
         }
     }
@@ -193,7 +199,10 @@ final class TemplateHubService {
                 .execute()
             return true
         } catch {
-            errorMessage = error.localizedDescription
+            #if DEBUG
+            print("[TemplateHub] rate failed: \(error)")
+            #endif
+            errorMessage = "Puanlama kaydedilemedi. Lütfen tekrar deneyin."
             return false
         }
     }
@@ -208,7 +217,10 @@ final class TemplateHubService {
             templates.removeAll { $0.id == id }
             return true
         } catch {
-            errorMessage = error.localizedDescription
+            #if DEBUG
+            print("[TemplateHub] delete failed: \(error)")
+            #endif
+            errorMessage = "Şablon silinemedi. Lütfen tekrar deneyin."
             return false
         }
     }

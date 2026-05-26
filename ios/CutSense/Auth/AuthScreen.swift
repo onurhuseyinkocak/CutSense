@@ -123,7 +123,10 @@ struct AuthScreen: View {
                 await authManager.signInWithApple(credential: credential)
             }
         case .failure(let error):
-            authManager.errorMessage = error.localizedDescription
+            #if DEBUG
+            print("[AuthScreen] Apple sign-in failed: \(error)")
+            #endif
+            authManager.errorMessage = "Apple ile giriş iptal edildi veya başarısız oldu."
         }
     }
 }

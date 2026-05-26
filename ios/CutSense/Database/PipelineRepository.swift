@@ -4,6 +4,24 @@ import Supabase
 struct PipelineRepository: Sendable {
     private let projectRepo = ProjectRepository()
 
+    /// Returns true when there is a real signed-in Supabase user. Local-mode users
+    /// (no auth, just a UserDefaults UUID) skip cloud writes entirely so we don't
+    /// burn 5s on each Supabase round-trip just to be rejected by RLS.
+    private var hasCloudSession: Bool {
+        get async {
+            (try? await supabase.auth.session) != nil
+        }
+    }
+
+    enum PipelineError: Error, LocalizedError {
+        case localOnlyMode
+        var errorDescription: String? {
+            switch self {
+            case .localOnlyMode: "Local mode — cloud writes skipped."
+            }
+        }
+    }
+
     // MARK: - Transcript
 
     func saveTranscript(
@@ -11,6 +29,7 @@ struct PipelineRepository: Sendable {
         userId: UUID,
         transcription: TranscriptionResult
     ) async throws -> UUID {
+        guard await hasCloudSession else { throw PipelineError.localOnlyMode }
         let insert = TranscriptInsert(
             projectId: projectId,
             userId: userId,
@@ -37,6 +56,7 @@ struct PipelineRepository: Sendable {
         segments: [TranscriptSegment]
     ) async throws {
         guard !segments.isEmpty else { return }
+        guard await hasCloudSession else { throw PipelineError.localOnlyMode }
         let inserts = segments.map { seg in
             TranscriptSegmentInsert(
                 transcriptId: transcriptId,
@@ -63,6 +83,7 @@ struct PipelineRepository: Sendable {
         decisions: [RoughCutDecision]
     ) async throws {
         guard !decisions.isEmpty else { return }
+        guard await hasCloudSession else { throw PipelineError.localOnlyMode }
         let inserts = decisions.map { d in
             RoughCutDecisionInsert(
                 projectId: projectId,
@@ -89,6 +110,7 @@ struct PipelineRepository: Sendable {
         userId: UUID,
         takeGroups: [TakeGroup]
     ) async throws {
+        guard await hasCloudSession else { throw PipelineError.localOnlyMode }
         for group in takeGroups {
             let groupInsert = TakeGroupInsert(
                 projectId: projectId,
@@ -131,6 +153,7 @@ struct PipelineRepository: Sendable {
         captions: [CaptionSegment]
     ) async throws {
         guard !captions.isEmpty else { return }
+        guard await hasCloudSession else { throw PipelineError.localOnlyMode }
         let inserts = captions.map { c in
             CaptionSegmentInsert(
                 projectId: projectId,
@@ -157,6 +180,7 @@ struct PipelineRepository: Sendable {
         decisions: [EditDecision]
     ) async throws {
         guard !decisions.isEmpty else { return }
+        guard await hasCloudSession else { throw PipelineError.localOnlyMode }
         let inserts = decisions.map { d in
             EditDecisionInsert(
                 projectId: projectId,
@@ -185,6 +209,7 @@ struct PipelineRepository: Sendable {
         templateName: String?,
         fileSizeBytes: Int64?
     ) async throws {
+        guard await hasCloudSession else { throw PipelineError.localOnlyMode }
         let insert = ExportInsert(
             projectId: projectId,
             userId: userId,
@@ -211,6 +236,7 @@ struct PipelineRepository: Sendable {
         userAction: String,
         language: String?
     ) async throws {
+        guard await hasCloudSession else { throw PipelineError.localOnlyMode }
         let insert = AiFeedbackInsert(
             userId: userId,
             segmentText: segmentText,
@@ -227,7 +253,8 @@ struct PipelineRepository: Sendable {
     }
 
     func fetchRecentAiFeedback(userId: UUID, limit: Int = 20) async throws -> [AiFeedbackRow] {
-        try await supabase
+        guard await hasCloudSession else { return [] }
+        return try await supabase
             .from("ai_feedback")
             .select()
             .eq("user_id", value: userId.uuidString)
@@ -240,6 +267,7 @@ struct PipelineRepository: Sendable {
     // MARK: - Fetch (for project resume)
 
     func fetchTranscript(projectId: UUID) async throws -> TranscriptionResult? {
+        guard await hasCloudSession else { return nil }
         let rows: [TranscriptRow] = try await supabase
             .from("transcripts")
             .select()
@@ -277,6 +305,7 @@ struct PipelineRepository: Sendable {
     }
 
     func fetchRoughCutDecisions(projectId: UUID) async throws -> RoughCutResult? {
+        guard await hasCloudSession else { return nil }
         let rows: [RoughCutDecisionRow] = try await supabase
             .from("rough_cut_decisions")
             .select()
@@ -299,8 +328,10 @@ struct PipelineRepository: Sendable {
         }
 
         let keepSegments = decisions.filter { $0.action == .keep }
-        let cleanDuration = keepSegments.reduce(0.0) { $0 + ($1.endTime - $1.startTime) }
         let originalDuration = decisions.map(\.endTime).max() ?? 0
+        let cleanDuration = TimelineRangeNormalizer
+            .includedRanges(from: decisions, assetDuration: originalDuration)
+            .reduce(0.0) { $0 + $1.duration }
 
         return RoughCutResult(
             decisions: decisions,
@@ -315,6 +346,7 @@ struct PipelineRepository: Sendable {
     // MARK: - Cleanup (delete old data before re-insert)
 
     func deleteAnalysisData(projectId: UUID) async throws {
+        guard await hasCloudSession else { return }
         // Order matters: children first due to FK constraints
         try await supabase.from("takes")
             .delete()
@@ -339,6 +371,7 @@ struct PipelineRepository: Sendable {
     }
 
     func deleteRoughCutDecisions(projectId: UUID) async throws {
+        guard await hasCloudSession else { return }
         try await supabase.from("rough_cut_decisions")
             .delete()
             .eq("project_id", value: projectId.uuidString)
@@ -346,6 +379,7 @@ struct PipelineRepository: Sendable {
     }
 
     func deleteCaptionData(projectId: UUID) async throws {
+        guard await hasCloudSession else { return }
         try await supabase.from("edit_decisions")
             .delete()
             .eq("project_id", value: projectId.uuidString)
@@ -367,6 +401,12 @@ struct PipelineRepository: Sendable {
         originalDuration: Double,
         finalDuration: Double
     ) async throws {
+        await LocalProjectStore.update(id: projectId) { project in
+            project.originalDuration = originalDuration
+            project.finalDuration = finalDuration
+        }
+
+        guard await hasCloudSession else { return }
         let update = DurationUpdate(
             originalDuration: originalDuration,
             finalDuration: finalDuration,
@@ -383,6 +423,11 @@ struct PipelineRepository: Sendable {
         projectId: UUID,
         templateName: String
     ) async throws {
+        await LocalProjectStore.update(id: projectId) { project in
+            project.selectedTemplate = templateName
+        }
+
+        guard await hasCloudSession else { return }
         try await supabase
             .from("projects")
             .update(["selected_template": templateName, "updated_at": ISO8601DateFormatter().string(from: Date())])
@@ -394,9 +439,44 @@ struct PipelineRepository: Sendable {
         projectId: UUID,
         path: String
     ) async throws {
+        await LocalProjectStore.update(id: projectId) { project in
+            project.localProjectPath = path
+            project.sourceFileName = URL(fileURLWithPath: path).lastPathComponent
+        }
+
+        guard await hasCloudSession else { return }
         try await supabase
             .from("projects")
             .update(["local_project_path": path, "updated_at": ISO8601DateFormatter().string(from: Date())])
+            .eq("id", value: projectId.uuidString)
+            .execute()
+    }
+
+    func updateProjectImportMetadata(
+        projectId: UUID,
+        path: String,
+        metadata: VideoMetadata
+    ) async throws {
+        let fileName = URL(fileURLWithPath: path).lastPathComponent
+
+        await LocalProjectStore.update(id: projectId) { project in
+            project.status = .imported
+            project.localProjectPath = path
+            project.sourceFileName = fileName
+            project.originalDuration = metadata.duration
+        }
+
+        guard await hasCloudSession else { return }
+        let update = ProjectImportMetadataUpdate(
+            status: ProjectStatus.imported.rawValue,
+            originalDuration: metadata.duration,
+            sourceFileName: fileName,
+            localProjectPath: path,
+            updatedAt: ISO8601DateFormatter().string(from: Date())
+        )
+        try await supabase
+            .from("projects")
+            .update(update)
             .eq("id", value: projectId.uuidString)
             .execute()
     }
@@ -406,6 +486,22 @@ struct PipelineRepository: Sendable {
 
 private struct IdRow: Codable {
     let id: UUID
+}
+
+private struct ProjectImportMetadataUpdate: Codable {
+    let status: String
+    let originalDuration: Double
+    let sourceFileName: String
+    let localProjectPath: String
+    let updatedAt: String
+
+    enum CodingKeys: String, CodingKey {
+        case status
+        case originalDuration = "original_duration"
+        case sourceFileName = "source_file_name"
+        case localProjectPath = "local_project_path"
+        case updatedAt = "updated_at"
+    }
 }
 
 private struct TranscriptInsert: Codable {

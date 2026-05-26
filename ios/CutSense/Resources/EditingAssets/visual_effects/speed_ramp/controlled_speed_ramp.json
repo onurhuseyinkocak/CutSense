@@ -1,0 +1,10 @@
+{
+  "id": "fx_controlled_speed_ramp",
+  "displayName": "Controlled Speed Ramp",
+  "type": "visualEffect",
+  "category": "speed_ramp",
+  "intensity": "medium",
+  "bestForPresets": ["tech_influencer", "ugc"],
+  "moodTags": ["fast", "transition", "dynamic"],
+  "renderHint": "timelineTiming"
+}

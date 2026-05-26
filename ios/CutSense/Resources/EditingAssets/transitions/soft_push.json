@@ -1,0 +1,7 @@
+{
+  "id": "transition_soft_push",
+  "displayName": "Soft Push",
+  "style": "crossDissolve",
+  "duration": 0.30,
+  "intensity": "medium"
+}

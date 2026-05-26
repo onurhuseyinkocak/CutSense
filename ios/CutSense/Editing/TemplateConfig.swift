@@ -15,6 +15,49 @@ enum TemplateIntensity: String, Codable, Sendable, CaseIterable {
     }
 }
 
+/// Cross-segment visual transition style applied at cut boundaries.
+enum TransitionStyle: String, Codable, Sendable, CaseIterable {
+    case crossDissolve
+    case dip       // black-dip transition
+    case whipPan
+    case flash
+
+    var displayName: String {
+        switch self {
+        case .crossDissolve: "Cross Dissolve"
+        case .dip: "Black Dip"
+        case .whipPan: "Whip Pan"
+        case .flash: "Flash"
+        }
+    }
+}
+
+/// Top-level category for grouping templates in the picker / hub.
+enum TemplateCategory: String, Codable, Sendable, CaseIterable {
+    case professional
+    case social
+    case creative
+    case lifestyle
+
+    var displayName: String {
+        switch self {
+        case .professional: "Professional"
+        case .social: "Social"
+        case .creative: "Creative"
+        case .lifestyle: "Lifestyle"
+        }
+    }
+
+    var icon: String {
+        switch self {
+        case .professional: "briefcase.fill"
+        case .social: "bolt.fill"
+        case .creative: "paintbrush.fill"
+        case .lifestyle: "sun.max.fill"
+        }
+    }
+}
+
 struct TemplateConfig: Sendable, Codable {
     let id: String
     let name: String
@@ -40,8 +83,25 @@ struct TemplateConfig: Sendable, Codable {
     // Color grading
     let colorGrade: ColorGrade
 
+    // Visual transition between segments at cut boundaries
+    var transitionStyle: TransitionStyle = .crossDissolve
+    var transitionDuration: Double = 0.18
+
+    // Grouping for picker UI
+    var category: TemplateCategory = .creative
+
+    // Caption pacing (min gap between consecutive caption reveals, seconds)
+    var captionMinGap: Double = 1.2
+
     // Theme override for custom templates (maps to a preset theme by id)
     var themeId: String? = nil
+
+    struct TintColor: Sendable, Codable {
+        var r: Float
+        var g: Float
+        var b: Float
+        static let zero = TintColor(r: 0, g: 0, b: 0)
+    }
 
     struct ColorGrade: Sendable, Codable {
         let saturation: Float    // 1.0 = neutral
@@ -49,6 +109,11 @@ struct TemplateConfig: Sendable, Codable {
         let contrast: Float      // 1.0 = neutral
         let warmth: Float        // 0.0 = neutral, >0 warm, <0 cool
         let vignetteIntensity: Float // 0.0 = off
+        var fade: Float = 0.0                  // black-point lift; 0 = off
+        var highlightsTint: TintColor = .zero  // RGB tint of highlights
+        var shadowsTint: TintColor = .zero     // RGB tint of shadows
+        var sharpen: Float = 0.0               // 0 = off; up to ~0.5
+        var grain: Float = 0.0                 // film-grain intensity, 0 = off
 
         static let none = ColorGrade(saturation: 1.0, brightness: 0.0, contrast: 1.0, warmth: 0.0, vignetteIntensity: 0.0)
     }
@@ -88,10 +153,10 @@ struct TemplateConfig: Sendable, Codable {
 
         static let neonViral = CaptionTheme(
             karaokeHighlight: CaptionColor(r: 0.0, g: 1.0, b: 0.8, a: 1.0),      // Neon cyan-green
-            karaokeDim: CaptionColor(r: 0.6, g: 0.6, b: 0.6, a: 0.65),
+            karaokeDim: CaptionColor(r: 0.82, g: 0.82, b: 0.82, a: 0.86),
             wordHighlightBg: CaptionColor(r: 0.0, g: 1.0, b: 0.8, a: 0.25),
             hookTextColor: .white,
-            hookBgColor: CaptionColor(r: 1.0, g: 0.15, b: 0.3, a: 0.9),          // Hot pink-red
+            hookBgColor: CaptionColor(r: 0.03, g: 0.035, b: 0.04, a: 0.68),
             defaultTextColor: .white,
             shadowColor: CaptionColor(r: 0, g: 0, b: 0, a: 0.8),
             glowEnabled: true
@@ -136,6 +201,7 @@ struct TemplateConfig: Sendable, Codable {
         switch lookupId {
         case "premium_founder": return .premiumGold
         case "viral_caption": return .neonViral
+        case "tech_influencer": return .neonViral
         case "clean_expert": return .monoClean
         case "cinematic_storyteller": return .warmCinematic
         case "podcast_highlights": return .podcastQuote
@@ -181,6 +247,35 @@ extension TemplateConfig {
         minCutDuration: 0.3,
         maxSilenceDuration: 0.35,
         colorGrade: ColorGrade(saturation: 1.15, brightness: 0.04, contrast: 1.12, warmth: 0.0, vignetteIntensity: 0.0)
+    )
+
+    static let techInfluencer = TemplateConfig(
+        id: "tech_influencer",
+        name: "Tech Influencer",
+        description: "Sharp creator pacing for startup, AI, product, and app clips",
+        intensity: .high,
+        hookStyle: .hookImpact,
+        emphasisStyle: .neonGlow,
+        keywordStyle: .neonGlow,
+        conclusionStyle: .hookImpact,
+        defaultStyle: .focusStatement,
+        backgroundMusicVolume: 0.08,
+        sfxVolume: 0.22,
+        voiceBoostDB: 4.5,
+        minCutDuration: 0.28,
+        maxSilenceDuration: 0.32,
+        colorGrade: ColorGrade(
+            saturation: 1.08,
+            brightness: 0.03,
+            contrast: 1.15,
+            warmth: -0.03,
+            vignetteIntensity: 0.08,
+            sharpen: 0.16
+        ),
+        transitionStyle: .whipPan,
+        transitionDuration: 0.16,
+        category: .social,
+        captionMinGap: 0.75
     )
 
     static let cleanExpert = TemplateConfig(
@@ -237,5 +332,7 @@ extension TemplateConfig {
         colorGrade: ColorGrade(saturation: 0.85, brightness: -0.02, contrast: 1.04, warmth: -0.03, vignetteIntensity: 0.2)
     )
 
-    static let all: [TemplateConfig] = [.premiumFounder, .viralCaption, .cleanExpert, .cinematicStoryteller, .podcastHighlights]
+    static let all: [TemplateConfig] = [
+        .techInfluencer
+    ]
 }

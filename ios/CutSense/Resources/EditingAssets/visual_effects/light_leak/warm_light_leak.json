@@ -1,0 +1,10 @@
+{
+  "id": "fx_warm_light_leak",
+  "displayName": "Warm Light Leak",
+  "type": "visualEffect",
+  "category": "light_leak",
+  "intensity": "medium",
+  "bestForPresets": ["cinematic"],
+  "moodTags": ["cinematic", "warm", "emotional"],
+  "renderHint": "lightLeakOverlay"
+}

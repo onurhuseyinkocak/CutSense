@@ -132,9 +132,11 @@ struct RoughCutPreviewPlayer: View {
                 forInterval: CMTime(seconds: 0.1, preferredTimescale: 600),
                 queue: .main
             ) { time in
-                currentTime = time.seconds
-                if time.seconds >= duration - 0.1 {
-                    isPlaying = false
+                MainActor.assumeIsolated {
+                    currentTime = time.seconds
+                    if time.seconds >= duration - 0.1 {
+                        isPlaying = false
+                    }
                 }
             }
 
@@ -142,7 +144,10 @@ struct RoughCutPreviewPlayer: View {
             timeObserver = observer
             isLoading = false
         } catch {
-            errorMessage = error.localizedDescription
+            #if DEBUG
+            print("[RoughCutPreviewPlayer] load failed: \(error)")
+            #endif
+            errorMessage = "Önizleme yüklenemedi."
             isLoading = false
         }
     }

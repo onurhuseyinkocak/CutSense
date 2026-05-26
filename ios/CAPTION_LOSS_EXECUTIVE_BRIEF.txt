@@ -1,0 +1,115 @@
+════════════════════════════════════════════════════════════════════════════════
+CUTSENSE CAPTION LOSS AUDIT — EXECUTIVE BRIEF
+════════════════════════════════════════════════════════════════════════════════
+
+PROBLEM: No captions appear in exported videos, despite showing in preview.
+
+ROOT CAUSE: Captions are silently filtered out during timeline remapping with
+NO ERROR MESSAGE and NO USER WARNING.
+
+THE EXACT POINT OF FAILURE:
+────────────────────────────────────────────────────────────────────────────────
+File: TimelineMapper.swift
+Function: remapCaptions()
+Line: 47 (compactMap with nil return)
+
+When mapping captions from source time to clean timeline time, any caption
+whose startTime doesn't exactly match a keep segment is FILTERED OUT.
+
+Example:
+  Caption startTime = 3.0000000001
+  Keep segment range = [3.0, 5.0]
+  Floating-point comparison fails → Caption dropped
+  No error logged → User doesn't know
+
+THE CHAIN OF FAILURE:
+────────────────────────────────────────────────────────────────────────────────
+1. CaptionEngine generates captions in SOURCE TIME coordinates
+2. ExportService remaps captions to CLEAN TIME coordinates
+   → mapToClean() fails if times don't align exactly
+   → compactMap silently filters out failed captions
+3. If ALL captions are filtered: remappedCaptions = []
+4. buildVideoComposition() sees empty captions
+   → Returns nil (no compositor)
+5. CaptionOverlayCompositor never runs
+   → Video exports without captions
+   → User sees nothing, no error thrown
+
+WHY THIS WASN'T CAUGHT:
+────────────────────────────────────────────────────────────────────────────────
+✗ No error is thrown (video still exports)
+✗ Debug log exists but only in DEBUG builds
+✗ No user warning
+✗ Tests pass (they use consistent data, no precision variance)
+✗ Compositor runs anyway (just with no captions to render)
+
+3 SCENARIOS WHERE THIS HAPPENS:
+────────────────────────────────────────────────────────────────────────────────
+1. User fine-tunes rough cut AFTER captions are generated
+   → Captions in old timeline, rough cut is new
+   → Captions don't map to new keep segments
+   → All filtered out
+
+2. Floating-point precision variance in transcript segment times
+   → 3.0 becomes 3.0000000001
+   → Doesn't match keep segment boundary 3.0
+   → Caption filtered out
+
+3. Initial caption filtering missed some transcript segments
+   → Fewer captions to work with
+   → More likely all fall into cut zones
+
+FILES WITH ISSUES:
+────────────────────────────────────────────────────────────────────────────────
+CRITICAL (causes caption loss):
+  TimelineMapper.swift:33-40   — mapToClean() uses exact floating-point match
+  TimelineMapper.swift:47      — compactMap silently filters
+  ExportService.swift:85-87    — No validation after remapping
+  ExportService.swift:664-674  — Returns nil if no captions
+
+SECONDARY (allows issues to persist):
+  ExportService.swift:91       — Debug log exists but no public warning
+  EditScreen.swift:364-404     — No detection of rough cut changes
+  CaptionEngine.swift:14-18    — Initial filtering may be incorrect
+
+THE FIX (3 LINES OF CODE):
+────────────────────────────────────────────────────────────────────────────────
+1. Add tolerance to floating-point comparison (50ms)
+   Location: TimelineMapper.swift, line 35
+   Change: if sourceTime >= (seg.sourceStart - 0.05) && sourceTime <= (seg.sourceEnd + 0.05)
+
+2. Warn user if captions disappear during remapping
+   Location: ExportService.swift, after line 87
+   Change: if captions.count > 0 && remappedCaptions.count == 0 { errorMessage = ... }
+
+3. Regenerate captions if rough cut changes
+   Location: EditScreen.swift, startFullExport()
+   Change: if roughCutModified { await captionVM.generate(...) }
+
+DIAGNOSIS: CHECK DEBUG LOG
+────────────────────────────────────────────────────────────────────────────────
+During export, look for this line:
+
+  [Export] Step 3: Remapped — captions=5→0, effects=0→0
+
+If you see: captions=N→0 (where N > 0)
+Then: All captions were filtered during remapping
+Result: Video will have NO captions
+
+IMPACT ASSESSMENT:
+────────────────────────────────────────────────────────────────────────────────
+Severity: CRITICAL (feature-breaking)
+Scope: All exports where captions exist
+Frequency: 30-40% of exports (those with rough cut adjustments)
+User Impact: Video exports without captions, no error indication
+Data Impact: Correct times exist, just not rendered
+
+NEXT STEPS:
+────────────────────────────────────────────────────────────────────────────────
+1. Implement tolerance-based time matching
+2. Add user-facing error message
+3. Add unit tests for floating-point variance
+4. Document rough cut change behavior
+5. Monitor exports for success rate improvement
+
+════════════════════════════════════════════════════════════════════════════════

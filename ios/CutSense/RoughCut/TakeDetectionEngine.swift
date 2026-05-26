@@ -21,9 +21,11 @@ enum TakeDetectionEngine {
         var currentGroup: [TranscriptSegment] = []
         var groupStartTime: Double?
 
-        for (index, segment) in segments.enumerated() {
+        for segment in segments {
             // Skip non-speech segments
-            guard segment.segmentType == .speech || segment.segmentType == .suspectedRestart else {
+            guard segment.segmentType == .speech ||
+                    segment.segmentType == .contentSentence ||
+                    segment.segmentType == .suspectedRestart else {
                 if !currentGroup.isEmpty {
                     finalizeGroup(&currentGroup, startTime: &groupStartTime, into: &groups)
                 }
@@ -38,9 +40,8 @@ enum TakeDetectionEngine {
 
             let lastInGroup = currentGroup.last!
             let timeDiff = segment.startTime - lastInGroup.endTime
-            let similarity = wordOverlap(lastInGroup.text, segment.text)
 
-            if similarity >= overlapThreshold && timeDiff < maxTakeGap {
+            if isSameTakeCandidate(lastInGroup, segment) && timeDiff < maxTakeGap {
                 // Same take group — speaker restarted
                 currentGroup.append(segment)
             } else {
@@ -61,6 +62,23 @@ enum TakeDetectionEngine {
         }
 
         return groups
+    }
+
+    private static func isSameTakeCandidate(_ previous: TranscriptSegment, _ current: TranscriptSegment) -> Bool {
+        let previousWords = normalizedWords(previous.text)
+        let currentWords = normalizedWords(current.text)
+        let similarity = wordOverlap(previousWords, currentWords)
+        guard similarity >= overlapThreshold else { return false }
+
+        // Generic overlap is not enough: adjacent story fragments often repeat brand/product
+        // terms while continuing the thought. Require actual restart evidence.
+        let hasClassifierEvidence = previous.segmentType == .suspectedRestart ||
+            previous.segmentType == .suspectedDuplicate ||
+            current.segmentType == .suspectedRestart ||
+            current.segmentType == .suspectedDuplicate
+        let hasSharedOpening = commonPrefixWordCount(previousWords, currentWords) >= 3
+
+        return hasClassifierEvidence || hasSharedOpening
     }
 
     private static func finalizeGroup(
@@ -86,9 +104,25 @@ enum TakeDetectionEngine {
         startTime = nil
     }
 
-    private static func wordOverlap(_ a: String, _ b: String) -> Double {
-        let wordsA = Set(a.lowercased().split(separator: " "))
-        let wordsB = Set(b.lowercased().split(separator: " "))
+    private static func normalizedWords(_ text: String) -> [String] {
+        text
+            .lowercased()
+            .split { !$0.isLetter && !$0.isNumber }
+            .map(String.init)
+    }
+
+    private static func commonPrefixWordCount(_ left: [String], _ right: [String]) -> Int {
+        var count = 0
+        for (leftWord, rightWord) in zip(left, right) {
+            guard leftWord == rightWord else { break }
+            count += 1
+        }
+        return count
+    }
+
+    private static func wordOverlap(_ wordsA: [String], _ wordsB: [String]) -> Double {
+        let wordsA = Set(wordsA)
+        let wordsB = Set(wordsB)
         let intersection = wordsA.intersection(wordsB).count
         let minCount = min(wordsA.count, wordsB.count)
         return minCount > 0 ? Double(intersection) / Double(minCount) : 0
