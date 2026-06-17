@@ -5,8 +5,10 @@ export interface Ctx {
   normalized: string; // 9:16 H.264/AAC
   audio: string; // 16k mono wav
   clean: string; // post-cut video (no captions)
+  effected: string; // clean + visual FX (grade/zoom/flash/glitch)
   assPath: string; // generated subtitle file
-  final: string; // captioned export
+  captioned: string; // effected + burned captions (no SFX yet)
+  final: string; // captioned + SFX export
 }
 
 export function makeCtx(workDir: string, raw: string): Ctx {
@@ -17,7 +19,9 @@ export function makeCtx(workDir: string, raw: string): Ctx {
     normalized: p("normalized.mp4"),
     audio: p("audio.wav"),
     clean: p("clean.mp4"),
+    effected: p("effected.mp4"),
     assPath: p("captions.ass"),
+    captioned: p("captioned.mp4"),
     final: p("final.mp4"),
   };
 }

@@ -156,31 +156,49 @@ export async function detectBadTakes(m: EditManifest, _ctx: Ctx): Promise<void> 
 }
 
 /**
- * Optional Groq audit: the LLM may add edit-commands the phrase list missed and
- * flag false positives. It proposes spans only; we keep heuristic spans as the
- * floor so we never depend on the LLM being available.
+ * Coherence pass (Groq). Reads the WHOLE numbered transcript and decides which
+ * sentences to REMOVE so the kept ones read as one clean, non-repetitive script.
+ * This is what kills the "full of repeated/incoherent sentences" problem:
+ * unscripted creators say the same line 2–4 times (retakes) without an explicit
+ * "cut" command, so the heuristics miss it. The LLM keeps the best version of
+ * each idea and drops the rest. Heuristic edit-commands stay as a floor.
  */
 async function llmAudit(sentences: Sentence[], heuristic: BadTakePhrase[]): Promise<BadTakePhrase[]> {
-  if (!groqConfigured() || sentences.length === 0) return heuristic;
+  if (!groqConfigured() || sentences.length < 2) return heuristic;
   const numbered = sentences.map((s, i) => `${i}\t[${s.start.toFixed(2)}-${s.end.toFixed(2)}]\t${s.text}`).join("\n");
+  const removeSet = new Set(heuristic.map((b) => b.start.toFixed(2)));
+
   const system =
-    "You audit a talking-head transcript for BAD TAKES the creator wants removed: explicit edit commands (e.g. 'tekrar alayım', 'burası olmadı', 'cut that'), false starts/restarts re-said right after, and near-duplicate repeats. Keep real content. Return JSON only.";
-  const user = `Sentences (index, time, text):\n${numbered}\n\nReturn {"bad":[{"index":N,"kind":"edit_command|restart|duplicate","confidence":0..1,"reason":"..."}]}. Only sentences that are clearly a bad take. Do NOT flag normal content, discourse markers (yani, aslında, mesela) or single fillers.`;
+    "You are a ruthless short-form video editor cleaning a raw, unscripted talking-head transcript (mostly Turkish). " +
+    "Creators record the SAME line several times (retakes), make false starts, ramble, and repeat ideas. " +
+    "Your job: choose the sentences to REMOVE so the KEPT sentences read as ONE coherent, non-repetitive script that flows naturally. Return JSON only.";
+  const user =
+    `Transcript sentences (index, time, text):\n${numbered}\n\n` +
+    `Return {"remove":[{"index":N,"kind":"duplicate|restart|edit_command|filler|incoherent","reason":"..."}]}.\n` +
+    `Rules:\n` +
+    `- When the same idea/sentence is said more than once (a retake), KEEP only the single best version (usually the most complete / the LAST clean one) and REMOVE all the others.\n` +
+    `- Remove false starts and fragments that are completed/repeated later.\n` +
+    `- Remove explicit edit commands ("tekrar alayım", "burası olmadı", "şunu kes", "baştan").\n` +
+    `- Remove pure filler/incoherent sentences that add nothing.\n` +
+    `- Read the KEPT sequence in your head: it MUST make sense end-to-end with no obvious repetition. Be aggressive about repetition; when unsure between two near-identical takes, remove the earlier one.\n` +
+    `- Do NOT remove distinct content just because it is similar in topic.`;
+
   try {
-    const res = await chatJson<{ bad?: { index: number; kind: string; confidence?: number; reason?: string }[] }>(system, user);
-    if (!res?.bad) return heuristic;
-    const byStart = new Map(heuristic.map((b) => [b.start.toFixed(2), b]));
-    for (const item of res.bad) {
+    const res = await chatJson<{ remove?: { index: number; kind?: string; reason?: string }[] }>(system, user);
+    const removals = res?.remove ?? [];
+    const out = [...heuristic];
+    for (const item of removals) {
       const s = sentences[item.index];
       if (!s) continue;
       const key = s.start.toFixed(2);
-      if (byStart.has(key)) continue; // heuristic already has it
-      const kind = (["edit_command", "restart", "duplicate", "filler"].includes(item.kind) ? item.kind : "edit_command") as BadTakePhrase["kind"];
-      byStart.set(key, { start: s.start, end: s.end, text: s.text, kind, confidence: Math.min(1, item.confidence ?? 0.7), reason: item.reason ?? "llm audit" });
+      if (removeSet.has(key)) continue;
+      removeSet.add(key);
+      const kind = (["edit_command", "restart", "duplicate", "filler"].includes(item.kind ?? "") ? item.kind : "duplicate") as BadTakePhrase["kind"];
+      out.push({ start: s.start, end: s.end, text: s.text, kind, confidence: 0.8, reason: item.reason ?? "coherence: repeated/incoherent" });
     }
-    return [...byStart.values()].sort((a, b) => a.start - b.start);
+    return out.sort((a, b) => a.start - b.start);
   } catch (e) {
-    warn("badtake", `llm audit failed: ${(e as Error).message}`);
+    warn("badtake", `coherence pass failed: ${(e as Error).message}`);
     return heuristic;
   }
 }
