@@ -44,12 +44,13 @@ Deno.serve(async (req) => {
   const { data: signed, error: signErr } = await admin.storage.from(bucket).createSignedUploadUrl(rawKey);
   if (signErr || !signed) return json({ error: signErr?.message || "sign failed" }, 500);
 
-  // insert queued job — the local poller claims it
+  // insert as awaiting_upload — the client flips it to "queued" only AFTER the
+  // raw upload finishes, so the poller never claims a job whose raw isn't there.
   const { error: insErr } = await admin.from("jobs").insert({
     id: jobId,
     user_id: user.id,
     project_id: projectId,
-    status: "queued",
+    status: "awaiting_upload",
     raw_r2_key: rawKey,
   });
   if (insErr) return json({ error: insErr.message }, 500);

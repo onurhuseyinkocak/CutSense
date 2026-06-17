@@ -10,112 +10,158 @@
 		009287350ADFA1794A5F547C /* AuthScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = E3B81F86B6235C8375FA3964 /* AuthScreen.swift */; };
 		01367DBE70874ED418C25A98 /* AssetRegistryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 46B74483FAEB9500011B5793 /* AssetRegistryTests.swift */; };
 		0238F25AF2FC0F9DE078FCA7 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = AB3F4CFE6EB7DA53D3C755D3 /* PrivacyInfo.xcprivacy */; };
-		052D7A073200C3CE9204EB9C /* dragon-studio-whoosh-cinematic-376875.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = 7148A11AE25B905FE1742F02 /* dragon-studio-whoosh-cinematic-376875.mp3 */; };
+		07BDC9656B633F62769B8770 /* CutSensePipeline.swift in Sources */ = {isa = PBXBuildFile; fileRef = B232C612EC81A35622B4B160 /* CutSensePipeline.swift */; };
+		087D12734A7B3411497D0F8D /* TemplateProfiles.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0004207500AC93DF532525F /* TemplateProfiles.swift */; };
 		0A701E4C6D95E9F71BC1975A /* AudioQualityGuard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7737772B64D237A67CB4D9E6 /* AudioQualityGuard.swift */; };
-		0AF407E9B4C9CF11C33B854A /* u_tmz2ks56ex-m3g-cinematic-bass-318310.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = 156AB136955226DD6BF0AC74 /* u_tmz2ks56ex-m3g-cinematic-bass-318310.mp3 */; };
 		0B2EF002D0CC4644B9289C0E /* mixkit_movie_logo_intro_impact_2900.wav in Resources */ = {isa = PBXBuildFile; fileRef = 05C09CF2AB4D001066FFEFDA /* mixkit_movie_logo_intro_impact_2900.wav */; };
+		0C383445FD3C95CB658B7803 /* sfx_pop_low.m4a in Resources */ = {isa = PBXBuildFile; fileRef = 1FCB2B1DA3BCEFB8487290E3 /* sfx_pop_low.m4a */; };
 		0CEB6AFC447CD4894C2876CE /* mixkit_camera_shutter_hard_click_1430.wav in Resources */ = {isa = PBXBuildFile; fileRef = 778B80B267FCAAD25B996827 /* mixkit_camera_shutter_hard_click_1430.wav */; };
-		0D2E25A7A9B44108A18F7C11 /* PipelineArtifactStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0D2E25A8A9B44108A18F7C11 /* PipelineArtifactStore.swift */; };
+		0D28F6FFA6C08EEF3FE25658 /* u_f1ee7vf7na-blip-131856.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = 7CE12BFD64289DD8358300C6 /* u_f1ee7vf7na-blip-131856.mp3 */; };
+		0D5E12EAE2D13049C21131BD /* universfield-new-notification-057-494255.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = 0F6B1B2F5B1EEFACF859A877 /* universfield-new-notification-057-494255.mp3 */; };
 		0ECE10182616A846F664EC54 /* mixkit_message_pop_alert_2354.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = E244F5B3F7B69B9D54D16894 /* mixkit_message_pop_alert_2354.mp3 */; };
+		10770FA78E2E0A52DAD1CAB7 /* sfx_riser_synth.m4a in Resources */ = {isa = PBXBuildFile; fileRef = E9DB5E294449124FE8380721 /* sfx_riser_synth.m4a */; };
 		12A91825D088BF80F4228107 /* mixkit_cinematic_trailer_riser_790.wav in Resources */ = {isa = PBXBuildFile; fileRef = 6719CD608473ACEA7FBFA7B3 /* mixkit_cinematic_trailer_riser_790.wav */; };
 		138E6D6D3EB793CAF0E65A76 /* CustomTemplateStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 985616D816D61EDFB7D8025D /* CustomTemplateStore.swift */; };
-		13BFD01AC2FB3B43B8CB5ADA /* dragon-studio-clicking-keyboard-asmr-sfx-356115.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = D1BD79B9AE07722BC85A053F /* dragon-studio-clicking-keyboard-asmr-sfx-356115.mp3 */; };
+		1682F76DEBC892B8DA47322C /* CaptionLayoutEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3EEE92F38729351DD13E15A1 /* CaptionLayoutEngine.swift */; };
 		16C5D36594C8D1F2B2599B96 /* HapticEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = B7560C92A88F1BACF79D4520 /* HapticEngine.swift */; };
+		17DB078622878D38DFB2D29E /* dragon-studio-new-notification-3-398649.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = D6DA8F76728596E112EA80A1 /* dragon-studio-new-notification-3-398649.mp3 */; };
 		191CAD387D08096FE31BEEE3 /* CaptionPreviewViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2731291F55A8814BD0161B90 /* CaptionPreviewViewModel.swift */; };
+		199B63F1CE37603A403F0348 /* TermsOfServiceScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = B09DD46E57DAD9EB7D99CF8F /* TermsOfServiceScreen.swift */; };
 		19D87D741CD4E96CD4F5DE7D /* cinematic.json in Resources */ = {isa = PBXBuildFile; fileRef = 8FE64792D4DE98C49C6BAA18 /* cinematic.json */; };
 		1AEBD5AA5BC2807AEAD4E5E0 /* mixkit_cinematic_horror_trailer_long_sweep_561.wav in Resources */ = {isa = PBXBuildFile; fileRef = CC211A4CE363C5E82EC9F47E /* mixkit_cinematic_horror_trailer_long_sweep_561.wav */; };
 		1B0E6A64759BD082AD3B2374 /* camera_snap.json in Resources */ = {isa = PBXBuildFile; fileRef = 96F647F358FCE37E6BD67340 /* camera_snap.json */; };
 		1B32AE90CD97373BBC38CA0C /* ProjectRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = F494D19DF79D6891075F003E /* ProjectRepository.swift */; };
+		1BD803FDA6E4987A0687035A /* openai_whisper-large-v3_turbo_954MB in Resources */ = {isa = PBXBuildFile; fileRef = 27E9FED350B3A58CF926FB12 /* openai_whisper-large-v3_turbo_954MB */; };
 		1C773039C5E27EF23061CEBD /* DebugTimelineScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = 364C800E58EF24989980D462 /* DebugTimelineScreen.swift */; };
-		1C9E3A0E6D8F4B92A1C0D001 /* CutSenseDebugRuntime.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1C9E3A0F6D8F4B92A1C0D001 /* CutSenseDebugRuntime.swift */; };
-		1C9E3A106D8F4B92A1C0D001 /* PipelineDiagnostics.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1C9E3A116D8F4B92A1C0D001 /* PipelineDiagnostics.swift */; };
-		1C9E3A126D8F4B92A1C0D001 /* PipelineDebugRunner.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1C9E3A136D8F4B92A1C0D001 /* PipelineDebugRunner.swift */; };
-		1D7F2E6A9B8C4D0EAF102233 /* TemplateEditGrammar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D7F2E6B9B8C4D0EAF102233 /* TemplateEditGrammar.swift */; };
 		1D8A46AB374CD1BB2A3CFA21 /* CircularProgressView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4728923092914BFEE24EC4BE /* CircularProgressView.swift */; };
+		1D8B9465C2590CCDC2601025 /* sfx_ding_soft.m4a in Resources */ = {isa = PBXBuildFile; fileRef = 75354E9CC552BD23B651044D /* sfx_ding_soft.m4a */; };
+		1EF15F10BFE674F7E8C1409F /* PexelsBRollService.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1C2BA0BA77C1F8FCDC09C54 /* PexelsBRollService.swift */; };
 		1FCCCFF0AF28AC0E322BDE63 /* pop.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = E9C84DA0BB6AE03ED96AB93E /* pop.mp3 */; };
 		2023EEA7E5F44C6A3981C509 /* subtle_film_grain.json in Resources */ = {isa = PBXBuildFile; fileRef = 2ED121E3C1663B5161109DDA /* subtle_film_grain.json */; };
+		21F50C0C95209B96788144EF /* dragon-studio-error-sound-390301.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = EBF92E5AA7113E14CECCF528 /* dragon-studio-error-sound-390301.mp3 */; };
+		221A089E9A3D5F1D4451A3D7 /* UserPreferences.swift in Sources */ = {isa = PBXBuildFile; fileRef = 07A5A9B95B2117CFED19D7A2 /* UserPreferences.swift */; };
 		229EC4A7B09ACBFFF660A9AC /* ProjectsScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = C2785F1827D73BCE2EBD4017 /* ProjectsScreen.swift */; };
+		24F7C44EDE8565D6098F864C /* CutSenseDebugRuntime.swift in Sources */ = {isa = PBXBuildFile; fileRef = A453B936998F94E276A2709D /* CutSenseDebugRuntime.swift */; };
 		258A65C2CF2DBF2461503348 /* Lottie in Frameworks */ = {isa = PBXBuildFile; productRef = C1223C501B51C6713465798A /* Lottie */; };
 		26400B2FFC353DFF6A6AE844 /* CaptionSceneEventPlanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = 586DC3889415C1CD20467C73 /* CaptionSceneEventPlanner.swift */; };
 		26E48D862C02A3CACFCC666D /* AudioAnalysisService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 66C373ACE0E41C68BEC62183 /* AudioAnalysisService.swift */; };
 		27EFC17E9403D28F5F5F80C3 /* SFXAssetManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 269103C287576CEE2D3D3199 /* SFXAssetManager.swift */; };
 		2871E83CAD77F9EB8F0C18B5 /* mixkit_air_woosh_1489.wav in Resources */ = {isa = PBXBuildFile; fileRef = 03397B0FD0030FF7C23E97EF /* mixkit_air_woosh_1489.wav */; };
 		28B44952EB04CA86C0607414 /* GradedVideoPlayer.md in Resources */ = {isa = PBXBuildFile; fileRef = 50223A99A5ACF3A7CE67F535 /* GradedVideoPlayer.md */; };
+		28F7D53A5E4311BAA0D42237 /* LUFSNormalizer.swift in Sources */ = {isa = PBXBuildFile; fileRef = A368DE998C6BEC0A9AE94390 /* LUFSNormalizer.swift */; };
 		29F9908A140738435A1B52EA /* subtle_gold_glow.json in Resources */ = {isa = PBXBuildFile; fileRef = F6FA0D125D62AC110BA62CDD /* subtle_gold_glow.json */; };
+		2A7B04A00AD2AD071D6F7651 /* lordsonny-cinematic-whoosh-reverse-161307.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = F086CCD485756E47B967F18C /* lordsonny-cinematic-whoosh-reverse-161307.mp3 */; };
 		2EB972F0DDFB789A3939A8E5 /* TemplateRecommendationEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = F918906AF55C37D1860A4437 /* TemplateRecommendationEngine.swift */; };
 		301B50764891F1535064762B /* CutSenseApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 86A091CC60867BC2AF47E2C4 /* CutSenseApp.swift */; };
-		3103AA0426A58D3BDEF40372 /* dragon-studio-pop-402324.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = 9723CB22962534EE803A9811 /* dragon-studio-pop-402324.mp3 */; };
 		3119699A27FC174B5FED0C20 /* ExportVerificationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 57E56D95137245F133E61B85 /* ExportVerificationTests.swift */; };
 		3125FF75BF4329C6EBF1F6E5 /* ExportPipelineE2ETests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5F8F6529656DEA8436213B8 /* ExportPipelineE2ETests.swift */; };
 		315AF352233DC3F89ECDE194 /* mixkit_modern_technology_select_3124.wav in Resources */ = {isa = PBXBuildFile; fileRef = A6167A43855F52107BBC202B /* mixkit_modern_technology_select_3124.wav */; };
 		3170B1BE4F8E916C31CB2BC6 /* cutsense_test_video.mp4 in Resources */ = {isa = PBXBuildFile; fileRef = 0BA172789654C4ABB795D96D /* cutsense_test_video.mp4 */; };
+		31C5AC89C1710538857B8D64 /* sfx_impact_thud.m4a in Resources */ = {isa = PBXBuildFile; fileRef = A394809520637D68D65725EA /* sfx_impact_thud.m4a */; };
+		31FDE55E4CED381DD6E4EB20 /* dragon-studio-clicking-keyboard-asmr-sfx-356115.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = 62FB3216A8FEA6FEB14A2AA9 /* dragon-studio-clicking-keyboard-asmr-sfx-356115.mp3 */; };
+		321E1D3D265C0CC15056405A /* dragon-studio-mouse-click-sfx-444806.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = 25CD478800730F80753692DB /* dragon-studio-mouse-click-sfx-444806.mp3 */; };
+		336F267D6EF9AE355B875EE2 /* SpeechFallback.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2363D009A523E7C187B0AA6B /* SpeechFallback.swift */; };
 		33CCAA14CC7C6549A5CD62BD /* AuthManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 72233D1433B64E2F396B2C0B /* AuthManager.swift */; };
-		35C5E213BDB0575C08161390 /* audiopapkin-riser-hit-sfx-001-289802.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = 7DA8A4481A97F711A6B924D1 /* audiopapkin-riser-hit-sfx-001-289802.mp3 */; };
-		3AB44A96A732F5D1DAEF9BFD /* pwlpl-deep-bass-drop-sound-effect-521058.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = 8FC3D8FB4DBD3D385DFD81CD /* pwlpl-deep-bass-drop-sound-effect-521058.mp3 */; };
+		33E8F18FB3F6547273434D7D /* Archivo-Black.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 09318105AC1DC8A6B58A8575 /* Archivo-Black.ttf */; };
 		3AB6DA6F87A37CBE68DF528C /* mixkit_cinematic_heartbeat_ambience_497.wav in Resources */ = {isa = PBXBuildFile; fileRef = 64B896D522E2636F41EA873D /* mixkit_cinematic_heartbeat_ambience_497.wav */; };
 		3AD0A167D8D0D23454BA0CB9 /* mixkit_electric_buzz_glitch_2594.wav in Resources */ = {isa = PBXBuildFile; fileRef = DBAA166296A2C2C78512AE95 /* mixkit_electric_buzz_glitch_2594.wav */; };
 		3AEA48EDBFC02081F6FDDC02 /* mixkit_hard_pop_click_2364.wav in Resources */ = {isa = PBXBuildFile; fileRef = 2E9EDF2D015134AAC95B70A8 /* mixkit_hard_pop_click_2364.wav */; };
 		3D2AA373B59BA7D06ED637E1 /* controlled_speed_ramp.json in Resources */ = {isa = PBXBuildFile; fileRef = B28F5F2C2CFEDB110249FE6D /* controlled_speed_ramp.json */; };
+		3DD6B3491AE3DEAC3383BAEE /* sfx_pop_high.m4a in Resources */ = {isa = PBXBuildFile; fileRef = 6DDC4784891F36C382050487 /* sfx_pop_high.m4a */; };
 		3E27F382B6A0859D26B67B66 /* RoughCutDecisionEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = ED5D91CABEA7737C8345B66D /* RoughCutDecisionEngine.swift */; };
+		3E3CEA4438E808F83831DEBD /* AutoCutPlanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8CD5431B04DD8CA677E30732 /* AutoCutPlanner.swift */; };
+		41088ABF3481DEBDCD9BD100 /* sfx_whoosh.m4a in Resources */ = {isa = PBXBuildFile; fileRef = 6CBDD497B6D94EB33788C118 /* sfx_whoosh.m4a */; };
+		411F2B3B74DD912C674E9A5F /* AudioPlanBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9A2841707B2522AC30D23AF5 /* AudioPlanBuilder.swift */; };
+		415A7D818F4452A71DDBC0A1 /* dragon-studio-cinematic-riser-03-414575.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = EDF22BC8EAC96FA000FC431C /* dragon-studio-cinematic-riser-03-414575.mp3 */; };
 		41A88B209E8C52CC778F8BB8 /* TakeDetectionEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8C6DEDC0C443A50526EC1F39 /* TakeDetectionEngine.swift */; };
-		4217C42EFEA99526DAAF163E /* bryansantosbreton-biodynamic-impact-braam-tonal-dark-184276.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = 5FD3EDC12048ACF10E72F1B9 /* bryansantosbreton-biodynamic-impact-braam-tonal-dark-184276.mp3 */; };
 		423F23D80750F13801D54231 /* CaptionOverlayCompositor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 57AEBDFD2199B8F98956BCB5 /* CaptionOverlayCompositor.swift */; };
+		42A044BDC67FCF3544C5C803 /* ExportNotifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = A113E1CB273100D270CA570A /* ExportNotifier.swift */; };
 		437D221834B1124CCCDCE37C /* VideoFrameRendererTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E0D99BFCDCE180843CE9BF55 /* VideoFrameRendererTests.swift */; };
 		44DA06C335DBE8E4B9893461 /* AssetRegistry.swift in Sources */ = {isa = PBXBuildFile; fileRef = F9D3868BB622824C11126087 /* AssetRegistry.swift */; };
 		467A17C0179EBAD61AE88C7A /* camera_shutter.json in Resources */ = {isa = PBXBuildFile; fileRef = 337E5C3E744A188C3AB90EAC /* camera_shutter.json */; };
 		477BC69A95C05A0353D7BA5A /* CutTimelineBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = C93BFA2FA483012322FF9C30 /* CutTimelineBar.swift */; };
+		4788995980A3976432F9946B /* music_chill_drone.m4a in Resources */ = {isa = PBXBuildFile; fileRef = F05005DB20BFBE61430344B7 /* music_chill_drone.m4a */; };
+		48F5039C10DABDD17F57C50B /* ProExportPipeline.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5B2D28F1D5B9F13933EF8F9C /* ProExportPipeline.swift */; };
 		4A39C3A8C0AF8DCDFD531763 /* AccountScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = F05673FB3EA70406FB93343F /* AccountScreen.swift */; };
+		4A5BD8429FF25A2D83FDB81A /* pwlpl-deep-bass-drop-sound-effect-521058.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = F0E859DBC1EC68970E94B99E /* pwlpl-deep-bass-drop-sound-effect-521058.mp3 */; };
 		4C3C18C918623FBA22557482 /* mixkit_silent_descent_614.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = AF8FF56A21450BDD1B2FF418 /* mixkit_silent_descent_614.mp3 */; };
 		4CD84223916261970EBBAC17 /* TestHelpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = 234198B5321CA8C80832EECC /* TestHelpers.swift */; };
 		4D46873AA239F209869EC673 /* mixkit_small_electric_glitch_2595.wav in Resources */ = {isa = PBXBuildFile; fileRef = 2F197F1380FF297A3BB59F8F /* mixkit_small_electric_glitch_2595.wav */; };
+		4DD40680DA539FD66953395C /* sfx_ding.m4a in Resources */ = {isa = PBXBuildFile; fileRef = D878F98E173DC3F99B7F1842 /* sfx_ding.m4a */; };
 		4E9622102B5A510697805595 /* LocalProjectStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF64AC90FB35412EB1966475 /* LocalProjectStore.swift */; };
+		4ECFBCF7D29CDA5BD0C91DF5 /* VisualPromptRewriter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 80913BFAA64F83AE56CAB5DE /* VisualPromptRewriter.swift */; };
 		4F6A55262FA30D1F236DFE05 /* mixkit_cinematic_whoosh_deep_impact_1143.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = 27AB9370D317A4EBB5B2EBDF /* mixkit_cinematic_whoosh_deep_impact_1143.mp3 */; };
 		50647152FF734A1A33B6CCAB /* mixkit_glitch_static_1457.wav in Resources */ = {isa = PBXBuildFile; fileRef = 5AAB544EE843C383493F38B2 /* mixkit_glitch_static_1457.wav */; };
+		50723CBF96A204800AB4DC8B /* WhatsAppVideoE2ETests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F66E524CC02A6D9F24AC5A58 /* WhatsAppVideoE2ETests.swift */; };
 		51AA479DD3B55747CE001FEE /* mixkit_select_click_1109.wav in Resources */ = {isa = PBXBuildFile; fileRef = 2CD053ED59342D9F5A1D6011 /* mixkit_select_click_1109.wav */; };
 		534A78A637D8917232DCD9B1 /* CaptionEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8CE6AF3FAF49136C495610E9 /* CaptionEngine.swift */; };
 		5671B9304FB2DC42E80E64A3 /* Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2515ADDECC802089D2ED807D /* Models.swift */; };
+		575E1429F49E84DD5BE1A3E4 /* sfx_whoosh_short.m4a in Resources */ = {isa = PBXBuildFile; fileRef = 25F93155610750EB89AB9161 /* sfx_whoosh_short.m4a */; };
+		57EF1EF49E00576572372193 /* sfx_riser.m4a in Resources */ = {isa = PBXBuildFile; fileRef = 178D005561D404CD7E3372C1 /* sfx_riser.m4a */; };
 		5B256508496EE1CA818D7D61 /* onboarding_welcome.json in Resources */ = {isa = PBXBuildFile; fileRef = F6D9F5B22B891A67A7A60A10 /* onboarding_welcome.json */; };
-		5EE42D6C14307C8E57AB27F7 /* lordsonny-cinematic-whoosh-reverse-161307.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = 81E9C33F03DD2BC27BC6896D /* lordsonny-cinematic-whoosh-reverse-161307.mp3 */; };
+		5DDA244E1A8BBF8A213B26B5 /* dragon-studio-correct-472358.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = 4217417544CC02D4481F3682 /* dragon-studio-correct-472358.mp3 */; };
+		5DF55B4BA73C1EDBAA728C57 /* Poppins-Black.ttf in Resources */ = {isa = PBXBuildFile; fileRef = FC932F91C04BAFA08E480125 /* Poppins-Black.ttf */; };
 		5F3FAD53F8F80058222D08B3 /* blur_highlight.json in Resources */ = {isa = PBXBuildFile; fileRef = 905E2110FEABF63D5D526D72 /* blur_highlight.json */; };
 		5F91C3CB48A2C14421124FA7 /* IntensityInterpolator.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA52D2BBB285627D676A4389 /* IntensityInterpolator.swift */; };
+		6226FB9F5CD6CC58B2EC36FA /* sfx_impact.m4a in Resources */ = {isa = PBXBuildFile; fileRef = 4B9F34FF047214A6EA683225 /* sfx_impact.m4a */; };
+		6332A4A3E25D0423096612FE /* soundreality-riser-hole-391174.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = 0025D82B0B581D1FED4F3EF8 /* soundreality-riser-hole-391174.mp3 */; };
 		640037D2A5CCE7FD11532F43 /* TimelineRangeNormalizer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 628FEBEB8AA11FA45F6FE610 /* TimelineRangeNormalizer.swift */; };
 		6424BC07ABE512CF595946E4 /* soft_push.json in Resources */ = {isa = PBXBuildFile; fileRef = 0C716EA8287807AEA7DD6732 /* soft_push.json */; };
-		6497CA047821A3219B907B7E /* soundreality-riser-hole-391174.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = B7B47652C3E5FBB565A70348 /* soundreality-riser-hole-391174.mp3 */; };
+		65A73B89C1521B2ADEEE64DC /* SmartBRollSelector.swift in Sources */ = {isa = PBXBuildFile; fileRef = D2176AB3E0637E3F844D04B5 /* SmartBRollSelector.swift */; };
+		6621D0DBDA058C512C51F0D5 /* CloudEditScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = C360784D19536F21F1BB4993 /* CloudEditScreen.swift */; };
 		66845A0CF4B43AE2875658CD /* whoosh.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = 8BAFC9C04FA32C226F4F58EF /* whoosh.mp3 */; };
 		67F308DA77A48CD1803F022C /* mixkit_big_cinematic_impact_788.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = D30F6CE51DFFE89BC388B1BA /* mixkit_big_cinematic_impact_788.mp3 */; };
 		694B8B0933D6FE9FBEB7CFAE /* riser.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = A6F23D426F0BA738B8C4F653 /* riser.mp3 */; };
 		696CCE3CD99BEAD3BD22EA02 /* CaptionModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00055E71E3774D1DA883AA17 /* CaptionModels.swift */; };
 		69D63998D72478F3CDD63286 /* VideoPreviewEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = BDB255C682E012DC6B8EC704 /* VideoPreviewEngine.swift */; };
 		6A8FFBC0DD0F007B62C1C534 /* tech_influencer.json in Resources */ = {isa = PBXBuildFile; fileRef = BB060D6760E56F1EE1F7FA96 /* tech_influencer.json */; };
+		6AC834BE1CFF55304C809790 /* bryansantosbreton-biodynamic-impact-braam-tonal-dark-184276.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = C7E82F7E153EDB3F1F739210 /* bryansantosbreton-biodynamic-impact-braam-tonal-dark-184276.mp3 */; };
+		6BB8BF29920956A98236225F /* PipelineDebugRunner.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5567E895557657123EA4D9DD /* PipelineDebugRunner.swift */; };
 		6C2E2B5FBA841BEA58B87AC9 /* TimelineDebugLogger.swift in Sources */ = {isa = PBXBuildFile; fileRef = AEFA457BD2DA1E5D808F8A67 /* TimelineDebugLogger.swift */; };
+		6C892C0165B91C7FB63C53E3 /* VideoCompressor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 34946037EE65B36A5A208FDD /* VideoCompressor.swift */; };
+		6D15D09494734D5B9A8A6F87 /* music_library.json in Resources */ = {isa = PBXBuildFile; fileRef = 6033441F2E1D1E7D8106DCE5 /* music_library.json */; };
+		6DEC069F9CCB38BBCB452805 /* TemplateEditGrammar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93FC35445ED474D52D95F30B /* TemplateEditGrammar.swift */; };
 		6E20D28AA323F0408420AD9E /* cinematic_quote.json in Resources */ = {isa = PBXBuildFile; fileRef = 06F4C50F35DB3B9653719CD8 /* cinematic_quote.json */; };
 		6F33CE18768DB9242862B7A0 /* mixkit_vintage_camera_shutter_1438.wav in Resources */ = {isa = PBXBuildFile; fileRef = 8A4F8F3CD1E424FD596670F4 /* mixkit_vintage_camera_shutter_1438.wav */; };
+		6F3E2CF0C193B054B3B30ACC /* sfx_whoosh_long.m4a in Resources */ = {isa = PBXBuildFile; fileRef = AB182C19C91E5A905ED651E7 /* sfx_whoosh_long.m4a */; };
 		70AC240342DFF3D249BE201B /* VideoFrameRenderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = A89F5B0D7BDF98A3432F854D /* VideoFrameRenderer.swift */; };
+		70CB4EC223AF0943842766B0 /* audiopapkin-riser-hit-sfx-001-289802.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = A7A7E29DA304031F63F24BDF /* audiopapkin-riser-hit-sfx-001-289802.mp3 */; };
 		70F6B0F6AE079FE06F8DF417 /* cross_dissolve.json in Resources */ = {isa = PBXBuildFile; fileRef = BA55ADB3442FF56602130033 /* cross_dissolve.json */; };
-		71058DE42CB9943D136C660E /* dragon-studio-simple-whoosh-382724.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = F0F68765A1DF22A1953A1B97 /* dragon-studio-simple-whoosh-382724.mp3 */; };
+		73ECD3EFE511F92EF7B976F5 /* WhisperKit in Frameworks */ = {isa = PBXBuildFile; productRef = 6A8DE6C3974CF8F23B5D5364 /* WhisperKit */; };
 		746A68F8301DD383E88E47B3 /* GoldenTranscriptTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6C497561CA0FA241920D4895 /* GoldenTranscriptTests.swift */; };
 		75D72BF1CAE19412CCD4E80D /* RoughCutPreviewPlayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A01DD8FF748A80B87ADD3DC /* RoughCutPreviewPlayer.swift */; };
+		7668780F8458929BCB723116 /* sfx_ding_bright.m4a in Resources */ = {isa = PBXBuildFile; fileRef = D70B7EEF4CA8A8B19D6C513C /* sfx_ding_bright.m4a */; };
 		76AC3C44DFD055688B6B16C9 /* SkeletonBlock.swift in Sources */ = {isa = PBXBuildFile; fileRef = D785ECF78C69386D7253C490 /* SkeletonBlock.swift */; };
 		76AC6B578000BC45EF6EC5EC /* mixkit_reverse_cinematic_impact_trailer_784.wav in Resources */ = {isa = PBXBuildFile; fileRef = F815D99063AA75FF8A90221E /* mixkit_reverse_cinematic_impact_trailer_784.wav */; };
 		783DC6915E1C513F21F47D2B /* FilterEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 43FF6D5797B56CB4F3A1BB0D /* FilterEngine.swift */; };
 		786602F19EBBE7F49705B4ED /* CleanTimelineBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = F97FF6F27A35AD8B62B81C44 /* CleanTimelineBuilder.swift */; };
+		78938C183B3C4C768F5C9899 /* MusicLibrary.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B2973473995D460071A783D /* MusicLibrary.swift */; };
 		796FB93ED63EE219A8EAE522 /* mixkit_sci_fi_score_464.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = 65C15AB4F18895C258581B92 /* mixkit_sci_fi_score_464.mp3 */; };
+		7979C11B34120F4C15280DA4 /* CaptionStyleLibrary.swift in Sources */ = {isa = PBXBuildFile; fileRef = EBBF83A94E82BB213D89AD57 /* CaptionStyleLibrary.swift */; };
+		7A1D7311FD27448ECE00BB6D /* SettingsScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = 28901B74846173D20088B4D4 /* SettingsScreen.swift */; };
 		7BAA2F3E1E68B3A6DDB241FA /* impact.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = E65F28EA5F92F055C18313B8 /* impact.mp3 */; };
+		7C808701BB361CC0FFF4D751 /* Oswald-Bold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 50DC7D86CD8D9289936A13DB /* Oswald-Bold.ttf */; };
 		7CA78976A6FE532053990E5C /* bold_viral_pop.json in Resources */ = {isa = PBXBuildFile; fileRef = C0CEAAF6EA2A10E547315B28 /* bold_viral_pop.json */; };
 		7ECB66A107EB769406B13E60 /* RoughCutReviewScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1BCE7E0EF6670FA7B6345C51 /* RoughCutReviewScreen.swift */; };
+		7FA1DEF3CF20EDB9B85C8091 /* sfx_transition_low.m4a in Resources */ = {isa = PBXBuildFile; fileRef = D5161A7032918C54969BD836 /* sfx_transition_low.m4a */; };
+		7FCE7691D3D59ACDFC5D0839 /* dragon-studio-simple-whoosh-382724.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = 7E35B564A7893ADB7FCC62A0 /* dragon-studio-simple-whoosh-382724.mp3 */; };
 		826F58BB4C31D23E97A05804 /* ASSET_LICENSES.md in Resources */ = {isa = PBXBuildFile; fileRef = 19991D7D4B94B56B30C4C024 /* ASSET_LICENSES.md */; };
 		837643FFAFE3177E3A31CC81 /* Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = F82E751CD6507A92A9434F6E /* Theme.swift */; };
-		84DAC16718378160F440FC60 /* universfield-camera-shutter-199580.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = 3ABBFB9F0DCEF6FB0596C698 /* universfield-camera-shutter-199580.mp3 */; };
+		843B09A50376E5980B112CB9 /* PipelineModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 74ACB6A1F6DB2FF612B67A27 /* PipelineModels.swift */; };
 		852454AB5509C96708AF8E0D /* TemplateHubScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = DF612A1CEF2C642FB5148737 /* TemplateHubScreen.swift */; };
 		86AD158EC4DD12AD39311D4F /* fade.json in Resources */ = {isa = PBXBuildFile; fileRef = C7FB9660DFC5669CBF6A5ACC /* fade.json */; };
+		8765CADCAF5D4196E2F7C0C9 /* CloudJobClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = C602ECB9CDB56FA9039E93CF /* CloudJobClient.swift */; };
 		882280A1E50E950B836A6F5B /* minimal_clean.json in Resources */ = {isa = PBXBuildFile; fileRef = E3FE302FA1F5DA36D5F2568A /* minimal_clean.json */; };
 		88FCA52256AE812FB6A3AE65 /* CutSense.storekit in Resources */ = {isa = PBXBuildFile; fileRef = C4F714C8062D468DA313F462 /* CutSense.storekit */; };
 		8917171E95F824FECB591473 /* mixkit_short_space_stutter_intro_riser_1144.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = 8F37490B1AC0E6E4F7C2109D /* mixkit_short_space_stutter_intro_riser_1144.mp3 */; };
+		8977D1A4ACD015DEB43E3137 /* dragon-studio-pop-402324.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = AEAC4FD5E05D1763ECC60E33 /* dragon-studio-pop-402324.mp3 */; };
+		8AA70244786024C809F0F650 /* virtualzero-mechanical-keyboard-typing-hd-372290.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = CE3C6BF4472966D4EAC33196 /* virtualzero-mechanical-keyboard-typing-hd-372290.mp3 */; };
 		8C0F1CBB6BBF7E093B594EEC /* EmptyStateView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 395236821E490A9EA1BBF501 /* EmptyStateView.swift */; };
+		8F3BA071320EF544B9A46772 /* TemplatesTabScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = 141E1D4A59EBB79CEB801009 /* TemplatesTabScreen.swift */; };
 		8FE29F02D97031E2F06E1B48 /* mixkit_camera_shutter_click_1133.wav in Resources */ = {isa = PBXBuildFile; fileRef = E2AB89574C8531F07E113952 /* mixkit_camera_shutter_click_1133.wav */; };
-		8FF160F9B497BB669136E60A /* universfield-computer-mouse-click-352734.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = 67975DED0523ABB29F1E4A5F /* universfield-computer-mouse-click-352734.mp3 */; };
 		921929627350FF6B28229514 /* mixkit_bubble_pop_up_alert_notification_2357.wav in Resources */ = {isa = PBXBuildFile; fileRef = ED517B2DF9DF364744F708CC /* mixkit_bubble_pop_up_alert_notification_2357.wav */; };
 		922F39C42B814DE21BA7BD9C /* RootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A2E0B8B749BBA30F67CE91A /* RootView.swift */; };
+		924FAF441E767E17F29790F4 /* CloudFlowLiveTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 18F71654794D73B19F444D2A /* CloudFlowLiveTests.swift */; };
 		9312FECAA7336E816ECF62CF /* EditDecisionEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5529C17CF84DF8BB00EB4830 /* EditDecisionEngine.swift */; };
 		94ACC917C41892C3F806E80B /* AudioMixService.swift in Sources */ = {isa = PBXBuildFile; fileRef = F01BAB05EFDAFAE4817EDA22 /* AudioMixService.swift */; };
 		94D2D89A266C8AA67EDE751A /* zoom_cut.json in Resources */ = {isa = PBXBuildFile; fileRef = B00539BF9942CDC489E2C1CD /* zoom_cut.json */; };
@@ -124,39 +170,48 @@
 		96A374438BD592B50F43C71A /* mixkit_cinematic_whoosh_fast_transition_1492.wav in Resources */ = {isa = PBXBuildFile; fileRef = DED8E3CD8979DC69A60B7A20 /* mixkit_cinematic_whoosh_fast_transition_1492.wav */; };
 		97BD97F196519737F997C1F7 /* onboarding_export.json in Resources */ = {isa = PBXBuildFile; fileRef = D81953529D437FEC584E1D39 /* onboarding_export.json */; };
 		99128F340EED2CAADD304369 /* Supabase in Frameworks */ = {isa = PBXBuildFile; productRef = FB538ABFCD1E080DC602EE9B /* Supabase */; };
-		992464A6B26E6482A7ED16E3 /* dragon-studio-error-sound-390301.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = C8AA2B0443F998D4356ABEDF /* dragon-studio-error-sound-390301.mp3 */; };
-		9B164B39CA582968B25EDBFE /* dragon-studio-correct-472358.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = 8A3A80D1DC9EF09BB536B41F /* dragon-studio-correct-472358.mp3 */; };
 		9D093485E1F8CF2AA7FFF0F7 /* mixkit_valley_sunset_127.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = E1AA622214B9ED1B8F4CE9E0 /* mixkit_valley_sunset_127.mp3 */; };
 		9DA3B0C9EF5D5B27291D6BC3 /* ErrorBanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF310B15D813C1331181DCD7 /* ErrorBanner.swift */; };
+		9DA5F7DACB76900118ADA7BD /* sfx_pop.m4a in Resources */ = {isa = PBXBuildFile; fileRef = 14C0E5B92F3488E9C5BFD12B /* sfx_pop.m4a */; };
 		9F168BB65519F27C3F1E627C /* ContinuityChecker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E75BA244D81BAF2CBB96D3A /* ContinuityChecker.swift */; };
 		9F40DD5DC36199DED4C3A973 /* mixkit_meditation_441.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = F91DAC9E379EA256D4E49C11 /* mixkit_meditation_441.mp3 */; };
 		9FB0F6DBA4FCE052496C4163 /* TemplateConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6FB146E284B616EEA64573CF /* TemplateConfig.swift */; };
-		A066F3026377CD3780925B2B /* dragon-studio-mouse-click-sfx-444806.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = 23EE5B6F740B22736E35C0D5 /* dragon-studio-mouse-click-sfx-444806.mp3 */; };
 		A084EF24CE460E3521205A57 /* PipelineIntegrationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A249ACA7751369C123E5451A /* PipelineIntegrationTests.swift */; };
 		A0CC5625474BF2D45D118367 /* swipe.json in Resources */ = {isa = PBXBuildFile; fileRef = 64E74A8AFDCDD8189FFDA135 /* swipe.json */; };
 		A14DD6D9F20DCB24688D7508 /* AnalysisViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 71DEFBB1263DE5E9BC452796 /* AnalysisViewModel.swift */; };
 		A27C5761649779A1BCE3B638 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = C568ED16C5A5569D901E936F /* Assets.xcassets */; };
+		A35932B0ED64B4E32FC0B190 /* CinematicComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = 385F68D0B87348CEEB8E73C1 /* CinematicComponents.swift */; };
 		A36E8F56161270DEEAA9CD56 /* OnboardingScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = DC71CA897E05C4463C8A352E /* OnboardingScreen.swift */; };
 		A387E8D0E762928EC832E5F6 /* ExportVerificationReport.swift in Sources */ = {isa = PBXBuildFile; fileRef = E656693935133F3D6145E617 /* ExportVerificationReport.swift */; };
 		A46E147C49C542FD078412F0 /* CaptionRoleClassifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC7FCCB2E20594CED878C917 /* CaptionRoleClassifier.swift */; };
 		A4D47DD659148EEF69939AF7 /* LoudnessNormalizer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9DF1AC315CA8AFF362E5512B /* LoudnessNormalizer.swift */; };
 		A4E819439EBA44CE9C52B371 /* SpeechTranscriptionService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 273E9FCDA19A2DCFEF51AB6A /* SpeechTranscriptionService.swift */; };
-		A68750E72FEC6B97371CB54F /* virtualzero-mechanical-keyboard-typing-hd-372290.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = BD7C11B2516EE0972AE2062A /* virtualzero-mechanical-keyboard-typing-hd-372290.mp3 */; };
-		A7D0B965CA0DC306A7CE56CB /* dragon-studio-new-notification-3-398649.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = 2FF6B12874330485C16F51B1 /* dragon-studio-new-notification-3-398649.mp3 */; };
+		A6EBF99516461C1AF167BBE0 /* SFXLibrary.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6BCB6C169082CBBA5A4AC240 /* SFXLibrary.swift */; };
+		A7E7F89D42C83722BCF3201E /* Poppins-ExtraBold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 5949166C1C72A972EE3B81CE /* Poppins-ExtraBold.ttf */; };
 		A919762B2DE2FD7AE8613EC4 /* mixkit_flying_fast_swoosh_1469.wav in Resources */ = {isa = PBXBuildFile; fileRef = CFDF36B32606D32D0E2B6F1A /* mixkit_flying_fast_swoosh_1469.wav */; };
+		A96C5EA077371084CEBC2BE6 /* universfield-impact-cinematic-boom-352465.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = EE34B574B7F818BDFA5D861B /* universfield-impact-cinematic-boom-352465.mp3 */; };
+		AA072158CA5F3D372A9D24AF /* Anton-Regular.ttf in Resources */ = {isa = PBXBuildFile; fileRef = F271CF07F6E16619D9F78711 /* Anton-Regular.ttf */; };
 		AA87B22DC0956726A5404B09 /* mixkit_cyberpunk_city_140.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = 44D51366F6E400484D12E395 /* mixkit_cyberpunk_city_140.mp3 */; };
 		ABE73513687163E4F97FB33F /* onboarding_ai.json in Resources */ = {isa = PBXBuildFile; fileRef = CC30D8BED7D725522624A5A0 /* onboarding_ai.json */; };
 		AC288C9000CFD7226A256596 /* CutSenseTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 668E0F2DEA05FD6C59ED350F /* CutSenseTests.swift */; };
 		AC88AA985F31542565EE3679 /* QualityGateService.swift in Sources */ = {isa = PBXBuildFile; fileRef = F928B8F6178CCF7F82382C34 /* QualityGateService.swift */; };
+		AD1A3A6F30BBA1651745251C /* Montserrat-Black.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 5248CEF4168BBE3E7A87F403 /* Montserrat-Black.ttf */; };
 		ADCAD5E915940F15C057A775 /* VideoMetadataService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9C9CA1330E134212E6674FEC /* VideoMetadataService.swift */; };
 		AEB9DFE2AAF615418DB8BED7 /* mixkit_arrow_whoosh_1714.wav in Resources */ = {isa = PBXBuildFile; fileRef = A97760BA1F4A20F0ED48DDAE /* mixkit_arrow_whoosh_1714.wav */; };
-		B1421990B1F8C1BF136ADA96 /* dragon-studio-glitch-effect-1-397982.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = 8C53614AC3DACC5E829627F4 /* dragon-studio-glitch-effect-1-397982.mp3 */; };
 		B2F83FC1E1329E7103A1600E /* TimelineMapper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 41A4067C5C627E1D027254D9 /* TimelineMapper.swift */; };
+		B3B6D0ED6658BB4824AC6BC0 /* PipelineArtifactStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4A3B6D25AD24AD6524D96ED7 /* PipelineArtifactStore.swift */; };
+		B4746419F121B4E33712B58C /* universfield-camera-shutter-199580.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = 279219DFC31D048ED8474DE7 /* universfield-camera-shutter-199580.mp3 */; };
+		B6355FDEED62B43E1D8335D9 /* PrivacyPolicyScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = 63D8FC0A64125E52CC49FC59 /* PrivacyPolicyScreen.swift */; };
 		B6DF602015817D4002578543 /* CaptionReadabilityGuard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 228923324C3F2424B2FE4DDF /* CaptionReadabilityGuard.swift */; };
+		B6E19FC5038EE937EDB99E51 /* HomeShell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4DEFD180FD2106D20751DC68 /* HomeShell.swift */; };
 		B6E5EA06E01A3474AF7C6B83 /* ContextAwareEditCommandDetector.swift in Sources */ = {isa = PBXBuildFile; fileRef = A95DC6396A268651C20BC4B3 /* ContextAwareEditCommandDetector.swift */; };
 		B75BEAAB8EDA50187B9EAC58 /* TimelineMapperTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4FA5036566837150A84F5B9A /* TimelineMapperTests.swift */; };
+		B7DE991B07D0D3868B419C5D /* AudioMixBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1801C4C0A2A2EF54C9294DA7 /* AudioMixBuilder.swift */; };
+		B7FE9D6B8FC8CB928DA7CE8F /* VideoStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4900125A8957FAD680392C8B /* VideoStorage.swift */; };
+		B8A07D58484F0652967AB1FA /* PollinationsService.swift in Sources */ = {isa = PBXBuildFile; fileRef = BAD1C88B697EF15A363D6C83 /* PollinationsService.swift */; };
 		B8CB272724C341F9D710535A /* CaptionPreviewPlayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = C561C3C840390511BCE448D0 /* CaptionPreviewPlayer.swift */; };
 		B8EA16B2AA648DEE61D90C7E /* confirm.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = 6ACF380C381DA16077DE5943 /* confirm.mp3 */; };
+		B8F36527CFEE5EF6DEA5A5BB /* u_tmz2ks56ex-m3g-cinematic-bass-318310.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = 141D76E3B0D3BD2D6DA0F867 /* u_tmz2ks56ex-m3g-cinematic-bass-318310.mp3 */; };
 		B990FE6F5062F60B3CA908AB /* mixkit_cinematic_tunnel_reverb_woosh_1486.wav in Resources */ = {isa = PBXBuildFile; fileRef = FA35A138329603651A4D5309 /* mixkit_cinematic_tunnel_reverb_woosh_1486.wav */; };
 		BA68F9D985C54E2955EE12F6 /* BackgroundMusicService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E9B57D7A39CACED343F475C /* BackgroundMusicService.swift */; };
 		BAF137E2C95EB405044B4072 /* VoiceEQProcessor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 60DC8F5B7EC704FFAC120DEF /* VoiceEQProcessor.swift */; };
@@ -164,33 +219,45 @@
 		C312EE462CEE53F55361AE56 /* warm_light_leak.json in Resources */ = {isa = PBXBuildFile; fileRef = D5CF08FB2A3A3C01F2CD9DB4 /* warm_light_leak.json */; };
 		C46A27D2813284BE5254AEE3 /* IntensityLimiter.swift in Sources */ = {isa = PBXBuildFile; fileRef = EDFE871FAC73BD77AB5A6368 /* IntensityLimiter.swift */; };
 		C53A6705E446B62F2CE64C45 /* SupabaseClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2DB7DC49AAFACB345FCAC32C /* SupabaseClient.swift */; };
+		C58BFB4F8486EBF262E634DB /* dragon-studio-glitch-effect-1-397982.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = E4357E0BF00F7E0EED22456C /* dragon-studio-glitch-effect-1-397982.mp3 */; };
+		C5DFF00A341585BB6002E28E /* WhisperTranscriptionService.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF5E4E4C2F1B6534CE2165A9 /* WhisperTranscriptionService.swift */; };
 		C6A9731C1C6EC776C5733849 /* chromatic_micro_glitch.json in Resources */ = {isa = PBXBuildFile; fileRef = 0E4090ED8786ACFA8C19277F /* chromatic_micro_glitch.json */; };
 		C8E94B08BDEBCB211EACCF08 /* RoughCutModuleTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 32ADD7484DA1E9319A6A6617 /* RoughCutModuleTests.swift */; };
-		CA98AE9DDF30920E4DF0D30C /* CaptionOverlayCompositor.swift.bak in Resources */ = {isa = PBXBuildFile; fileRef = 2E46C63FB8C440745132CD33 /* CaptionOverlayCompositor.swift.bak */; };
+		CAEB2F64CA87F5FE9C23BD1A /* sfx_riser_long.m4a in Resources */ = {isa = PBXBuildFile; fileRef = 76E8EE3FF06949E44998AA7E /* sfx_riser_long.m4a */; };
 		CB100223B5178427C59CF3A5 /* OverEditingGuard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1868C6962283F039CF528939 /* OverEditingGuard.swift */; };
 		CB90BF7B41E9D642D7E0E96F /* mixkit_cinematic_suspense_swell_786.wav in Resources */ = {isa = PBXBuildFile; fileRef = 2DE7CB9A9EB74C2B44D6D1DE /* mixkit_cinematic_suspense_swell_786.wav */; };
+		CBAE525F81C65E2BA990E1CC /* PexelsServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 59A7CC64F047DD4C2C883FBD /* PexelsServiceTests.swift */; };
 		CC06F1C1B25F33B0F58E1031 /* PipelineRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9E7352B12AB615168B697A4 /* PipelineRepository.swift */; };
 		CDF75ADC78CBFADB5543C340 /* mixkit_terror_sweep_of_darkness_2630.wav in Resources */ = {isa = PBXBuildFile; fileRef = 81511CD30F56BC29C93037A8 /* mixkit_terror_sweep_of_darkness_2630.wav */; };
 		CF655FE41DBD8E89AB7F017D /* VideoColorAnalyzer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9773559F45333682CEF1C853 /* VideoColorAnalyzer.swift */; };
 		D0CBB41EF99115F492B1432A /* bold_tech_dynamic.json in Resources */ = {isa = PBXBuildFile; fileRef = E6B365E1291C7B0F3C1441AF /* bold_tech_dynamic.json */; };
 		D2BD8EF815D8FB6530381BE4 /* VideoImportService.swift in Sources */ = {isa = PBXBuildFile; fileRef = C62FC1631B126EE52AC1C53B /* VideoImportService.swift */; };
 		D68E3028D6CE4731198AC1E8 /* mixkit_dramatic_metal_explosion_impact_1687.wav in Resources */ = {isa = PBXBuildFile; fileRef = 532E080A8CB1824479D93051 /* mixkit_dramatic_metal_explosion_impact_1687.wav */; };
-		D849BCF4111D8D8AAC1AD1D0 /* universfield-impact-cinematic-boom-352465.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = C41CDA867A82B722EEEDBC9E /* universfield-impact-cinematic-boom-352465.mp3 */; };
+		D793F1378ADFF2F398A9FB08 /* universfield-computer-mouse-click-352734.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = 8676D093F0FDA7BB78B1168A /* universfield-computer-mouse-click-352734.mp3 */; };
+		DA3ED6FBC0C4B1E259D69374 /* Inter-Bold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 09818CB6F11EF569FFBC2555 /* Inter-Bold.ttf */; };
 		DA9F44B14EBE9B91990A2C75 /* TemplateHubService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 58A84CAB5695D7431AF0DE77 /* TemplateHubService.swift */; };
 		DCF23FD8BCB6E72C2FBE4022 /* ExportService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 88AE4A2C0B4FF7CE416CB779 /* ExportService.swift */; };
-		E0647D9645B221BAD0C92F24 /* dragon-studio-cinematic-riser-03-414575.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = 48FEA25242C2FCD1AA27FD12 /* dragon-studio-cinematic-riser-03-414575.mp3 */; };
-		E2FDA03EA12A0197C3851D39 /* u_f1ee7vf7na-blip-131856.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = 74B15AD39772C69EADB041FD /* u_f1ee7vf7na-blip-131856.mp3 */; };
+		DD020AAC66BE219BDD3412AC /* BebasNeue-Regular.ttf in Resources */ = {isa = PBXBuildFile; fileRef = BDFB2BA80657142D96B6A4DA /* BebasNeue-Regular.ttf */; };
+		E015511B32001FD7E93DA6FA /* whatsapp_test_video.mp4 in Resources */ = {isa = PBXBuildFile; fileRef = 922370C0A0F74C3B11D50D08 /* whatsapp_test_video.mp4 */; };
+		E0F35A94C5B0F214501775F3 /* PlusJakartaSans-ExtraBold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = BEE9AAB723AD590034D08A1D /* PlusJakartaSans-ExtraBold.ttf */; };
+		E3DC869131E5189939D8C1EA /* PipelineDiagnostics.swift in Sources */ = {isa = PBXBuildFile; fileRef = B04A5F59463391B69FE4935D /* PipelineDiagnostics.swift */; };
 		E5754DC49BADA4344D2AD5AF /* AdaptiveTemplateEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8500F5F94DA6591FAD026FB9 /* AdaptiveTemplateEngine.swift */; };
 		E8D219C0D41A2AF9AE4C3895 /* slow_zoom.json in Resources */ = {isa = PBXBuildFile; fileRef = 746BBA3218E4B540A2A8D18C /* slow_zoom.json */; };
 		E917548C69E0C0D457CA52C7 /* ABComparisonPlayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 43B0999B8F5E4C958119A311 /* ABComparisonPlayer.swift */; };
 		E9CF91B32C34517D70DF19E8 /* MeaningPreservationEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 237512016215469EB5482955 /* MeaningPreservationEngine.swift */; };
+		EB4538312ED9401F16DFC5B3 /* CreateScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = 69F346E128316E94411F0F72 /* CreateScreen.swift */; };
 		EB51CC12E7E4355BC11F634E /* PaywallScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = 517FF607C487C3E0A65E83B0 /* PaywallScreen.swift */; };
+		EB6E62B8CB918C509A7D68A6 /* sfx_impact_snap.m4a in Resources */ = {isa = PBXBuildFile; fileRef = 3C2C22C846056C1CE18C74B8 /* sfx_impact_snap.m4a */; };
 		EB9720867451B44BF22078BB /* EditScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F082FD09751E1C261B5C535 /* EditScreen.swift */; };
 		EEA6F71D9ADB57226826080D /* NetworkMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF130DD020638B87FA292E69 /* NetworkMonitor.swift */; };
 		EED8ADD818110699E2C50C5A /* SmartTranscriptAnalyzer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 164790751C92C5C4A5E4263E /* SmartTranscriptAnalyzer.swift */; };
 		F2655387ED70058D7B4E7B7D /* cinematic_lower_third.json in Resources */ = {isa = PBXBuildFile; fileRef = BE954477354C3CE42219547E /* cinematic_lower_third.json */; };
-		F78F3DE88B825B192C4EC872 /* universfield-new-notification-057-494255.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = F48316BE241351D98795A632 /* universfield-new-notification-057-494255.mp3 */; };
+		F3C055B51A0FD5C7FF434F7F /* BeatDetector.swift in Sources */ = {isa = PBXBuildFile; fileRef = D640F24843F9BD61FC747BAB /* BeatDetector.swift */; };
+		F920633D356BE86440D5885F /* sfx_library.json in Resources */ = {isa = PBXBuildFile; fileRef = BAABE3F6D0A958847E7BDE65 /* sfx_library.json */; };
+		FB051517EB0C8765A74D1EDB /* dragon-studio-whoosh-cinematic-376875.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = 9A0327A2E1390CD272E5D59E /* dragon-studio-whoosh-cinematic-376875.mp3 */; };
 		FC26EA6E9C25FCBBDE7239B5 /* LocalProjectStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7CDBC3BF82983D3AFB8DEA9C /* LocalProjectStoreTests.swift */; };
+		FCFAAEFE7FAC95C5A81AA746 /* CaptionRenderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 554917BBEA6BE6A984557B4E /* CaptionRenderer.swift */; };
+		FEF6CCC6B9DB6EDE23989561 /* SimpleCaptionPipeline.swift in Sources */ = {isa = PBXBuildFile; fileRef = 59ACBEFAE009ED07CC36457B /* SimpleCaptionPipeline.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -205,156 +272,212 @@
 
 /* Begin PBXFileReference section */
 		00055E71E3774D1DA883AA17 /* CaptionModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CaptionModels.swift; sourceTree = "<group>"; };
+		0025D82B0B581D1FED4F3EF8 /* soundreality-riser-hole-391174.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = "soundreality-riser-hole-391174.mp3"; sourceTree = "<group>"; };
 		03397B0FD0030FF7C23E97EF /* mixkit_air_woosh_1489.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = mixkit_air_woosh_1489.wav; sourceTree = "<group>"; };
 		05C09CF2AB4D001066FFEFDA /* mixkit_movie_logo_intro_impact_2900.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = mixkit_movie_logo_intro_impact_2900.wav; sourceTree = "<group>"; };
 		06F4C50F35DB3B9653719CD8 /* cinematic_quote.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = cinematic_quote.json; sourceTree = "<group>"; };
+		07A5A9B95B2117CFED19D7A2 /* UserPreferences.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserPreferences.swift; sourceTree = "<group>"; };
+		09318105AC1DC8A6B58A8575 /* Archivo-Black.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Archivo-Black.ttf"; sourceTree = "<group>"; };
+		09818CB6F11EF569FFBC2555 /* Inter-Bold.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Inter-Bold.ttf"; sourceTree = "<group>"; };
 		0A2E0B8B749BBA30F67CE91A /* RootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootView.swift; sourceTree = "<group>"; };
 		0BA172789654C4ABB795D96D /* cutsense_test_video.mp4 */ = {isa = PBXFileReference; path = cutsense_test_video.mp4; sourceTree = "<group>"; };
 		0C716EA8287807AEA7DD6732 /* soft_push.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = soft_push.json; sourceTree = "<group>"; };
-		0D2E25A8A9B44108A18F7C11 /* PipelineArtifactStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PipelineArtifactStore.swift; sourceTree = "<group>"; };
 		0E4090ED8786ACFA8C19277F /* chromatic_micro_glitch.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = chromatic_micro_glitch.json; sourceTree = "<group>"; };
-		156AB136955226DD6BF0AC74 /* u_tmz2ks56ex-m3g-cinematic-bass-318310.mp3 */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = audio.mp3; name = "u_tmz2ks56ex-m3g-cinematic-bass-318310.mp3"; path = "CutSense/Resources/EditingAssets/sfx/impact/u_tmz2ks56ex-m3g-cinematic-bass-318310.mp3"; sourceTree = SOURCE_ROOT; };
+		0F6B1B2F5B1EEFACF859A877 /* universfield-new-notification-057-494255.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = "universfield-new-notification-057-494255.mp3"; sourceTree = "<group>"; };
+		141D76E3B0D3BD2D6DA0F867 /* u_tmz2ks56ex-m3g-cinematic-bass-318310.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = "u_tmz2ks56ex-m3g-cinematic-bass-318310.mp3"; sourceTree = "<group>"; };
+		141E1D4A59EBB79CEB801009 /* TemplatesTabScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TemplatesTabScreen.swift; sourceTree = "<group>"; };
+		14C0E5B92F3488E9C5BFD12B /* sfx_pop.m4a */ = {isa = PBXFileReference; path = sfx_pop.m4a; sourceTree = "<group>"; };
 		164790751C92C5C4A5E4263E /* SmartTranscriptAnalyzer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SmartTranscriptAnalyzer.swift; sourceTree = "<group>"; };
+		178D005561D404CD7E3372C1 /* sfx_riser.m4a */ = {isa = PBXFileReference; path = sfx_riser.m4a; sourceTree = "<group>"; };
+		1801C4C0A2A2EF54C9294DA7 /* AudioMixBuilder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioMixBuilder.swift; sourceTree = "<group>"; };
 		1868C6962283F039CF528939 /* OverEditingGuard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OverEditingGuard.swift; sourceTree = "<group>"; };
+		18F71654794D73B19F444D2A /* CloudFlowLiveTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CloudFlowLiveTests.swift; sourceTree = "<group>"; };
 		19991D7D4B94B56B30C4C024 /* ASSET_LICENSES.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = ASSET_LICENSES.md; sourceTree = "<group>"; };
 		1BCE7E0EF6670FA7B6345C51 /* RoughCutReviewScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RoughCutReviewScreen.swift; sourceTree = "<group>"; };
-		1C9E3A0F6D8F4B92A1C0D001 /* CutSenseDebugRuntime.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CutSenseDebugRuntime.swift; sourceTree = "<group>"; };
-		1C9E3A116D8F4B92A1C0D001 /* PipelineDiagnostics.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PipelineDiagnostics.swift; sourceTree = "<group>"; };
-		1C9E3A136D8F4B92A1C0D001 /* PipelineDebugRunner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PipelineDebugRunner.swift; sourceTree = "<group>"; };
-		1D7F2E6B9B8C4D0EAF102233 /* TemplateEditGrammar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TemplateEditGrammar.swift; sourceTree = "<group>"; };
+		1FCB2B1DA3BCEFB8487290E3 /* sfx_pop_low.m4a */ = {isa = PBXFileReference; path = sfx_pop_low.m4a; sourceTree = "<group>"; };
 		21B8EA8C7B409C4AE35BF3D7 /* CutSense.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = CutSense.entitlements; sourceTree = "<group>"; };
 		228923324C3F2424B2FE4DDF /* CaptionReadabilityGuard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CaptionReadabilityGuard.swift; sourceTree = "<group>"; };
 		234198B5321CA8C80832EECC /* TestHelpers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TestHelpers.swift; sourceTree = "<group>"; };
+		2363D009A523E7C187B0AA6B /* SpeechFallback.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpeechFallback.swift; sourceTree = "<group>"; };
 		237512016215469EB5482955 /* MeaningPreservationEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MeaningPreservationEngine.swift; sourceTree = "<group>"; };
-		23EE5B6F740B22736E35C0D5 /* dragon-studio-mouse-click-sfx-444806.mp3 */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = audio.mp3; name = "dragon-studio-mouse-click-sfx-444806.mp3"; path = "CutSense/Resources/EditingAssets/sfx/pop_click/dragon-studio-mouse-click-sfx-444806.mp3"; sourceTree = SOURCE_ROOT; };
 		2515ADDECC802089D2ED807D /* Models.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Models.swift; sourceTree = "<group>"; };
+		25CD478800730F80753692DB /* dragon-studio-mouse-click-sfx-444806.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = "dragon-studio-mouse-click-sfx-444806.mp3"; sourceTree = "<group>"; };
+		25F93155610750EB89AB9161 /* sfx_whoosh_short.m4a */ = {isa = PBXFileReference; path = sfx_whoosh_short.m4a; sourceTree = "<group>"; };
 		269103C287576CEE2D3D3199 /* SFXAssetManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SFXAssetManager.swift; sourceTree = "<group>"; };
 		2731291F55A8814BD0161B90 /* CaptionPreviewViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CaptionPreviewViewModel.swift; sourceTree = "<group>"; };
 		273E9FCDA19A2DCFEF51AB6A /* SpeechTranscriptionService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpeechTranscriptionService.swift; sourceTree = "<group>"; };
+		279219DFC31D048ED8474DE7 /* universfield-camera-shutter-199580.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = "universfield-camera-shutter-199580.mp3"; sourceTree = "<group>"; };
 		27AB9370D317A4EBB5B2EBDF /* mixkit_cinematic_whoosh_deep_impact_1143.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = mixkit_cinematic_whoosh_deep_impact_1143.mp3; sourceTree = "<group>"; };
+		27E9FED350B3A58CF926FB12 /* openai_whisper-large-v3_turbo_954MB */ = {isa = PBXFileReference; lastKnownFileType = folder; name = "openai_whisper-large-v3_turbo_954MB"; path = "CutSense/Resources/WhisperModels/openai_whisper-large-v3_turbo_954MB"; sourceTree = SOURCE_ROOT; };
 		283112666E896AFA8EEC42BB /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		28901B74846173D20088B4D4 /* SettingsScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsScreen.swift; sourceTree = "<group>"; };
 		2A01DD8FF748A80B87ADD3DC /* RoughCutPreviewPlayer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RoughCutPreviewPlayer.swift; sourceTree = "<group>"; };
 		2CD053ED59342D9F5A1D6011 /* mixkit_select_click_1109.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = mixkit_select_click_1109.wav; sourceTree = "<group>"; };
 		2DB7DC49AAFACB345FCAC32C /* SupabaseClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SupabaseClient.swift; sourceTree = "<group>"; };
 		2DE7CB9A9EB74C2B44D6D1DE /* mixkit_cinematic_suspense_swell_786.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = mixkit_cinematic_suspense_swell_786.wav; sourceTree = "<group>"; };
-		2E46C63FB8C440745132CD33 /* CaptionOverlayCompositor.swift.bak */ = {isa = PBXFileReference; path = CaptionOverlayCompositor.swift.bak; sourceTree = "<group>"; };
 		2E9EDF2D015134AAC95B70A8 /* mixkit_hard_pop_click_2364.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = mixkit_hard_pop_click_2364.wav; sourceTree = "<group>"; };
 		2ED121E3C1663B5161109DDA /* subtle_film_grain.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = subtle_film_grain.json; sourceTree = "<group>"; };
 		2F197F1380FF297A3BB59F8F /* mixkit_small_electric_glitch_2595.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = mixkit_small_electric_glitch_2595.wav; sourceTree = "<group>"; };
-		2FF6B12874330485C16F51B1 /* dragon-studio-new-notification-3-398649.mp3 */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = audio.mp3; name = "dragon-studio-new-notification-3-398649.mp3"; path = "CutSense/Resources/EditingAssets/sfx/pop_click/dragon-studio-new-notification-3-398649.mp3"; sourceTree = SOURCE_ROOT; };
 		32ADD7484DA1E9319A6A6617 /* RoughCutModuleTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RoughCutModuleTests.swift; sourceTree = "<group>"; };
 		337E5C3E744A188C3AB90EAC /* camera_shutter.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = camera_shutter.json; sourceTree = "<group>"; };
+		34946037EE65B36A5A208FDD /* VideoCompressor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VideoCompressor.swift; sourceTree = "<group>"; };
 		364C800E58EF24989980D462 /* DebugTimelineScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DebugTimelineScreen.swift; sourceTree = "<group>"; };
+		385F68D0B87348CEEB8E73C1 /* CinematicComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CinematicComponents.swift; sourceTree = "<group>"; };
 		395236821E490A9EA1BBF501 /* EmptyStateView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmptyStateView.swift; sourceTree = "<group>"; };
-		3ABBFB9F0DCEF6FB0596C698 /* universfield-camera-shutter-199580.mp3 */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = audio.mp3; name = "universfield-camera-shutter-199580.mp3"; path = "CutSense/Resources/EditingAssets/sfx/camera_transition/universfield-camera-shutter-199580.mp3"; sourceTree = SOURCE_ROOT; };
+		3C2C22C846056C1CE18C74B8 /* sfx_impact_snap.m4a */ = {isa = PBXFileReference; path = sfx_impact_snap.m4a; sourceTree = "<group>"; };
+		3EEE92F38729351DD13E15A1 /* CaptionLayoutEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CaptionLayoutEngine.swift; sourceTree = "<group>"; };
 		41A4067C5C627E1D027254D9 /* TimelineMapper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimelineMapper.swift; sourceTree = "<group>"; };
+		4217417544CC02D4481F3682 /* dragon-studio-correct-472358.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = "dragon-studio-correct-472358.mp3"; sourceTree = "<group>"; };
 		43B0999B8F5E4C958119A311 /* ABComparisonPlayer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ABComparisonPlayer.swift; sourceTree = "<group>"; };
 		43FF6D5797B56CB4F3A1BB0D /* FilterEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FilterEngine.swift; sourceTree = "<group>"; };
 		44D51366F6E400484D12E395 /* mixkit_cyberpunk_city_140.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = mixkit_cyberpunk_city_140.mp3; sourceTree = "<group>"; };
 		46B74483FAEB9500011B5793 /* AssetRegistryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssetRegistryTests.swift; sourceTree = "<group>"; };
 		4728923092914BFEE24EC4BE /* CircularProgressView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CircularProgressView.swift; sourceTree = "<group>"; };
-		48FEA25242C2FCD1AA27FD12 /* dragon-studio-cinematic-riser-03-414575.mp3 */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = audio.mp3; name = "dragon-studio-cinematic-riser-03-414575.mp3"; path = "CutSense/Resources/EditingAssets/sfx/riser/dragon-studio-cinematic-riser-03-414575.mp3"; sourceTree = SOURCE_ROOT; };
+		4900125A8957FAD680392C8B /* VideoStorage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VideoStorage.swift; sourceTree = "<group>"; };
+		4A3B6D25AD24AD6524D96ED7 /* PipelineArtifactStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PipelineArtifactStore.swift; sourceTree = "<group>"; };
+		4B2973473995D460071A783D /* MusicLibrary.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MusicLibrary.swift; sourceTree = "<group>"; };
+		4B9F34FF047214A6EA683225 /* sfx_impact.m4a */ = {isa = PBXFileReference; path = sfx_impact.m4a; sourceTree = "<group>"; };
+		4DEFD180FD2106D20751DC68 /* HomeShell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeShell.swift; sourceTree = "<group>"; };
 		4FA5036566837150A84F5B9A /* TimelineMapperTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimelineMapperTests.swift; sourceTree = "<group>"; };
 		50223A99A5ACF3A7CE67F535 /* GradedVideoPlayer.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = GradedVideoPlayer.md; sourceTree = "<group>"; };
+		50DC7D86CD8D9289936A13DB /* Oswald-Bold.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Oswald-Bold.ttf"; sourceTree = "<group>"; };
 		517FF607C487C3E0A65E83B0 /* PaywallScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaywallScreen.swift; sourceTree = "<group>"; };
+		5248CEF4168BBE3E7A87F403 /* Montserrat-Black.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Montserrat-Black.ttf"; sourceTree = "<group>"; };
 		532E080A8CB1824479D93051 /* mixkit_dramatic_metal_explosion_impact_1687.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = mixkit_dramatic_metal_explosion_impact_1687.wav; sourceTree = "<group>"; };
 		5529C17CF84DF8BB00EB4830 /* EditDecisionEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditDecisionEngine.swift; sourceTree = "<group>"; };
+		554917BBEA6BE6A984557B4E /* CaptionRenderer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CaptionRenderer.swift; sourceTree = "<group>"; };
+		5567E895557657123EA4D9DD /* PipelineDebugRunner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PipelineDebugRunner.swift; sourceTree = "<group>"; };
 		57AEBDFD2199B8F98956BCB5 /* CaptionOverlayCompositor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CaptionOverlayCompositor.swift; sourceTree = "<group>"; };
 		57E56D95137245F133E61B85 /* ExportVerificationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExportVerificationTests.swift; sourceTree = "<group>"; };
 		586DC3889415C1CD20467C73 /* CaptionSceneEventPlanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CaptionSceneEventPlanner.swift; sourceTree = "<group>"; };
 		58A84CAB5695D7431AF0DE77 /* TemplateHubService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TemplateHubService.swift; sourceTree = "<group>"; };
+		5949166C1C72A972EE3B81CE /* Poppins-ExtraBold.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Poppins-ExtraBold.ttf"; sourceTree = "<group>"; };
+		59A7CC64F047DD4C2C883FBD /* PexelsServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PexelsServiceTests.swift; sourceTree = "<group>"; };
+		59ACBEFAE009ED07CC36457B /* SimpleCaptionPipeline.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SimpleCaptionPipeline.swift; sourceTree = "<group>"; };
 		5AAB544EE843C383493F38B2 /* mixkit_glitch_static_1457.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = mixkit_glitch_static_1457.wav; sourceTree = "<group>"; };
-		5FD3EDC12048ACF10E72F1B9 /* bryansantosbreton-biodynamic-impact-braam-tonal-dark-184276.mp3 */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = audio.mp3; name = "bryansantosbreton-biodynamic-impact-braam-tonal-dark-184276.mp3"; path = "CutSense/Resources/EditingAssets/sfx/impact/bryansantosbreton-biodynamic-impact-braam-tonal-dark-184276.mp3"; sourceTree = SOURCE_ROOT; };
+		5B2D28F1D5B9F13933EF8F9C /* ProExportPipeline.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProExportPipeline.swift; sourceTree = "<group>"; };
+		6033441F2E1D1E7D8106DCE5 /* music_library.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = music_library.json; sourceTree = "<group>"; };
 		60DC8F5B7EC704FFAC120DEF /* VoiceEQProcessor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoiceEQProcessor.swift; sourceTree = "<group>"; };
 		628FEBEB8AA11FA45F6FE610 /* TimelineRangeNormalizer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimelineRangeNormalizer.swift; sourceTree = "<group>"; };
+		62FB3216A8FEA6FEB14A2AA9 /* dragon-studio-clicking-keyboard-asmr-sfx-356115.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = "dragon-studio-clicking-keyboard-asmr-sfx-356115.mp3"; sourceTree = "<group>"; };
+		63D8FC0A64125E52CC49FC59 /* PrivacyPolicyScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrivacyPolicyScreen.swift; sourceTree = "<group>"; };
 		64B896D522E2636F41EA873D /* mixkit_cinematic_heartbeat_ambience_497.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = mixkit_cinematic_heartbeat_ambience_497.wav; sourceTree = "<group>"; };
 		64E74A8AFDCDD8189FFDA135 /* swipe.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = swipe.json; sourceTree = "<group>"; };
 		65C15AB4F18895C258581B92 /* mixkit_sci_fi_score_464.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = mixkit_sci_fi_score_464.mp3; sourceTree = "<group>"; };
 		668E0F2DEA05FD6C59ED350F /* CutSenseTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CutSenseTests.swift; sourceTree = "<group>"; };
 		66C373ACE0E41C68BEC62183 /* AudioAnalysisService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioAnalysisService.swift; sourceTree = "<group>"; };
 		6719CD608473ACEA7FBFA7B3 /* mixkit_cinematic_trailer_riser_790.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = mixkit_cinematic_trailer_riser_790.wav; sourceTree = "<group>"; };
-		67975DED0523ABB29F1E4A5F /* universfield-computer-mouse-click-352734.mp3 */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = audio.mp3; name = "universfield-computer-mouse-click-352734.mp3"; path = "CutSense/Resources/EditingAssets/sfx/pop_click/universfield-computer-mouse-click-352734.mp3"; sourceTree = SOURCE_ROOT; };
+		69F346E128316E94411F0F72 /* CreateScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreateScreen.swift; sourceTree = "<group>"; };
 		6ACF380C381DA16077DE5943 /* confirm.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = confirm.mp3; sourceTree = "<group>"; };
+		6BCB6C169082CBBA5A4AC240 /* SFXLibrary.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SFXLibrary.swift; sourceTree = "<group>"; };
 		6C497561CA0FA241920D4895 /* GoldenTranscriptTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GoldenTranscriptTests.swift; sourceTree = "<group>"; };
+		6CBDD497B6D94EB33788C118 /* sfx_whoosh.m4a */ = {isa = PBXFileReference; path = sfx_whoosh.m4a; sourceTree = "<group>"; };
+		6DDC4784891F36C382050487 /* sfx_pop_high.m4a */ = {isa = PBXFileReference; path = sfx_pop_high.m4a; sourceTree = "<group>"; };
 		6FB146E284B616EEA64573CF /* TemplateConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TemplateConfig.swift; sourceTree = "<group>"; };
-		7148A11AE25B905FE1742F02 /* dragon-studio-whoosh-cinematic-376875.mp3 */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = audio.mp3; name = "dragon-studio-whoosh-cinematic-376875.mp3"; path = "CutSense/Resources/EditingAssets/sfx/whoosh/dragon-studio-whoosh-cinematic-376875.mp3"; sourceTree = SOURCE_ROOT; };
 		71DEFBB1263DE5E9BC452796 /* AnalysisViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnalysisViewModel.swift; sourceTree = "<group>"; };
 		72233D1433B64E2F396B2C0B /* AuthManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthManager.swift; sourceTree = "<group>"; };
 		746BBA3218E4B540A2A8D18C /* slow_zoom.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = slow_zoom.json; sourceTree = "<group>"; };
-		74B15AD39772C69EADB041FD /* u_f1ee7vf7na-blip-131856.mp3 */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = audio.mp3; name = "u_f1ee7vf7na-blip-131856.mp3"; path = "CutSense/Resources/EditingAssets/sfx/pop_click/u_f1ee7vf7na-blip-131856.mp3"; sourceTree = SOURCE_ROOT; };
+		74ACB6A1F6DB2FF612B67A27 /* PipelineModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PipelineModels.swift; sourceTree = "<group>"; };
+		75354E9CC552BD23B651044D /* sfx_ding_soft.m4a */ = {isa = PBXFileReference; path = sfx_ding_soft.m4a; sourceTree = "<group>"; };
+		76E8EE3FF06949E44998AA7E /* sfx_riser_long.m4a */ = {isa = PBXFileReference; path = sfx_riser_long.m4a; sourceTree = "<group>"; };
 		7737772B64D237A67CB4D9E6 /* AudioQualityGuard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioQualityGuard.swift; sourceTree = "<group>"; };
 		778B80B267FCAAD25B996827 /* mixkit_camera_shutter_hard_click_1430.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = mixkit_camera_shutter_hard_click_1430.wav; sourceTree = "<group>"; };
 		7CDBC3BF82983D3AFB8DEA9C /* LocalProjectStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalProjectStoreTests.swift; sourceTree = "<group>"; };
-		7DA8A4481A97F711A6B924D1 /* audiopapkin-riser-hit-sfx-001-289802.mp3 */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = audio.mp3; name = "audiopapkin-riser-hit-sfx-001-289802.mp3"; path = "CutSense/Resources/EditingAssets/sfx/riser/audiopapkin-riser-hit-sfx-001-289802.mp3"; sourceTree = SOURCE_ROOT; };
+		7CE12BFD64289DD8358300C6 /* u_f1ee7vf7na-blip-131856.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = "u_f1ee7vf7na-blip-131856.mp3"; sourceTree = "<group>"; };
+		7E35B564A7893ADB7FCC62A0 /* dragon-studio-simple-whoosh-382724.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = "dragon-studio-simple-whoosh-382724.mp3"; sourceTree = "<group>"; };
 		7E37C2184A75BA244D77348F /* SubscriptionManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionManager.swift; sourceTree = "<group>"; };
 		7E9B57D7A39CACED343F475C /* BackgroundMusicService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BackgroundMusicService.swift; sourceTree = "<group>"; };
+		80913BFAA64F83AE56CAB5DE /* VisualPromptRewriter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VisualPromptRewriter.swift; sourceTree = "<group>"; };
 		81511CD30F56BC29C93037A8 /* mixkit_terror_sweep_of_darkness_2630.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = mixkit_terror_sweep_of_darkness_2630.wav; sourceTree = "<group>"; };
-		81E9C33F03DD2BC27BC6896D /* lordsonny-cinematic-whoosh-reverse-161307.mp3 */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = audio.mp3; name = "lordsonny-cinematic-whoosh-reverse-161307.mp3"; path = "CutSense/Resources/EditingAssets/sfx/whoosh/lordsonny-cinematic-whoosh-reverse-161307.mp3"; sourceTree = SOURCE_ROOT; };
 		8500F5F94DA6591FAD026FB9 /* AdaptiveTemplateEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdaptiveTemplateEngine.swift; sourceTree = "<group>"; };
+		8676D093F0FDA7BB78B1168A /* universfield-computer-mouse-click-352734.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = "universfield-computer-mouse-click-352734.mp3"; sourceTree = "<group>"; };
 		86A091CC60867BC2AF47E2C4 /* CutSenseApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CutSenseApp.swift; sourceTree = "<group>"; };
 		88AE4A2C0B4FF7CE416CB779 /* ExportService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExportService.swift; sourceTree = "<group>"; };
-		8A3A80D1DC9EF09BB536B41F /* dragon-studio-correct-472358.mp3 */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = audio.mp3; name = "dragon-studio-correct-472358.mp3"; path = "CutSense/Resources/EditingAssets/sfx/pop_click/dragon-studio-correct-472358.mp3"; sourceTree = SOURCE_ROOT; };
 		8A4F8F3CD1E424FD596670F4 /* mixkit_vintage_camera_shutter_1438.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = mixkit_vintage_camera_shutter_1438.wav; sourceTree = "<group>"; };
 		8BAFC9C04FA32C226F4F58EF /* whoosh.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = whoosh.mp3; sourceTree = "<group>"; };
-		8C53614AC3DACC5E829627F4 /* dragon-studio-glitch-effect-1-397982.mp3 */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = audio.mp3; name = "dragon-studio-glitch-effect-1-397982.mp3"; path = "CutSense/Resources/EditingAssets/sfx/glitch/dragon-studio-glitch-effect-1-397982.mp3"; sourceTree = SOURCE_ROOT; };
 		8C6DEDC0C443A50526EC1F39 /* TakeDetectionEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TakeDetectionEngine.swift; sourceTree = "<group>"; };
+		8CD5431B04DD8CA677E30732 /* AutoCutPlanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutoCutPlanner.swift; sourceTree = "<group>"; };
 		8CE6AF3FAF49136C495610E9 /* CaptionEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CaptionEngine.swift; sourceTree = "<group>"; };
 		8CE7C67F669CC7C139D97E42 /* CutSenseTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = CutSenseTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		8F082FD09751E1C261B5C535 /* EditScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditScreen.swift; sourceTree = "<group>"; };
 		8F37490B1AC0E6E4F7C2109D /* mixkit_short_space_stutter_intro_riser_1144.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = mixkit_short_space_stutter_intro_riser_1144.mp3; sourceTree = "<group>"; };
-		8FC3D8FB4DBD3D385DFD81CD /* pwlpl-deep-bass-drop-sound-effect-521058.mp3 */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = audio.mp3; name = "pwlpl-deep-bass-drop-sound-effect-521058.mp3"; path = "CutSense/Resources/EditingAssets/sfx/impact/pwlpl-deep-bass-drop-sound-effect-521058.mp3"; sourceTree = SOURCE_ROOT; };
 		8FE64792D4DE98C49C6BAA18 /* cinematic.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = cinematic.json; sourceTree = "<group>"; };
 		905E2110FEABF63D5D526D72 /* blur_highlight.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = blur_highlight.json; sourceTree = "<group>"; };
+		922370C0A0F74C3B11D50D08 /* whatsapp_test_video.mp4 */ = {isa = PBXFileReference; path = whatsapp_test_video.mp4; sourceTree = "<group>"; };
+		93FC35445ED474D52D95F30B /* TemplateEditGrammar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TemplateEditGrammar.swift; sourceTree = "<group>"; };
 		96F647F358FCE37E6BD67340 /* camera_snap.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = camera_snap.json; sourceTree = "<group>"; };
-		9723CB22962534EE803A9811 /* dragon-studio-pop-402324.mp3 */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = audio.mp3; name = "dragon-studio-pop-402324.mp3"; path = "CutSense/Resources/EditingAssets/sfx/pop_click/dragon-studio-pop-402324.mp3"; sourceTree = SOURCE_ROOT; };
 		9773559F45333682CEF1C853 /* VideoColorAnalyzer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VideoColorAnalyzer.swift; sourceTree = "<group>"; };
 		985616D816D61EDFB7D8025D /* CustomTemplateStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustomTemplateStore.swift; sourceTree = "<group>"; };
+		9A0327A2E1390CD272E5D59E /* dragon-studio-whoosh-cinematic-376875.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = "dragon-studio-whoosh-cinematic-376875.mp3"; sourceTree = "<group>"; };
+		9A2841707B2522AC30D23AF5 /* AudioPlanBuilder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioPlanBuilder.swift; sourceTree = "<group>"; };
 		9C9CA1330E134212E6674FEC /* VideoMetadataService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VideoMetadataService.swift; sourceTree = "<group>"; };
 		9DF1AC315CA8AFF362E5512B /* LoudnessNormalizer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoudnessNormalizer.swift; sourceTree = "<group>"; };
 		9E75BA244D81BAF2CBB96D3A /* ContinuityChecker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContinuityChecker.swift; sourceTree = "<group>"; };
+		A113E1CB273100D270CA570A /* ExportNotifier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExportNotifier.swift; sourceTree = "<group>"; };
 		A249ACA7751369C123E5451A /* PipelineIntegrationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PipelineIntegrationTests.swift; sourceTree = "<group>"; };
+		A368DE998C6BEC0A9AE94390 /* LUFSNormalizer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LUFSNormalizer.swift; sourceTree = "<group>"; };
+		A394809520637D68D65725EA /* sfx_impact_thud.m4a */ = {isa = PBXFileReference; path = sfx_impact_thud.m4a; sourceTree = "<group>"; };
+		A453B936998F94E276A2709D /* CutSenseDebugRuntime.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CutSenseDebugRuntime.swift; sourceTree = "<group>"; };
 		A6167A43855F52107BBC202B /* mixkit_modern_technology_select_3124.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = mixkit_modern_technology_select_3124.wav; sourceTree = "<group>"; };
 		A6F23D426F0BA738B8C4F653 /* riser.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = riser.mp3; sourceTree = "<group>"; };
+		A7A7E29DA304031F63F24BDF /* audiopapkin-riser-hit-sfx-001-289802.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = "audiopapkin-riser-hit-sfx-001-289802.mp3"; sourceTree = "<group>"; };
 		A89F5B0D7BDF98A3432F854D /* VideoFrameRenderer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VideoFrameRenderer.swift; sourceTree = "<group>"; };
 		A95DC6396A268651C20BC4B3 /* ContextAwareEditCommandDetector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContextAwareEditCommandDetector.swift; sourceTree = "<group>"; };
 		A97760BA1F4A20F0ED48DDAE /* mixkit_arrow_whoosh_1714.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = mixkit_arrow_whoosh_1714.wav; sourceTree = "<group>"; };
+		AB182C19C91E5A905ED651E7 /* sfx_whoosh_long.m4a */ = {isa = PBXFileReference; path = sfx_whoosh_long.m4a; sourceTree = "<group>"; };
 		AB3F4CFE6EB7DA53D3C755D3 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		AC7FCCB2E20594CED878C917 /* CaptionRoleClassifier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CaptionRoleClassifier.swift; sourceTree = "<group>"; };
+		AEAC4FD5E05D1763ECC60E33 /* dragon-studio-pop-402324.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = "dragon-studio-pop-402324.mp3"; sourceTree = "<group>"; };
 		AEFA457BD2DA1E5D808F8A67 /* TimelineDebugLogger.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimelineDebugLogger.swift; sourceTree = "<group>"; };
 		AF130DD020638B87FA292E69 /* NetworkMonitor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkMonitor.swift; sourceTree = "<group>"; };
+		AF5E4E4C2F1B6534CE2165A9 /* WhisperTranscriptionService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WhisperTranscriptionService.swift; sourceTree = "<group>"; };
 		AF8FF56A21450BDD1B2FF418 /* mixkit_silent_descent_614.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = mixkit_silent_descent_614.mp3; sourceTree = "<group>"; };
 		B00539BF9942CDC489E2C1CD /* zoom_cut.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = zoom_cut.json; sourceTree = "<group>"; };
+		B04A5F59463391B69FE4935D /* PipelineDiagnostics.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PipelineDiagnostics.swift; sourceTree = "<group>"; };
+		B09DD46E57DAD9EB7D99CF8F /* TermsOfServiceScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TermsOfServiceScreen.swift; sourceTree = "<group>"; };
+		B232C612EC81A35622B4B160 /* CutSensePipeline.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CutSensePipeline.swift; sourceTree = "<group>"; };
 		B28F5F2C2CFEDB110249FE6D /* controlled_speed_ramp.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = controlled_speed_ramp.json; sourceTree = "<group>"; };
 		B7560C92A88F1BACF79D4520 /* HapticEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HapticEngine.swift; sourceTree = "<group>"; };
-		B7B47652C3E5FBB565A70348 /* soundreality-riser-hole-391174.mp3 */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = audio.mp3; name = "soundreality-riser-hole-391174.mp3"; path = "CutSense/Resources/EditingAssets/sfx/riser/soundreality-riser-hole-391174.mp3"; sourceTree = SOURCE_ROOT; };
 		B9A4ECAEAEB959B791A3372C /* CutSense.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = CutSense.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		BA55ADB3442FF56602130033 /* cross_dissolve.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = cross_dissolve.json; sourceTree = "<group>"; };
+		BAABE3F6D0A958847E7BDE65 /* sfx_library.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = sfx_library.json; sourceTree = "<group>"; };
+		BAD1C88B697EF15A363D6C83 /* PollinationsService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PollinationsService.swift; sourceTree = "<group>"; };
 		BB060D6760E56F1EE1F7FA96 /* tech_influencer.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = tech_influencer.json; sourceTree = "<group>"; };
-		BD7C11B2516EE0972AE2062A /* virtualzero-mechanical-keyboard-typing-hd-372290.mp3 */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = audio.mp3; name = "virtualzero-mechanical-keyboard-typing-hd-372290.mp3"; path = "CutSense/Resources/EditingAssets/sfx/typing/virtualzero-mechanical-keyboard-typing-hd-372290.mp3"; sourceTree = SOURCE_ROOT; };
 		BDB255C682E012DC6B8EC704 /* VideoPreviewEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VideoPreviewEngine.swift; sourceTree = "<group>"; };
+		BDFB2BA80657142D96B6A4DA /* BebasNeue-Regular.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "BebasNeue-Regular.ttf"; sourceTree = "<group>"; };
 		BE954477354C3CE42219547E /* cinematic_lower_third.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = cinematic_lower_third.json; sourceTree = "<group>"; };
+		BEE9AAB723AD590034D08A1D /* PlusJakartaSans-ExtraBold.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "PlusJakartaSans-ExtraBold.ttf"; sourceTree = "<group>"; };
 		BF310B15D813C1331181DCD7 /* ErrorBanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ErrorBanner.swift; sourceTree = "<group>"; };
+		C0004207500AC93DF532525F /* TemplateProfiles.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TemplateProfiles.swift; sourceTree = "<group>"; };
 		C0CEAAF6EA2A10E547315B28 /* bold_viral_pop.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = bold_viral_pop.json; sourceTree = "<group>"; };
+		C1C2BA0BA77C1F8FCDC09C54 /* PexelsBRollService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PexelsBRollService.swift; sourceTree = "<group>"; };
 		C2785F1827D73BCE2EBD4017 /* ProjectsScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectsScreen.swift; sourceTree = "<group>"; };
-		C41CDA867A82B722EEEDBC9E /* universfield-impact-cinematic-boom-352465.mp3 */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = audio.mp3; name = "universfield-impact-cinematic-boom-352465.mp3"; path = "CutSense/Resources/EditingAssets/sfx/impact/universfield-impact-cinematic-boom-352465.mp3"; sourceTree = SOURCE_ROOT; };
+		C360784D19536F21F1BB4993 /* CloudEditScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CloudEditScreen.swift; sourceTree = "<group>"; };
 		C4F714C8062D468DA313F462 /* CutSense.storekit */ = {isa = PBXFileReference; path = CutSense.storekit; sourceTree = "<group>"; };
 		C561C3C840390511BCE448D0 /* CaptionPreviewPlayer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CaptionPreviewPlayer.swift; sourceTree = "<group>"; };
 		C568ED16C5A5569D901E936F /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		C602ECB9CDB56FA9039E93CF /* CloudJobClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CloudJobClient.swift; sourceTree = "<group>"; };
 		C62FC1631B126EE52AC1C53B /* VideoImportService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VideoImportService.swift; sourceTree = "<group>"; };
+		C7E82F7E153EDB3F1F739210 /* bryansantosbreton-biodynamic-impact-braam-tonal-dark-184276.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = "bryansantosbreton-biodynamic-impact-braam-tonal-dark-184276.mp3"; sourceTree = "<group>"; };
 		C7FB9660DFC5669CBF6A5ACC /* fade.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = fade.json; sourceTree = "<group>"; };
-		C8AA2B0443F998D4356ABEDF /* dragon-studio-error-sound-390301.mp3 */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = audio.mp3; name = "dragon-studio-error-sound-390301.mp3"; path = "CutSense/Resources/EditingAssets/sfx/pop_click/dragon-studio-error-sound-390301.mp3"; sourceTree = SOURCE_ROOT; };
 		C93BFA2FA483012322FF9C30 /* CutTimelineBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CutTimelineBar.swift; sourceTree = "<group>"; };
 		C9E7352B12AB615168B697A4 /* PipelineRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PipelineRepository.swift; sourceTree = "<group>"; };
 		CC211A4CE363C5E82EC9F47E /* mixkit_cinematic_horror_trailer_long_sweep_561.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = mixkit_cinematic_horror_trailer_long_sweep_561.wav; sourceTree = "<group>"; };
 		CC30D8BED7D725522624A5A0 /* onboarding_ai.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = onboarding_ai.json; sourceTree = "<group>"; };
+		CE3C6BF4472966D4EAC33196 /* virtualzero-mechanical-keyboard-typing-hd-372290.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = "virtualzero-mechanical-keyboard-typing-hd-372290.mp3"; sourceTree = "<group>"; };
 		CF64AC90FB35412EB1966475 /* LocalProjectStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalProjectStore.swift; sourceTree = "<group>"; };
 		CFDF36B32606D32D0E2B6F1A /* mixkit_flying_fast_swoosh_1469.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = mixkit_flying_fast_swoosh_1469.wav; sourceTree = "<group>"; };
-		D1BD79B9AE07722BC85A053F /* dragon-studio-clicking-keyboard-asmr-sfx-356115.mp3 */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = audio.mp3; name = "dragon-studio-clicking-keyboard-asmr-sfx-356115.mp3"; path = "CutSense/Resources/EditingAssets/sfx/typing/dragon-studio-clicking-keyboard-asmr-sfx-356115.mp3"; sourceTree = SOURCE_ROOT; };
+		D2176AB3E0637E3F844D04B5 /* SmartBRollSelector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SmartBRollSelector.swift; sourceTree = "<group>"; };
 		D30F6CE51DFFE89BC388B1BA /* mixkit_big_cinematic_impact_788.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = mixkit_big_cinematic_impact_788.mp3; sourceTree = "<group>"; };
 		D4C2AB9DE9323D35D601A1E6 /* BestTakeSelector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BestTakeSelector.swift; sourceTree = "<group>"; };
+		D5161A7032918C54969BD836 /* sfx_transition_low.m4a */ = {isa = PBXFileReference; path = sfx_transition_low.m4a; sourceTree = "<group>"; };
 		D5CF08FB2A3A3C01F2CD9DB4 /* warm_light_leak.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = warm_light_leak.json; sourceTree = "<group>"; };
+		D640F24843F9BD61FC747BAB /* BeatDetector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BeatDetector.swift; sourceTree = "<group>"; };
+		D6DA8F76728596E112EA80A1 /* dragon-studio-new-notification-3-398649.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = "dragon-studio-new-notification-3-398649.mp3"; sourceTree = "<group>"; };
+		D70B7EEF4CA8A8B19D6C513C /* sfx_ding_bright.m4a */ = {isa = PBXFileReference; path = sfx_ding_bright.m4a; sourceTree = "<group>"; };
 		D785ECF78C69386D7253C490 /* SkeletonBlock.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SkeletonBlock.swift; sourceTree = "<group>"; };
 		D81953529D437FEC584E1D39 /* onboarding_export.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = onboarding_export.json; sourceTree = "<group>"; };
+		D878F98E173DC3F99B7F1842 /* sfx_ding.m4a */ = {isa = PBXFileReference; path = sfx_ding.m4a; sourceTree = "<group>"; };
 		DBAA166296A2C2C78512AE95 /* mixkit_electric_buzz_glitch_2594.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = mixkit_electric_buzz_glitch_2594.wav; sourceTree = "<group>"; };
 		DC71CA897E05C4463C8A352E /* OnboardingScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingScreen.swift; sourceTree = "<group>"; };
 		DED8E3CD8979DC69A60B7A20 /* mixkit_cinematic_whoosh_fast_transition_1492.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = mixkit_cinematic_whoosh_fast_transition_1492.wav; sourceTree = "<group>"; };
@@ -366,19 +489,28 @@
 		E2AB89574C8531F07E113952 /* mixkit_camera_shutter_click_1133.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = mixkit_camera_shutter_click_1133.wav; sourceTree = "<group>"; };
 		E3B81F86B6235C8375FA3964 /* AuthScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthScreen.swift; sourceTree = "<group>"; };
 		E3FE302FA1F5DA36D5F2568A /* minimal_clean.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = minimal_clean.json; sourceTree = "<group>"; };
+		E4357E0BF00F7E0EED22456C /* dragon-studio-glitch-effect-1-397982.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = "dragon-studio-glitch-effect-1-397982.mp3"; sourceTree = "<group>"; };
 		E656693935133F3D6145E617 /* ExportVerificationReport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExportVerificationReport.swift; sourceTree = "<group>"; };
 		E65F28EA5F92F055C18313B8 /* impact.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = impact.mp3; sourceTree = "<group>"; };
 		E6B365E1291C7B0F3C1441AF /* bold_tech_dynamic.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = bold_tech_dynamic.json; sourceTree = "<group>"; };
 		E9C84DA0BB6AE03ED96AB93E /* pop.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = pop.mp3; sourceTree = "<group>"; };
+		E9DB5E294449124FE8380721 /* sfx_riser_synth.m4a */ = {isa = PBXFileReference; path = sfx_riser_synth.m4a; sourceTree = "<group>"; };
+		EBBF83A94E82BB213D89AD57 /* CaptionStyleLibrary.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CaptionStyleLibrary.swift; sourceTree = "<group>"; };
+		EBF92E5AA7113E14CECCF528 /* dragon-studio-error-sound-390301.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = "dragon-studio-error-sound-390301.mp3"; sourceTree = "<group>"; };
 		ED517B2DF9DF364744F708CC /* mixkit_bubble_pop_up_alert_notification_2357.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = mixkit_bubble_pop_up_alert_notification_2357.wav; sourceTree = "<group>"; };
 		ED5D91CABEA7737C8345B66D /* RoughCutDecisionEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RoughCutDecisionEngine.swift; sourceTree = "<group>"; };
+		EDF22BC8EAC96FA000FC431C /* dragon-studio-cinematic-riser-03-414575.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = "dragon-studio-cinematic-riser-03-414575.mp3"; sourceTree = "<group>"; };
 		EDFE871FAC73BD77AB5A6368 /* IntensityLimiter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IntensityLimiter.swift; sourceTree = "<group>"; };
+		EE34B574B7F818BDFA5D861B /* universfield-impact-cinematic-boom-352465.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = "universfield-impact-cinematic-boom-352465.mp3"; sourceTree = "<group>"; };
 		F01BAB05EFDAFAE4817EDA22 /* AudioMixService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioMixService.swift; sourceTree = "<group>"; };
+		F05005DB20BFBE61430344B7 /* music_chill_drone.m4a */ = {isa = PBXFileReference; path = music_chill_drone.m4a; sourceTree = "<group>"; };
 		F05673FB3EA70406FB93343F /* AccountScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccountScreen.swift; sourceTree = "<group>"; };
-		F0F68765A1DF22A1953A1B97 /* dragon-studio-simple-whoosh-382724.mp3 */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = audio.mp3; name = "dragon-studio-simple-whoosh-382724.mp3"; path = "CutSense/Resources/EditingAssets/sfx/whoosh/dragon-studio-simple-whoosh-382724.mp3"; sourceTree = SOURCE_ROOT; };
-		F48316BE241351D98795A632 /* universfield-new-notification-057-494255.mp3 */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = audio.mp3; name = "universfield-new-notification-057-494255.mp3"; path = "CutSense/Resources/EditingAssets/sfx/pop_click/universfield-new-notification-057-494255.mp3"; sourceTree = SOURCE_ROOT; };
+		F086CCD485756E47B967F18C /* lordsonny-cinematic-whoosh-reverse-161307.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = "lordsonny-cinematic-whoosh-reverse-161307.mp3"; sourceTree = "<group>"; };
+		F0E859DBC1EC68970E94B99E /* pwlpl-deep-bass-drop-sound-effect-521058.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = "pwlpl-deep-bass-drop-sound-effect-521058.mp3"; sourceTree = "<group>"; };
+		F271CF07F6E16619D9F78711 /* Anton-Regular.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Anton-Regular.ttf"; sourceTree = "<group>"; };
 		F494D19DF79D6891075F003E /* ProjectRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectRepository.swift; sourceTree = "<group>"; };
 		F5F8F6529656DEA8436213B8 /* ExportPipelineE2ETests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExportPipelineE2ETests.swift; sourceTree = "<group>"; };
+		F66E524CC02A6D9F24AC5A58 /* WhatsAppVideoE2ETests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WhatsAppVideoE2ETests.swift; sourceTree = "<group>"; };
 		F6D9F5B22B891A67A7A60A10 /* onboarding_welcome.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = onboarding_welcome.json; sourceTree = "<group>"; };
 		F6FA0D125D62AC110BA62CDD /* subtle_gold_glow.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = subtle_gold_glow.json; sourceTree = "<group>"; };
 		F815D99063AA75FF8A90221E /* mixkit_reverse_cinematic_impact_trailer_784.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = mixkit_reverse_cinematic_impact_trailer_784.wav; sourceTree = "<group>"; };
@@ -390,7 +522,8 @@
 		F9D3868BB622824C11126087 /* AssetRegistry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssetRegistry.swift; sourceTree = "<group>"; };
 		FA35A138329603651A4D5309 /* mixkit_cinematic_tunnel_reverb_woosh_1486.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = mixkit_cinematic_tunnel_reverb_woosh_1486.wav; sourceTree = "<group>"; };
 		FA52D2BBB285627D676A4389 /* IntensityInterpolator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IntensityInterpolator.swift; sourceTree = "<group>"; };
-		TEMP_02E31297-3A93-4D99-9E88-B51AED448C09 /* Secrets.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Secrets.xcconfig; sourceTree = "<group>"; };
+		FC932F91C04BAFA08E480125 /* Poppins-Black.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Poppins-Black.ttf"; sourceTree = "<group>"; };
+		"TEMP_B5D08DA1-9784-4CA4-A813-A4191761A907" /* Secrets.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Secrets.xcconfig; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -400,6 +533,7 @@
 			files = (
 				99128F340EED2CAADD304369 /* Supabase in Frameworks */,
 				258A65C2CF2DBF2461503348 /* Lottie in Frameworks */,
+				73ECD3EFE511F92EF7B976F5 /* WhisperKit in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -415,23 +549,23 @@
 			path = cinematic;
 			sourceTree = "<group>";
 		};
-		0937889BA262EC55C2E0D420 /* camera_transition */ = {
+		07471321A417757890FE1BBC /* Music */ = {
 			isa = PBXGroup;
 			children = (
-				3ABBFB9F0DCEF6FB0596C698 /* universfield-camera-shutter-199580.mp3 */,
+				F05005DB20BFBE61430344B7 /* music_chill_drone.m4a */,
 			);
-			name = camera_transition;
-			path = camera_transition;
+			path = Music;
 			sourceTree = "<group>";
 		};
 		0DD0231FE1A8DEAA3568A63F /* Export */ = {
 			isa = PBXGroup;
 			children = (
 				57AEBDFD2199B8F98956BCB5 /* CaptionOverlayCompositor.swift */,
-				2E46C63FB8C440745132CD33 /* CaptionOverlayCompositor.swift.bak */,
 				F97FF6F27A35AD8B62B81C44 /* CleanTimelineBuilder.swift */,
 				88AE4A2C0B4FF7CE416CB779 /* ExportService.swift */,
 				43FF6D5797B56CB4F3A1BB0D /* FilterEngine.swift */,
+				5B2D28F1D5B9F13933EF8F9C /* ProExportPipeline.swift */,
+				59ACBEFAE009ED07CC36457B /* SimpleCaptionPipeline.swift */,
 				41A4067C5C627E1D027254D9 /* TimelineMapper.swift */,
 				628FEBEB8AA11FA45F6FE610 /* TimelineRangeNormalizer.swift */,
 			);
@@ -464,14 +598,6 @@
 			path = chromatic_aberration;
 			sourceTree = "<group>";
 		};
-		1DC06BD2FEF2DF794DC09025 /* Resources */ = {
-			isa = PBXGroup;
-			children = (
-				2E2D05C3B48BBF3D28279980 /* EditingAssets */,
-			);
-			name = Resources;
-			sourceTree = "<group>";
-		};
 		297EFE1D581563E7A9B61532 /* light_leak */ = {
 			isa = PBXGroup;
 			children = (
@@ -480,21 +606,15 @@
 			path = light_leak;
 			sourceTree = "<group>";
 		};
-		2E2D05C3B48BBF3D28279980 /* EditingAssets */ = {
-			isa = PBXGroup;
-			children = (
-				C9651F1A0AD73B5DAD11812A /* sfx */,
-			);
-			name = EditingAssets;
-			sourceTree = "<group>";
-		};
 		3191EC79147EC13BA7639368 /* Video */ = {
 			isa = PBXGroup;
 			children = (
+				34946037EE65B36A5A208FDD /* VideoCompressor.swift */,
 				A89F5B0D7BDF98A3432F854D /* VideoFrameRenderer.swift */,
 				C62FC1631B126EE52AC1C53B /* VideoImportService.swift */,
 				9C9CA1330E134212E6674FEC /* VideoMetadataService.swift */,
 				BDB255C682E012DC6B8EC704 /* VideoPreviewEngine.swift */,
+				4900125A8957FAD680392C8B /* VideoStorage.swift */,
 			);
 			path = Video;
 			sourceTree = "<group>";
@@ -514,17 +634,6 @@
 				F91DAC9E379EA256D4E49C11 /* mixkit_meditation_441.mp3 */,
 			);
 			path = minimal;
-			sourceTree = "<group>";
-		};
-		3BBB12BE4C1971D39D1BCC4E /* whoosh */ = {
-			isa = PBXGroup;
-			children = (
-				F0F68765A1DF22A1953A1B97 /* dragon-studio-simple-whoosh-382724.mp3 */,
-				7148A11AE25B905FE1742F02 /* dragon-studio-whoosh-cinematic-376875.mp3 */,
-				81E9C33F03DD2BC27BC6896D /* lordsonny-cinematic-whoosh-reverse-161307.mp3 */,
-			);
-			name = whoosh;
-			path = whoosh;
 			sourceTree = "<group>";
 		};
 		3E1083CBD53A83869F4E9290 /* Store */ = {
@@ -549,8 +658,24 @@
 				273E9FCDA19A2DCFEF51AB6A /* SpeechTranscriptionService.swift */,
 				8C6DEDC0C443A50526EC1F39 /* TakeDetectionEngine.swift */,
 				E2066A131F8F42AC244BD893 /* TranscriptCleanupAnalyzer.swift */,
+				AF5E4E4C2F1B6534CE2165A9 /* WhisperTranscriptionService.swift */,
 			);
 			path = RoughCut;
+			sourceTree = "<group>";
+		};
+		4BA4042F55007892BDAAC3D0 /* Audio */ = {
+			isa = PBXGroup;
+			children = (
+				1801C4C0A2A2EF54C9294DA7 /* AudioMixBuilder.swift */,
+				9A2841707B2522AC30D23AF5 /* AudioPlanBuilder.swift */,
+				D640F24843F9BD61FC747BAB /* BeatDetector.swift */,
+				A368DE998C6BEC0A9AE94390 /* LUFSNormalizer.swift */,
+				6033441F2E1D1E7D8106DCE5 /* music_library.json */,
+				4B2973473995D460071A783D /* MusicLibrary.swift */,
+				BAABE3F6D0A958847E7BDE65 /* sfx_library.json */,
+				6BCB6C169082CBBA5A4AC240 /* SFXLibrary.swift */,
+			);
+			path = Audio;
 			sourceTree = "<group>";
 		};
 		4C0D2120713C1AB9AC579D0E /* camera_motion */ = {
@@ -572,11 +697,15 @@
 		51FCB6EF7BB57724C712E781 /* impact */ = {
 			isa = PBXGroup;
 			children = (
+				C7E82F7E153EDB3F1F739210 /* bryansantosbreton-biodynamic-impact-braam-tonal-dark-184276.mp3 */,
 				D30F6CE51DFFE89BC388B1BA /* mixkit_big_cinematic_impact_788.mp3 */,
 				27AB9370D317A4EBB5B2EBDF /* mixkit_cinematic_whoosh_deep_impact_1143.mp3 */,
 				532E080A8CB1824479D93051 /* mixkit_dramatic_metal_explosion_impact_1687.wav */,
 				05C09CF2AB4D001066FFEFDA /* mixkit_movie_logo_intro_impact_2900.wav */,
 				F815D99063AA75FF8A90221E /* mixkit_reverse_cinematic_impact_trailer_784.wav */,
+				F0E859DBC1EC68970E94B99E /* pwlpl-deep-bass-drop-sound-effect-521058.mp3 */,
+				141D76E3B0D3BD2D6DA0F867 /* u_tmz2ks56ex-m3g-cinematic-bass-318310.mp3 */,
+				EE34B574B7F818BDFA5D861B /* universfield-impact-cinematic-boom-352465.mp3 */,
 			);
 			path = impact;
 			sourceTree = "<group>";
@@ -584,11 +713,11 @@
 		568F452D455B9D00CC6F1233 /* Debug */ = {
 			isa = PBXGroup;
 			children = (
-				1C9E3A0F6D8F4B92A1C0D001 /* CutSenseDebugRuntime.swift */,
+				A453B936998F94E276A2709D /* CutSenseDebugRuntime.swift */,
 				364C800E58EF24989980D462 /* DebugTimelineScreen.swift */,
 				E656693935133F3D6145E617 /* ExportVerificationReport.swift */,
-				1C9E3A116D8F4B92A1C0D001 /* PipelineDiagnostics.swift */,
-				1C9E3A136D8F4B92A1C0D001 /* PipelineDebugRunner.swift */,
+				5567E895557657123EA4D9DD /* PipelineDebugRunner.swift */,
+				B04A5F59463391B69FE4935D /* PipelineDiagnostics.swift */,
 			);
 			path = Debug;
 			sourceTree = "<group>";
@@ -600,6 +729,22 @@
 				E65F28EA5F92F055C18313B8 /* impact.mp3 */,
 				E9C84DA0BB6AE03ED96AB93E /* pop.mp3 */,
 				A6F23D426F0BA738B8C4F653 /* riser.mp3 */,
+				D70B7EEF4CA8A8B19D6C513C /* sfx_ding_bright.m4a */,
+				75354E9CC552BD23B651044D /* sfx_ding_soft.m4a */,
+				D878F98E173DC3F99B7F1842 /* sfx_ding.m4a */,
+				3C2C22C846056C1CE18C74B8 /* sfx_impact_snap.m4a */,
+				A394809520637D68D65725EA /* sfx_impact_thud.m4a */,
+				4B9F34FF047214A6EA683225 /* sfx_impact.m4a */,
+				6DDC4784891F36C382050487 /* sfx_pop_high.m4a */,
+				1FCB2B1DA3BCEFB8487290E3 /* sfx_pop_low.m4a */,
+				14C0E5B92F3488E9C5BFD12B /* sfx_pop.m4a */,
+				76E8EE3FF06949E44998AA7E /* sfx_riser_long.m4a */,
+				E9DB5E294449124FE8380721 /* sfx_riser_synth.m4a */,
+				178D005561D404CD7E3372C1 /* sfx_riser.m4a */,
+				D5161A7032918C54969BD836 /* sfx_transition_low.m4a */,
+				AB182C19C91E5A905ED651E7 /* sfx_whoosh_long.m4a */,
+				25F93155610750EB89AB9161 /* sfx_whoosh_short.m4a */,
+				6CBDD497B6D94EB33788C118 /* sfx_whoosh.m4a */,
 				8BAFC9C04FA32C226F4F58EF /* whoosh.mp3 */,
 			);
 			path = SFX;
@@ -613,21 +758,14 @@
 				F5F8F6529656DEA8436213B8 /* ExportPipelineE2ETests.swift */,
 				57E56D95137245F133E61B85 /* ExportVerificationTests.swift */,
 				6C497561CA0FA241920D4895 /* GoldenTranscriptTests.swift */,
+				59A7CC64F047DD4C2C883FBD /* PexelsServiceTests.swift */,
 				32ADD7484DA1E9319A6A6617 /* RoughCutModuleTests.swift */,
 				234198B5321CA8C80832EECC /* TestHelpers.swift */,
 				E0D99BFCDCE180843CE9BF55 /* VideoFrameRendererTests.swift */,
+				922370C0A0F74C3B11D50D08 /* whatsapp_test_video.mp4 */,
+				F66E524CC02A6D9F24AC5A58 /* WhatsAppVideoE2ETests.swift */,
 			);
 			path = CutSenseQualityTests;
-			sourceTree = "<group>";
-		};
-		58B0888EDE43CC0265E247B5 /* typing */ = {
-			isa = PBXGroup;
-			children = (
-				D1BD79B9AE07722BC85A053F /* dragon-studio-clicking-keyboard-asmr-sfx-356115.mp3 */,
-				BD7C11B2516EE0972AE2062A /* virtualzero-mechanical-keyboard-typing-hd-372290.mp3 */,
-			);
-			name = typing;
-			path = typing;
 			sourceTree = "<group>";
 		};
 		5EC0C59DE8D150877848EF14 /* Editing */ = {
@@ -647,21 +785,14 @@
 				F928B8F6178CCF7F82382C34 /* QualityGateService.swift */,
 				269103C287576CEE2D3D3199 /* SFXAssetManager.swift */,
 				6FB146E284B616EEA64573CF /* TemplateConfig.swift */,
-				1D7F2E6B9B8C4D0EAF102233 /* TemplateEditGrammar.swift */,
+				93FC35445ED474D52D95F30B /* TemplateEditGrammar.swift */,
+				C0004207500AC93DF532525F /* TemplateProfiles.swift */,
 				F918906AF55C37D1860A4437 /* TemplateRecommendationEngine.swift */,
 				AEFA457BD2DA1E5D808F8A67 /* TimelineDebugLogger.swift */,
 				9773559F45333682CEF1C853 /* VideoColorAnalyzer.swift */,
 				60DC8F5B7EC704FFAC120DEF /* VoiceEQProcessor.swift */,
 			);
 			path = Editing;
-			sourceTree = "<group>";
-		};
-		6143927767CA6D8E8EA460B5 /* ios */ = {
-			isa = PBXGroup;
-			children = (
-				C53D013CB3CB3B9810DDEA9C /* CutSense */,
-			);
-			name = ios;
 			sourceTree = "<group>";
 		};
 		64C098A7ACC2152C56B7E71E /* Animations */ = {
@@ -674,18 +805,10 @@
 			path = Animations;
 			sourceTree = "<group>";
 		};
-		689A098CBFB4084C3D752B25 /* glitch */ = {
-			isa = PBXGroup;
-			children = (
-				8C53614AC3DACC5E829627F4 /* dragon-studio-glitch-effect-1-397982.mp3 */,
-			);
-			name = glitch;
-			path = glitch;
-			sourceTree = "<group>";
-		};
 		6A45B8ED127C4A74D5CBB20D /* glitch */ = {
 			isa = PBXGroup;
 			children = (
+				E4357E0BF00F7E0EED22456C /* dragon-studio-glitch-effect-1-397982.mp3 */,
 				DBAA166296A2C2C78512AE95 /* mixkit_electric_buzz_glitch_2594.wav */,
 				5AAB544EE843C383493F38B2 /* mixkit_glitch_static_1457.wav */,
 				2F197F1380FF297A3BB59F8F /* mixkit_small_electric_glitch_2595.wav */,
@@ -699,13 +822,20 @@
 				43B0999B8F5E4C958119A311 /* ABComparisonPlayer.swift */,
 				F05673FB3EA70406FB93343F /* AccountScreen.swift */,
 				C561C3C840390511BCE448D0 /* CaptionPreviewPlayer.swift */,
+				C360784D19536F21F1BB4993 /* CloudEditScreen.swift */,
+				69F346E128316E94411F0F72 /* CreateScreen.swift */,
 				C93BFA2FA483012322FF9C30 /* CutTimelineBar.swift */,
 				8F082FD09751E1C261B5C535 /* EditScreen.swift */,
+				4DEFD180FD2106D20751DC68 /* HomeShell.swift */,
 				DC71CA897E05C4463C8A352E /* OnboardingScreen.swift */,
+				63D8FC0A64125E52CC49FC59 /* PrivacyPolicyScreen.swift */,
 				C2785F1827D73BCE2EBD4017 /* ProjectsScreen.swift */,
 				2A01DD8FF748A80B87ADD3DC /* RoughCutPreviewPlayer.swift */,
 				1BCE7E0EF6670FA7B6345C51 /* RoughCutReviewScreen.swift */,
+				28901B74846173D20088B4D4 /* SettingsScreen.swift */,
 				DF612A1CEF2C642FB5148737 /* TemplateHubScreen.swift */,
+				141E1D4A59EBB79CEB801009 /* TemplatesTabScreen.swift */,
+				B09DD46E57DAD9EB7D99CF8F /* TermsOfServiceScreen.swift */,
 				10818492634A1A2360A850E5 /* Components */,
 			);
 			path = UI;
@@ -745,15 +875,20 @@
 			path = tech;
 			sourceTree = "<group>";
 		};
-		7C5B1C754689DA8DA32D6778 /* riser */ = {
+		7A0103CEF6F829E454C74120 /* Fonts */ = {
 			isa = PBXGroup;
 			children = (
-				7DA8A4481A97F711A6B924D1 /* audiopapkin-riser-hit-sfx-001-289802.mp3 */,
-				48FEA25242C2FCD1AA27FD12 /* dragon-studio-cinematic-riser-03-414575.mp3 */,
-				B7B47652C3E5FBB565A70348 /* soundreality-riser-hole-391174.mp3 */,
+				F271CF07F6E16619D9F78711 /* Anton-Regular.ttf */,
+				09318105AC1DC8A6B58A8575 /* Archivo-Black.ttf */,
+				BDFB2BA80657142D96B6A4DA /* BebasNeue-Regular.ttf */,
+				09818CB6F11EF569FFBC2555 /* Inter-Bold.ttf */,
+				5248CEF4168BBE3E7A87F403 /* Montserrat-Black.ttf */,
+				50DC7D86CD8D9289936A13DB /* Oswald-Bold.ttf */,
+				BEE9AAB723AD590034D08A1D /* PlusJakartaSans-ExtraBold.ttf */,
+				FC932F91C04BAFA08E480125 /* Poppins-Black.ttf */,
+				5949166C1C72A972EE3B81CE /* Poppins-ExtraBold.ttf */,
 			);
-			name = riser;
-			path = riser;
+			path = Fonts;
 			sourceTree = "<group>";
 		};
 		859F73CCAD8AE78EB2C1F9E1 /* blur */ = {
@@ -806,7 +941,7 @@
 			children = (
 				CF64AC90FB35412EB1966475 /* LocalProjectStore.swift */,
 				2515ADDECC802089D2ED807D /* Models.swift */,
-				0D2E25A8A9B44108A18F7C11 /* PipelineArtifactStore.swift */,
+				4A3B6D25AD24AD6524D96ED7 /* PipelineArtifactStore.swift */,
 				C9E7352B12AB615168B697A4 /* PipelineRepository.swift */,
 				F494D19DF79D6891075F003E /* ProjectRepository.swift */,
 				58A84CAB5695D7431AF0DE77 /* TemplateHubService.swift */,
@@ -822,6 +957,15 @@
 				2DB7DC49AAFACB345FCAC32C /* SupabaseClient.swift */,
 			);
 			path = Core;
+			sourceTree = "<group>";
+		};
+		9DB2CCCCED88ECF529353CB5 /* typing */ = {
+			isa = PBXGroup;
+			children = (
+				62FB3216A8FEA6FEB14A2AA9 /* dragon-studio-clicking-keyboard-asmr-sfx-356115.mp3 */,
+				CE3C6BF4472966D4EAC33196 /* virtualzero-mechanical-keyboard-typing-hd-372290.mp3 */,
+			);
+			path = typing;
 			sourceTree = "<group>";
 		};
 		9FD253FEE6BDE8935D6F53D6 /* visual_effects */ = {
@@ -855,13 +999,43 @@
 		A47B766547662485B834930C /* pop_click */ = {
 			isa = PBXGroup;
 			children = (
+				4217417544CC02D4481F3682 /* dragon-studio-correct-472358.mp3 */,
+				EBF92E5AA7113E14CECCF528 /* dragon-studio-error-sound-390301.mp3 */,
+				25CD478800730F80753692DB /* dragon-studio-mouse-click-sfx-444806.mp3 */,
+				D6DA8F76728596E112EA80A1 /* dragon-studio-new-notification-3-398649.mp3 */,
+				AEAC4FD5E05D1763ECC60E33 /* dragon-studio-pop-402324.mp3 */,
 				ED517B2DF9DF364744F708CC /* mixkit_bubble_pop_up_alert_notification_2357.wav */,
 				2E9EDF2D015134AAC95B70A8 /* mixkit_hard_pop_click_2364.wav */,
 				E244F5B3F7B69B9D54D16894 /* mixkit_message_pop_alert_2354.mp3 */,
 				A6167A43855F52107BBC202B /* mixkit_modern_technology_select_3124.wav */,
 				2CD053ED59342D9F5A1D6011 /* mixkit_select_click_1109.wav */,
+				7CE12BFD64289DD8358300C6 /* u_f1ee7vf7na-blip-131856.mp3 */,
+				8676D093F0FDA7BB78B1168A /* universfield-computer-mouse-click-352734.mp3 */,
+				0F6B1B2F5B1EEFACF859A877 /* universfield-new-notification-057-494255.mp3 */,
 			);
 			path = pop_click;
+			sourceTree = "<group>";
+		};
+		A5DC08DADEF0A52259073DDF /* WhisperModels */ = {
+			isa = PBXGroup;
+			children = (
+				27E9FED350B3A58CF926FB12 /* openai_whisper-large-v3_turbo_954MB */,
+			);
+			path = WhisperModels;
+			sourceTree = "<group>";
+		};
+		B13EE0F1465544ABDE683A92 /* Services */ = {
+			isa = PBXGroup;
+			children = (
+				A113E1CB273100D270CA570A /* ExportNotifier.swift */,
+				C1C2BA0BA77C1F8FCDC09C54 /* PexelsBRollService.swift */,
+				BAD1C88B697EF15A363D6C83 /* PollinationsService.swift */,
+				D2176AB3E0637E3F844D04B5 /* SmartBRollSelector.swift */,
+				2363D009A523E7C187B0AA6B /* SpeechFallback.swift */,
+				07A5A9B95B2117CFED19D7A2 /* UserPreferences.swift */,
+				80913BFAA64F83AE56CAB5DE /* VisualPromptRewriter.swift */,
+			);
+			path = Services;
 			sourceTree = "<group>";
 		};
 		B2164B633DC3DB6A98CC6C31 /* ambient */ = {
@@ -878,6 +1052,7 @@
 				E2AB89574C8531F07E113952 /* mixkit_camera_shutter_click_1133.wav */,
 				778B80B267FCAAD25B996827 /* mixkit_camera_shutter_hard_click_1430.wav */,
 				8A4F8F3CD1E424FD596670F4 /* mixkit_vintage_camera_shutter_1438.wav */,
+				279219DFC31D048ED8474DE7 /* universfield-camera-shutter-199580.mp3 */,
 			);
 			path = camera_transition;
 			sourceTree = "<group>";
@@ -887,24 +1062,17 @@
 			children = (
 				CBD1C901E5D778687410A12B /* CutSense */,
 				6B3F92F2FF1C7B91D74E54E1 /* Products */,
-				6143927767CA6D8E8EA460B5 /* ios */,
 			);
 			sourceTree = "<group>";
 		};
-		B9C56D2F0D2B5AB03069F586 /* pop_click */ = {
+		B86C9CA3617C84F5B6F94EF0 /* Pipeline */ = {
 			isa = PBXGroup;
 			children = (
-				8A3A80D1DC9EF09BB536B41F /* dragon-studio-correct-472358.mp3 */,
-				C8AA2B0443F998D4356ABEDF /* dragon-studio-error-sound-390301.mp3 */,
-				23EE5B6F740B22736E35C0D5 /* dragon-studio-mouse-click-sfx-444806.mp3 */,
-				2FF6B12874330485C16F51B1 /* dragon-studio-new-notification-3-398649.mp3 */,
-				9723CB22962534EE803A9811 /* dragon-studio-pop-402324.mp3 */,
-				74B15AD39772C69EADB041FD /* u_f1ee7vf7na-blip-131856.mp3 */,
-				67975DED0523ABB29F1E4A5F /* universfield-computer-mouse-click-352734.mp3 */,
-				F48316BE241351D98795A632 /* universfield-new-notification-057-494255.mp3 */,
+				8CD5431B04DD8CA677E30732 /* AutoCutPlanner.swift */,
+				B232C612EC81A35622B4B160 /* CutSensePipeline.swift */,
+				74ACB6A1F6DB2FF612B67A27 /* PipelineModels.swift */,
 			);
-			name = pop_click;
-			path = pop_click;
+			path = Pipeline;
 			sourceTree = "<group>";
 		};
 		BA4BCBE11FDD8284CE1DEC92 /* Preview */ = {
@@ -935,11 +1103,14 @@
 		C06D92DC02A266FB1D752D72 /* riser */ = {
 			isa = PBXGroup;
 			children = (
+				A7A7E29DA304031F63F24BDF /* audiopapkin-riser-hit-sfx-001-289802.mp3 */,
+				EDF22BC8EAC96FA000FC431C /* dragon-studio-cinematic-riser-03-414575.mp3 */,
 				CC211A4CE363C5E82EC9F47E /* mixkit_cinematic_horror_trailer_long_sweep_561.wav */,
 				2DE7CB9A9EB74C2B44D6D1DE /* mixkit_cinematic_suspense_swell_786.wav */,
 				6719CD608473ACEA7FBFA7B3 /* mixkit_cinematic_trailer_riser_790.wav */,
 				8F37490B1AC0E6E4F7C2109D /* mixkit_short_space_stutter_intro_riser_1144.mp3 */,
 				81511CD30F56BC29C93037A8 /* mixkit_terror_sweep_of_darkness_2630.wav */,
+				0025D82B0B581D1FED4F3EF8 /* soundreality-riser-hole-391174.mp3 */,
 			);
 			path = riser;
 			sourceTree = "<group>";
@@ -957,6 +1128,7 @@
 		C352374787B869B685F8D2AB /* DesignSystem */ = {
 			isa = PBXGroup;
 			children = (
+				385F68D0B87348CEEB8E73C1 /* CinematicComponents.swift */,
 				D785ECF78C69386D7253C490 /* SkeletonBlock.swift */,
 				F82E751CD6507A92A9434F6E /* Theme.swift */,
 			);
@@ -972,17 +1144,10 @@
 				51FCB6EF7BB57724C712E781 /* impact */,
 				A47B766547662485B834930C /* pop_click */,
 				C06D92DC02A266FB1D752D72 /* riser */,
+				9DB2CCCCED88ECF529353CB5 /* typing */,
 				E2F8C3883F06E90B6827A119 /* whoosh */,
 			);
 			path = sfx;
-			sourceTree = "<group>";
-		};
-		C53D013CB3CB3B9810DDEA9C /* CutSense */ = {
-			isa = PBXGroup;
-			children = (
-				1DC06BD2FEF2DF794DC09025 /* Resources */,
-			);
-			name = CutSense;
 			sourceTree = "<group>";
 		};
 		C8110F61253D4B7D6DEA39FD /* cinematic */ = {
@@ -992,20 +1157,6 @@
 				E1AA622214B9ED1B8F4CE9E0 /* mixkit_valley_sunset_127.mp3 */,
 			);
 			path = cinematic;
-			sourceTree = "<group>";
-		};
-		C9651F1A0AD73B5DAD11812A /* sfx */ = {
-			isa = PBXGroup;
-			children = (
-				0937889BA262EC55C2E0D420 /* camera_transition */,
-				689A098CBFB4084C3D752B25 /* glitch */,
-				DC931E8A90955750CD861BD7 /* impact */,
-				B9C56D2F0D2B5AB03069F586 /* pop_click */,
-				7C5B1C754689DA8DA32D6778 /* riser */,
-				58B0888EDE43CC0265E247B5 /* typing */,
-				3BBB12BE4C1971D39D1BCC4E /* whoosh */,
-			);
-			name = sfx;
 			sourceTree = "<group>";
 		};
 		CBD0E9E4095AEA2EDD4816EA /* speed_ramp */ = {
@@ -1022,6 +1173,7 @@
 				21B8EA8C7B409C4AE35BF3D7 /* CutSense.entitlements */,
 				283112666E896AFA8EEC42BB /* Info.plist */,
 				35CC3410B0D884249E10C2E7 /* App */,
+				4BA4042F55007892BDAAC3D0 /* Audio */,
 				C04282FB250D4ABF603BEC59 /* Auth */,
 				F48BA4D9BD5C9E3743913A08 /* Captions */,
 				9D5CEF5EF8174C17C9725E77 /* Core */,
@@ -1030,9 +1182,12 @@
 				C352374787B869B685F8D2AB /* DesignSystem */,
 				5EC0C59DE8D150877848EF14 /* Editing */,
 				0DD0231FE1A8DEAA3568A63F /* Export */,
+				CC7484A912603A4B86B85F17 /* Networking */,
+				B86C9CA3617C84F5B6F94EF0 /* Pipeline */,
 				BA4BCBE11FDD8284CE1DEC92 /* Preview */,
 				EAB2D8C08839F9CF71950CCF /* Resources */,
 				4003C4E064D905B994EE3F12 /* RoughCut */,
+				B13EE0F1465544ABDE683A92 /* Services */,
 				3E1083CBD53A83869F4E9290 /* Store */,
 				D505E2BC1266530AD3BF7987 /* Tests */,
 				6AF1FF056AF9A1586A4A5EDA /* UI */,
@@ -1042,9 +1197,18 @@
 			path = CutSense;
 			sourceTree = "<group>";
 		};
+		CC7484A912603A4B86B85F17 /* Networking */ = {
+			isa = PBXGroup;
+			children = (
+				C602ECB9CDB56FA9039E93CF /* CloudJobClient.swift */,
+			);
+			path = Networking;
+			sourceTree = "<group>";
+		};
 		D505E2BC1266530AD3BF7987 /* Tests */ = {
 			isa = PBXGroup;
 			children = (
+				18F71654794D73B19F444D2A /* CloudFlowLiveTests.swift */,
 				668E0F2DEA05FD6C59ED350F /* CutSenseTests.swift */,
 				7CDBC3BF82983D3AFB8DEA9C /* LocalProjectStoreTests.swift */,
 				A249ACA7751369C123E5451A /* PipelineIntegrationTests.swift */,
@@ -1067,21 +1231,12 @@
 			path = EditingAssets;
 			sourceTree = "<group>";
 		};
-		DC931E8A90955750CD861BD7 /* impact */ = {
-			isa = PBXGroup;
-			children = (
-				5FD3EDC12048ACF10E72F1B9 /* bryansantosbreton-biodynamic-impact-braam-tonal-dark-184276.mp3 */,
-				8FC3D8FB4DBD3D385DFD81CD /* pwlpl-deep-bass-drop-sound-effect-521058.mp3 */,
-				156AB136955226DD6BF0AC74 /* u_tmz2ks56ex-m3g-cinematic-bass-318310.mp3 */,
-				C41CDA867A82B722EEEDBC9E /* universfield-impact-cinematic-boom-352465.mp3 */,
-			);
-			name = impact;
-			path = impact;
-			sourceTree = "<group>";
-		};
 		E2F8C3883F06E90B6827A119 /* whoosh */ = {
 			isa = PBXGroup;
 			children = (
+				7E35B564A7893ADB7FCC62A0 /* dragon-studio-simple-whoosh-382724.mp3 */,
+				9A0327A2E1390CD272E5D59E /* dragon-studio-whoosh-cinematic-376875.mp3 */,
+				F086CCD485756E47B967F18C /* lordsonny-cinematic-whoosh-reverse-161307.mp3 */,
 				03397B0FD0030FF7C23E97EF /* mixkit_air_woosh_1489.wav */,
 				A97760BA1F4A20F0ED48DDAE /* mixkit_arrow_whoosh_1714.wav */,
 				FA35A138329603651A4D5309 /* mixkit_cinematic_tunnel_reverb_woosh_1486.wav */,
@@ -1099,8 +1254,11 @@
 				AB3F4CFE6EB7DA53D3C755D3 /* PrivacyInfo.xcprivacy */,
 				64C098A7ACC2152C56B7E71E /* Animations */,
 				DC011275516204F0B3E0B1D9 /* EditingAssets */,
+				7A0103CEF6F829E454C74120 /* Fonts */,
 				BA80A74D492807BFD48D2F31 /* Licenses */,
+				07471321A417757890FE1BBC /* Music */,
 				56AA3FD7EEE9631A039EA62A /* SFX */,
+				A5DC08DADEF0A52259073DDF /* WhisperModels */,
 			);
 			path = Resources;
 			sourceTree = "<group>";
@@ -1117,12 +1275,23 @@
 			isa = PBXGroup;
 			children = (
 				8CE6AF3FAF49136C495610E9 /* CaptionEngine.swift */,
+				3EEE92F38729351DD13E15A1 /* CaptionLayoutEngine.swift */,
 				00055E71E3774D1DA883AA17 /* CaptionModels.swift */,
 				228923324C3F2424B2FE4DDF /* CaptionReadabilityGuard.swift */,
+				554917BBEA6BE6A984557B4E /* CaptionRenderer.swift */,
 				AC7FCCB2E20594CED878C917 /* CaptionRoleClassifier.swift */,
 				586DC3889415C1CD20467C73 /* CaptionSceneEventPlanner.swift */,
+				EBBF83A94E82BB213D89AD57 /* CaptionStyleLibrary.swift */,
 			);
 			path = Captions;
+			sourceTree = "<group>";
+		};
+		"TEMP_EB112E7E-74F4-4DCD-A41E-C516D599BF71" /* ios */ = {
+			isa = PBXGroup;
+			children = (
+				"TEMP_B5D08DA1-9784-4CA4-A813-A4191761A907" /* Secrets.xcconfig */,
+			);
+			path = ios;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -1141,6 +1310,8 @@
 				5FF62D850D2FB55F38E20FD9 /* PBXTargetDependency */,
 			);
 			name = CutSenseTests;
+			packageProductDependencies = (
+			);
 			productName = CutSenseTests;
 			productReference = 8CE7C67F669CC7C139D97E42 /* CutSenseTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
@@ -1161,6 +1332,7 @@
 			packageProductDependencies = (
 				FB538ABFCD1E080DC602EE9B /* Supabase */,
 				C1223C501B51C6713465798A /* Lottie */,
+				6A8DE6C3974CF8F23B5D5364 /* WhisperKit */,
 			);
 			productName = CutSense;
 			productReference = B9A4ECAEAEB959B791A3372C /* CutSense.app */;
@@ -1193,6 +1365,7 @@
 			packageReferences = (
 				8D52B5DB169683955AEDB955 /* XCRemoteSwiftPackageReference "lottie-ios" */,
 				E3A82BD56F4B97B77E351CB3 /* XCRemoteSwiftPackageReference "supabase-swift" */,
+				B57E98BB02E6DE15F1920529 /* XCRemoteSwiftPackageReference "WhisperKit" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 6B3F92F2FF1C7B91D74E54E1 /* Products */;
@@ -1211,6 +1384,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				3170B1BE4F8E916C31CB2BC6 /* cutsense_test_video.mp4 in Resources */,
+				E015511B32001FD7E93DA6FA /* whatsapp_test_video.mp4 in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1219,14 +1393,24 @@
 			buildActionMask = 2147483647;
 			files = (
 				826F58BB4C31D23E97A05804 /* ASSET_LICENSES.md in Resources */,
+				AA072158CA5F3D372A9D24AF /* Anton-Regular.ttf in Resources */,
+				33E8F18FB3F6547273434D7D /* Archivo-Black.ttf in Resources */,
 				A27C5761649779A1BCE3B638 /* Assets.xcassets in Resources */,
-				CA98AE9DDF30920E4DF0D30C /* CaptionOverlayCompositor.swift.bak in Resources */,
+				DD020AAC66BE219BDD3412AC /* BebasNeue-Regular.ttf in Resources */,
 				88FCA52256AE812FB6A3AE65 /* CutSense.storekit in Resources */,
 				28B44952EB04CA86C0607414 /* GradedVideoPlayer.md in Resources */,
+				DA3ED6FBC0C4B1E259D69374 /* Inter-Bold.ttf in Resources */,
+				AD1A3A6F30BBA1651745251C /* Montserrat-Black.ttf in Resources */,
+				7C808701BB361CC0FFF4D751 /* Oswald-Bold.ttf in Resources */,
+				E0F35A94C5B0F214501775F3 /* PlusJakartaSans-ExtraBold.ttf in Resources */,
+				5DF55B4BA73C1EDBAA728C57 /* Poppins-Black.ttf in Resources */,
+				A7E7F89D42C83722BCF3201E /* Poppins-ExtraBold.ttf in Resources */,
 				0238F25AF2FC0F9DE078FCA7 /* PrivacyInfo.xcprivacy in Resources */,
+				70CB4EC223AF0943842766B0 /* audiopapkin-riser-hit-sfx-001-289802.mp3 in Resources */,
 				5F3FAD53F8F80058222D08B3 /* blur_highlight.json in Resources */,
 				D0CBB41EF99115F492B1432A /* bold_tech_dynamic.json in Resources */,
 				7CA78976A6FE532053990E5C /* bold_viral_pop.json in Resources */,
+				6AC834BE1CFF55304C809790 /* bryansantosbreton-biodynamic-impact-braam-tonal-dark-184276.mp3 in Resources */,
 				467A17C0179EBAD61AE88C7A /* camera_shutter.json in Resources */,
 				1B0E6A64759BD082AD3B2374 /* camera_snap.json in Resources */,
 				C6A9731C1C6EC776C5733849 /* chromatic_micro_glitch.json in Resources */,
@@ -1236,8 +1420,19 @@
 				B8EA16B2AA648DEE61D90C7E /* confirm.mp3 in Resources */,
 				3D2AA373B59BA7D06ED637E1 /* controlled_speed_ramp.json in Resources */,
 				70F6B0F6AE079FE06F8DF417 /* cross_dissolve.json in Resources */,
+				415A7D818F4452A71DDBC0A1 /* dragon-studio-cinematic-riser-03-414575.mp3 in Resources */,
+				31FDE55E4CED381DD6E4EB20 /* dragon-studio-clicking-keyboard-asmr-sfx-356115.mp3 in Resources */,
+				5DDA244E1A8BBF8A213B26B5 /* dragon-studio-correct-472358.mp3 in Resources */,
+				21F50C0C95209B96788144EF /* dragon-studio-error-sound-390301.mp3 in Resources */,
+				C58BFB4F8486EBF262E634DB /* dragon-studio-glitch-effect-1-397982.mp3 in Resources */,
+				321E1D3D265C0CC15056405A /* dragon-studio-mouse-click-sfx-444806.mp3 in Resources */,
+				17DB078622878D38DFB2D29E /* dragon-studio-new-notification-3-398649.mp3 in Resources */,
+				8977D1A4ACD015DEB43E3137 /* dragon-studio-pop-402324.mp3 in Resources */,
+				7FCE7691D3D59ACDFC5D0839 /* dragon-studio-simple-whoosh-382724.mp3 in Resources */,
+				FB051517EB0C8765A74D1EDB /* dragon-studio-whoosh-cinematic-376875.mp3 in Resources */,
 				86AD158EC4DD12AD39311D4F /* fade.json in Resources */,
 				7BAA2F3E1E68B3A6DDB241FA /* impact.mp3 in Resources */,
+				2A7B04A00AD2AD071D6F7651 /* lordsonny-cinematic-whoosh-reverse-161307.mp3 in Resources */,
 				882280A1E50E950B836A6F5B /* minimal_clean.json in Resources */,
 				2871E83CAD77F9EB8F0C18B5 /* mixkit_air_woosh_1489.wav in Resources */,
 				AEB9DFE2AAF615418DB8BED7 /* mixkit_arrow_whoosh_1714.wav in Resources */,
@@ -1271,42 +1466,49 @@
 				CDF75ADC78CBFADB5543C340 /* mixkit_terror_sweep_of_darkness_2630.wav in Resources */,
 				9D093485E1F8CF2AA7FFF0F7 /* mixkit_valley_sunset_127.mp3 in Resources */,
 				6F33CE18768DB9242862B7A0 /* mixkit_vintage_camera_shutter_1438.wav in Resources */,
+				4788995980A3976432F9946B /* music_chill_drone.m4a in Resources */,
+				6D15D09494734D5B9A8A6F87 /* music_library.json in Resources */,
 				ABE73513687163E4F97FB33F /* onboarding_ai.json in Resources */,
 				97BD97F196519737F997C1F7 /* onboarding_export.json in Resources */,
 				5B256508496EE1CA818D7D61 /* onboarding_welcome.json in Resources */,
+				1BD803FDA6E4987A0687035A /* openai_whisper-large-v3_turbo_954MB in Resources */,
 				1FCCCFF0AF28AC0E322BDE63 /* pop.mp3 in Resources */,
+				4A5BD8429FF25A2D83FDB81A /* pwlpl-deep-bass-drop-sound-effect-521058.mp3 in Resources */,
 				694B8B0933D6FE9FBEB7CFAE /* riser.mp3 in Resources */,
+				4DD40680DA539FD66953395C /* sfx_ding.m4a in Resources */,
+				7668780F8458929BCB723116 /* sfx_ding_bright.m4a in Resources */,
+				1D8B9465C2590CCDC2601025 /* sfx_ding_soft.m4a in Resources */,
+				6226FB9F5CD6CC58B2EC36FA /* sfx_impact.m4a in Resources */,
+				EB6E62B8CB918C509A7D68A6 /* sfx_impact_snap.m4a in Resources */,
+				31C5AC89C1710538857B8D64 /* sfx_impact_thud.m4a in Resources */,
+				F920633D356BE86440D5885F /* sfx_library.json in Resources */,
+				9DA5F7DACB76900118ADA7BD /* sfx_pop.m4a in Resources */,
+				3DD6B3491AE3DEAC3383BAEE /* sfx_pop_high.m4a in Resources */,
+				0C383445FD3C95CB658B7803 /* sfx_pop_low.m4a in Resources */,
+				57EF1EF49E00576572372193 /* sfx_riser.m4a in Resources */,
+				CAEB2F64CA87F5FE9C23BD1A /* sfx_riser_long.m4a in Resources */,
+				10770FA78E2E0A52DAD1CAB7 /* sfx_riser_synth.m4a in Resources */,
+				7FA1DEF3CF20EDB9B85C8091 /* sfx_transition_low.m4a in Resources */,
+				41088ABF3481DEBDCD9BD100 /* sfx_whoosh.m4a in Resources */,
+				6F3E2CF0C193B054B3B30ACC /* sfx_whoosh_long.m4a in Resources */,
+				575E1429F49E84DD5BE1A3E4 /* sfx_whoosh_short.m4a in Resources */,
 				E8D219C0D41A2AF9AE4C3895 /* slow_zoom.json in Resources */,
 				6424BC07ABE512CF595946E4 /* soft_push.json in Resources */,
+				6332A4A3E25D0423096612FE /* soundreality-riser-hole-391174.mp3 in Resources */,
 				2023EEA7E5F44C6A3981C509 /* subtle_film_grain.json in Resources */,
 				29F9908A140738435A1B52EA /* subtle_gold_glow.json in Resources */,
 				A0CC5625474BF2D45D118367 /* swipe.json in Resources */,
 				6A8FFBC0DD0F007B62C1C534 /* tech_influencer.json in Resources */,
+				0D28F6FFA6C08EEF3FE25658 /* u_f1ee7vf7na-blip-131856.mp3 in Resources */,
+				B8F36527CFEE5EF6DEA5A5BB /* u_tmz2ks56ex-m3g-cinematic-bass-318310.mp3 in Resources */,
+				B4746419F121B4E33712B58C /* universfield-camera-shutter-199580.mp3 in Resources */,
+				D793F1378ADFF2F398A9FB08 /* universfield-computer-mouse-click-352734.mp3 in Resources */,
+				A96C5EA077371084CEBC2BE6 /* universfield-impact-cinematic-boom-352465.mp3 in Resources */,
+				0D5E12EAE2D13049C21131BD /* universfield-new-notification-057-494255.mp3 in Resources */,
+				8AA70244786024C809F0F650 /* virtualzero-mechanical-keyboard-typing-hd-372290.mp3 in Resources */,
 				C312EE462CEE53F55361AE56 /* warm_light_leak.json in Resources */,
 				66845A0CF4B43AE2875658CD /* whoosh.mp3 in Resources */,
 				94D2D89A266C8AA67EDE751A /* zoom_cut.json in Resources */,
-				84DAC16718378160F440FC60 /* universfield-camera-shutter-199580.mp3 in Resources */,
-				B1421990B1F8C1BF136ADA96 /* dragon-studio-glitch-effect-1-397982.mp3 in Resources */,
-				4217C42EFEA99526DAAF163E /* bryansantosbreton-biodynamic-impact-braam-tonal-dark-184276.mp3 in Resources */,
-				3AB44A96A732F5D1DAEF9BFD /* pwlpl-deep-bass-drop-sound-effect-521058.mp3 in Resources */,
-				0AF407E9B4C9CF11C33B854A /* u_tmz2ks56ex-m3g-cinematic-bass-318310.mp3 in Resources */,
-				D849BCF4111D8D8AAC1AD1D0 /* universfield-impact-cinematic-boom-352465.mp3 in Resources */,
-				9B164B39CA582968B25EDBFE /* dragon-studio-correct-472358.mp3 in Resources */,
-				992464A6B26E6482A7ED16E3 /* dragon-studio-error-sound-390301.mp3 in Resources */,
-				A066F3026377CD3780925B2B /* dragon-studio-mouse-click-sfx-444806.mp3 in Resources */,
-				A7D0B965CA0DC306A7CE56CB /* dragon-studio-new-notification-3-398649.mp3 in Resources */,
-				3103AA0426A58D3BDEF40372 /* dragon-studio-pop-402324.mp3 in Resources */,
-				E2FDA03EA12A0197C3851D39 /* u_f1ee7vf7na-blip-131856.mp3 in Resources */,
-				8FF160F9B497BB669136E60A /* universfield-computer-mouse-click-352734.mp3 in Resources */,
-				F78F3DE88B825B192C4EC872 /* universfield-new-notification-057-494255.mp3 in Resources */,
-				35C5E213BDB0575C08161390 /* audiopapkin-riser-hit-sfx-001-289802.mp3 in Resources */,
-				E0647D9645B221BAD0C92F24 /* dragon-studio-cinematic-riser-03-414575.mp3 in Resources */,
-				6497CA047821A3219B907B7E /* soundreality-riser-hole-391174.mp3 in Resources */,
-				13BFD01AC2FB3B43B8CB5ADA /* dragon-studio-clicking-keyboard-asmr-sfx-356115.mp3 in Resources */,
-				A68750E72FEC6B97371CB54F /* virtualzero-mechanical-keyboard-typing-hd-372290.mp3 in Resources */,
-				71058DE42CB9943D136C660E /* dragon-studio-simple-whoosh-382724.mp3 in Resources */,
-				052D7A073200C3CE9204EB9C /* dragon-studio-whoosh-cinematic-376875.mp3 in Resources */,
-				5EE42D6C14307C8E57AB27F7 /* lordsonny-cinematic-whoosh-reverse-161307.mp3 in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1323,51 +1525,72 @@
 				A14DD6D9F20DCB24688D7508 /* AnalysisViewModel.swift in Sources */,
 				44DA06C335DBE8E4B9893461 /* AssetRegistry.swift in Sources */,
 				26E48D862C02A3CACFCC666D /* AudioAnalysisService.swift in Sources */,
+				B7DE991B07D0D3868B419C5D /* AudioMixBuilder.swift in Sources */,
 				94ACC917C41892C3F806E80B /* AudioMixService.swift in Sources */,
+				411F2B3B74DD912C674E9A5F /* AudioPlanBuilder.swift in Sources */,
 				0A701E4C6D95E9F71BC1975A /* AudioQualityGuard.swift in Sources */,
 				33CCAA14CC7C6549A5CD62BD /* AuthManager.swift in Sources */,
 				009287350ADFA1794A5F547C /* AuthScreen.swift in Sources */,
+				3E3CEA4438E808F83831DEBD /* AutoCutPlanner.swift in Sources */,
 				BA68F9D985C54E2955EE12F6 /* BackgroundMusicService.swift in Sources */,
+				F3C055B51A0FD5C7FF434F7F /* BeatDetector.swift in Sources */,
 				9512BCB9AAD8ABC2EA88C7D8 /* BestTakeSelector.swift in Sources */,
 				534A78A637D8917232DCD9B1 /* CaptionEngine.swift in Sources */,
+				1682F76DEBC892B8DA47322C /* CaptionLayoutEngine.swift in Sources */,
 				696CCE3CD99BEAD3BD22EA02 /* CaptionModels.swift in Sources */,
 				423F23D80750F13801D54231 /* CaptionOverlayCompositor.swift in Sources */,
 				B8CB272724C341F9D710535A /* CaptionPreviewPlayer.swift in Sources */,
 				191CAD387D08096FE31BEEE3 /* CaptionPreviewViewModel.swift in Sources */,
 				B6DF602015817D4002578543 /* CaptionReadabilityGuard.swift in Sources */,
+				FCFAAEFE7FAC95C5A81AA746 /* CaptionRenderer.swift in Sources */,
 				A46E147C49C542FD078412F0 /* CaptionRoleClassifier.swift in Sources */,
 				26400B2FFC353DFF6A6AE844 /* CaptionSceneEventPlanner.swift in Sources */,
+				7979C11B34120F4C15280DA4 /* CaptionStyleLibrary.swift in Sources */,
+				A35932B0ED64B4E32FC0B190 /* CinematicComponents.swift in Sources */,
 				1D8A46AB374CD1BB2A3CFA21 /* CircularProgressView.swift in Sources */,
 				786602F19EBBE7F49705B4ED /* CleanTimelineBuilder.swift in Sources */,
+				6621D0DBDA058C512C51F0D5 /* CloudEditScreen.swift in Sources */,
+				8765CADCAF5D4196E2F7C0C9 /* CloudJobClient.swift in Sources */,
 				B6E5EA06E01A3474AF7C6B83 /* ContextAwareEditCommandDetector.swift in Sources */,
 				9F168BB65519F27C3F1E627C /* ContinuityChecker.swift in Sources */,
+				EB4538312ED9401F16DFC5B3 /* CreateScreen.swift in Sources */,
 				138E6D6D3EB793CAF0E65A76 /* CustomTemplateStore.swift in Sources */,
 				301B50764891F1535064762B /* CutSenseApp.swift in Sources */,
+				24F7C44EDE8565D6098F864C /* CutSenseDebugRuntime.swift in Sources */,
+				07BDC9656B633F62769B8770 /* CutSensePipeline.swift in Sources */,
 				477BC69A95C05A0353D7BA5A /* CutTimelineBar.swift in Sources */,
-				1C9E3A0E6D8F4B92A1C0D001 /* CutSenseDebugRuntime.swift in Sources */,
 				1C773039C5E27EF23061CEBD /* DebugTimelineScreen.swift in Sources */,
 				9312FECAA7336E816ECF62CF /* EditDecisionEngine.swift in Sources */,
 				EB9720867451B44BF22078BB /* EditScreen.swift in Sources */,
 				8C0F1CBB6BBF7E093B594EEC /* EmptyStateView.swift in Sources */,
 				9DA3B0C9EF5D5B27291D6BC3 /* ErrorBanner.swift in Sources */,
+				42A044BDC67FCF3544C5C803 /* ExportNotifier.swift in Sources */,
 				DCF23FD8BCB6E72C2FBE4022 /* ExportService.swift in Sources */,
 				A387E8D0E762928EC832E5F6 /* ExportVerificationReport.swift in Sources */,
 				783DC6915E1C513F21F47D2B /* FilterEngine.swift in Sources */,
 				16C5D36594C8D1F2B2599B96 /* HapticEngine.swift in Sources */,
+				B6E19FC5038EE937EDB99E51 /* HomeShell.swift in Sources */,
 				5F91C3CB48A2C14421124FA7 /* IntensityInterpolator.swift in Sources */,
 				C46A27D2813284BE5254AEE3 /* IntensityLimiter.swift in Sources */,
+				28F7D53A5E4311BAA0D42237 /* LUFSNormalizer.swift in Sources */,
 				4E9622102B5A510697805595 /* LocalProjectStore.swift in Sources */,
 				A4D47DD659148EEF69939AF7 /* LoudnessNormalizer.swift in Sources */,
 				E9CF91B32C34517D70DF19E8 /* MeaningPreservationEngine.swift in Sources */,
 				5671B9304FB2DC42E80E64A3 /* Models.swift in Sources */,
+				78938C183B3C4C768F5C9899 /* MusicLibrary.swift in Sources */,
 				EEA6F71D9ADB57226826080D /* NetworkMonitor.swift in Sources */,
 				A36E8F56161270DEEAA9CD56 /* OnboardingScreen.swift in Sources */,
 				CB100223B5178427C59CF3A5 /* OverEditingGuard.swift in Sources */,
 				EB51CC12E7E4355BC11F634E /* PaywallScreen.swift in Sources */,
-				0D2E25A7A9B44108A18F7C11 /* PipelineArtifactStore.swift in Sources */,
-				1C9E3A106D8F4B92A1C0D001 /* PipelineDiagnostics.swift in Sources */,
-				1C9E3A126D8F4B92A1C0D001 /* PipelineDebugRunner.swift in Sources */,
+				1EF15F10BFE674F7E8C1409F /* PexelsBRollService.swift in Sources */,
+				B3B6D0ED6658BB4824AC6BC0 /* PipelineArtifactStore.swift in Sources */,
+				6BB8BF29920956A98236225F /* PipelineDebugRunner.swift in Sources */,
+				E3DC869131E5189939D8C1EA /* PipelineDiagnostics.swift in Sources */,
+				843B09A50376E5980B112CB9 /* PipelineModels.swift in Sources */,
 				CC06F1C1B25F33B0F58E1031 /* PipelineRepository.swift in Sources */,
+				B8A07D58484F0652967AB1FA /* PollinationsService.swift in Sources */,
+				B6355FDEED62B43E1D8335D9 /* PrivacyPolicyScreen.swift in Sources */,
+				48F5039C10DABDD17F57C50B /* ProExportPipeline.swift in Sources */,
 				1B32AE90CD97373BBC38CA0C /* ProjectRepository.swift in Sources */,
 				229EC4A7B09ACBFFF660A9AC /* ProjectsScreen.swift in Sources */,
 				AC88AA985F31542565EE3679 /* QualityGateService.swift in Sources */,
@@ -1376,28 +1599,41 @@
 				75D72BF1CAE19412CCD4E80D /* RoughCutPreviewPlayer.swift in Sources */,
 				7ECB66A107EB769406B13E60 /* RoughCutReviewScreen.swift in Sources */,
 				27EFC17E9403D28F5F5F80C3 /* SFXAssetManager.swift in Sources */,
+				A6EBF99516461C1AF167BBE0 /* SFXLibrary.swift in Sources */,
+				7A1D7311FD27448ECE00BB6D /* SettingsScreen.swift in Sources */,
+				FEF6CCC6B9DB6EDE23989561 /* SimpleCaptionPipeline.swift in Sources */,
 				76AC3C44DFD055688B6B16C9 /* SkeletonBlock.swift in Sources */,
+				65A73B89C1521B2ADEEE64DC /* SmartBRollSelector.swift in Sources */,
 				EED8ADD818110699E2C50C5A /* SmartTranscriptAnalyzer.swift in Sources */,
+				336F267D6EF9AE355B875EE2 /* SpeechFallback.swift in Sources */,
 				A4E819439EBA44CE9C52B371 /* SpeechTranscriptionService.swift in Sources */,
 				94FCAB872F179B71A12DEA72 /* SubscriptionManager.swift in Sources */,
 				C53A6705E446B62F2CE64C45 /* SupabaseClient.swift in Sources */,
 				41A88B209E8C52CC778F8BB8 /* TakeDetectionEngine.swift in Sources */,
 				9FB0F6DBA4FCE052496C4163 /* TemplateConfig.swift in Sources */,
-				1D7F2E6A9B8C4D0EAF102233 /* TemplateEditGrammar.swift in Sources */,
+				6DEC069F9CCB38BBCB452805 /* TemplateEditGrammar.swift in Sources */,
 				852454AB5509C96708AF8E0D /* TemplateHubScreen.swift in Sources */,
 				DA9F44B14EBE9B91990A2C75 /* TemplateHubService.swift in Sources */,
+				087D12734A7B3411497D0F8D /* TemplateProfiles.swift in Sources */,
 				2EB972F0DDFB789A3939A8E5 /* TemplateRecommendationEngine.swift in Sources */,
+				8F3BA071320EF544B9A46772 /* TemplatesTabScreen.swift in Sources */,
+				199B63F1CE37603A403F0348 /* TermsOfServiceScreen.swift in Sources */,
 				837643FFAFE3177E3A31CC81 /* Theme.swift in Sources */,
 				6C2E2B5FBA841BEA58B87AC9 /* TimelineDebugLogger.swift in Sources */,
 				B2F83FC1E1329E7103A1600E /* TimelineMapper.swift in Sources */,
 				640037D2A5CCE7FD11532F43 /* TimelineRangeNormalizer.swift in Sources */,
 				BB959AF76A2768AC1BC67BD2 /* TranscriptCleanupAnalyzer.swift in Sources */,
+				221A089E9A3D5F1D4451A3D7 /* UserPreferences.swift in Sources */,
 				CF655FE41DBD8E89AB7F017D /* VideoColorAnalyzer.swift in Sources */,
+				6C892C0165B91C7FB63C53E3 /* VideoCompressor.swift in Sources */,
 				70AC240342DFF3D249BE201B /* VideoFrameRenderer.swift in Sources */,
 				D2BD8EF815D8FB6530381BE4 /* VideoImportService.swift in Sources */,
 				ADCAD5E915940F15C057A775 /* VideoMetadataService.swift in Sources */,
 				69D63998D72478F3CDD63286 /* VideoPreviewEngine.swift in Sources */,
+				B7FE9D6B8FC8CB928DA7CE8F /* VideoStorage.swift in Sources */,
+				4ECFBCF7D29CDA5BD0C91DF5 /* VisualPromptRewriter.swift in Sources */,
 				BAF137E2C95EB405044B4072 /* VoiceEQProcessor.swift in Sources */,
+				C5DFF00A341585BB6002E28E /* WhisperTranscriptionService.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1406,16 +1642,19 @@
 			buildActionMask = 2147483647;
 			files = (
 				01367DBE70874ED418C25A98 /* AssetRegistryTests.swift in Sources */,
+				924FAF441E767E17F29790F4 /* CloudFlowLiveTests.swift in Sources */,
 				AC288C9000CFD7226A256596 /* CutSenseTests.swift in Sources */,
 				3125FF75BF4329C6EBF1F6E5 /* ExportPipelineE2ETests.swift in Sources */,
 				3119699A27FC174B5FED0C20 /* ExportVerificationTests.swift in Sources */,
 				746A68F8301DD383E88E47B3 /* GoldenTranscriptTests.swift in Sources */,
 				FC26EA6E9C25FCBBDE7239B5 /* LocalProjectStoreTests.swift in Sources */,
+				CBAE525F81C65E2BA990E1CC /* PexelsServiceTests.swift in Sources */,
 				A084EF24CE460E3521205A57 /* PipelineIntegrationTests.swift in Sources */,
 				C8E94B08BDEBCB211EACCF08 /* RoughCutModuleTests.swift in Sources */,
 				4CD84223916261970EBBAC17 /* TestHelpers.swift in Sources */,
 				B75BEAAB8EDA50187B9EAC58 /* TimelineMapperTests.swift in Sources */,
 				437D221834B1124CCCDCE37C /* VideoFrameRendererTests.swift in Sources */,
+				50723CBF96A204800AB4DC8B /* WhatsAppVideoE2ETests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1434,12 +1673,8 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
-				CODE_SIGN_IDENTITY = "iPhone Developer";
-				CODE_SIGN_STYLE = Automatic;
-				DEVELOPMENT_TEAM = 6HCP552XP8;
 				ENABLE_TESTING_SEARCH_PATHS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -1447,7 +1682,7 @@
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.cutsense.CutSenseTests;
 				SDKROOT = iphoneos;
-				SWIFT_VERSION = 6.2;
+				SWIFT_VERSION = 6.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
 				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/CutSense.app/CutSense";
 			};
@@ -1455,7 +1690,7 @@
 		};
 		5D2B5D51A98111036FFA9A82 /* Debug */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = TEMP_02E31297-3A93-4D99-9E88-B51AED448C09 /* Secrets.xcconfig */;
+			baseConfigurationReference = "TEMP_B5D08DA1-9784-4CA4-A813-A4191761A907" /* Secrets.xcconfig */;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				CLANG_ANALYZER_NONNULL = YES;
@@ -1505,7 +1740,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
@@ -1513,7 +1748,7 @@
 				SDKROOT = iphoneos;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
-				SWIFT_VERSION = 6.2;
+				SWIFT_VERSION = 5.0;
 			};
 			name = Debug;
 		};
@@ -1521,12 +1756,8 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
-				CODE_SIGN_IDENTITY = "iPhone Developer";
-				CODE_SIGN_STYLE = Automatic;
-				DEVELOPMENT_TEAM = 6HCP552XP8;
 				ENABLE_TESTING_SEARCH_PATHS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -1534,7 +1765,7 @@
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.cutsense.CutSenseTests;
 				SDKROOT = iphoneos;
-				SWIFT_VERSION = 6.2;
+				SWIFT_VERSION = 6.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
 				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/CutSense.app/CutSense";
 			};
@@ -1542,7 +1773,7 @@
 		};
 		99BC8EAA3459D2B564347FD0 /* Release */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = TEMP_02E31297-3A93-4D99-9E88-B51AED448C09 /* Secrets.xcconfig */;
+			baseConfigurationReference = "TEMP_B5D08DA1-9784-4CA4-A813-A4191761A907" /* Secrets.xcconfig */;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				CLANG_ANALYZER_NONNULL = YES;
@@ -1586,14 +1817,14 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = iphoneos;
 				SWIFT_COMPILATION_MODE = wholemodule;
 				SWIFT_OPTIMIZATION_LEVEL = "-O";
-				SWIFT_VERSION = 6.2;
+				SWIFT_VERSION = 5.0;
 			};
 			name = Release;
 		};
@@ -1604,7 +1835,7 @@
 				CODE_SIGN_ENTITLEMENTS = CutSense/CutSense.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 16;
+				CURRENT_PROJECT_VERSION = 19;
 				DEVELOPMENT_TEAM = 6HCP552XP8;
 				INFOPLIST_FILE = CutSense/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -1615,8 +1846,8 @@
 				PRODUCT_BUNDLE_IDENTIFIER = com.cutsense.app;
 				SDKROOT = iphoneos;
 				SWIFT_STRICT_CONCURRENCY = complete;
-				SWIFT_VERSION = 6.2;
-				TARGETED_DEVICE_FAMILY = "1,2";
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = 1;
 			};
 			name = Release;
 		};
@@ -1627,7 +1858,7 @@
 				CODE_SIGN_ENTITLEMENTS = CutSense/CutSense.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 16;
+				CURRENT_PROJECT_VERSION = 19;
 				DEVELOPMENT_TEAM = 6HCP552XP8;
 				INFOPLIST_FILE = CutSense/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -1638,8 +1869,8 @@
 				PRODUCT_BUNDLE_IDENTIFIER = com.cutsense.app;
 				SDKROOT = iphoneos;
 				SWIFT_STRICT_CONCURRENCY = complete;
-				SWIFT_VERSION = 6.2;
-				TARGETED_DEVICE_FAMILY = "1,2";
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = 1;
 			};
 			name = Debug;
 		};
@@ -1684,6 +1915,14 @@
 				minimumVersion = 4.4.0;
 			};
 		};
+		B57E98BB02E6DE15F1920529 /* XCRemoteSwiftPackageReference "WhisperKit" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/argmaxinc/WhisperKit";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 0.10.0;
+			};
+		};
 		E3A82BD56F4B97B77E351CB3 /* XCRemoteSwiftPackageReference "supabase-swift" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/supabase/supabase-swift";
@@ -1695,6 +1934,11 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
+		6A8DE6C3974CF8F23B5D5364 /* WhisperKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = B57E98BB02E6DE15F1920529 /* XCRemoteSwiftPackageReference "WhisperKit" */;
+			productName = WhisperKit;
+		};
 		C1223C501B51C6713465798A /* Lottie */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = 8D52B5DB169683955AEDB955 /* XCRemoteSwiftPackageReference "lottie-ios" */;
