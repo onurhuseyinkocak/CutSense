@@ -1,0 +1,55 @@
+name: render-worker
+
+# On-demand video render worker. Triggered per job via repository_dispatch from
+# the create-job edge function (or manually). The worker ALWAYS exits 0 — any
+# failure is written to the job row (jobs.error), so this run stays green.
+on:
+  repository_dispatch:
+    types: [render-job]
+  workflow_dispatch:
+    inputs:
+      job_id:
+        description: "Job id (uuid)"
+        required: true
+      project_id:
+        description: "Project id (optional)"
+        required: false
+
+# Allow many renders to run in parallel; never cancel an in-flight render.
+concurrency:
+  group: render-${{ github.event.client_payload.job_id || github.event.inputs.job_id }}
+  cancel-in-progress: false
+
+jobs:
+  render:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install ffmpeg
+        run: sudo apt-get update && sudo apt-get install -y ffmpeg
+
+      - name: Install worker deps
+        working-directory: backend
+        run: npm ci || npm install
+
+      - name: Run render worker
+        working-directory: backend
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          R2_BUCKET: ${{ secrets.R2_BUCKET }}
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+        run: |
+          JOB="${{ github.event.client_payload.job_id || github.event.inputs.job_id }}"
+          PROJ="${{ github.event.client_payload.project_id || github.event.inputs.project_id }}"
+          echo "rendering job $JOB"
+          npx tsx src/cli.ts "$JOB" "$PROJ"
