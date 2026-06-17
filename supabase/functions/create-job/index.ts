@@ -1,13 +1,15 @@
 // Supabase Edge Function: create-job
-// 1) verify caller, 2) presign an R2 PUT for the raw upload, 3) insert a jobs
-// row, 4) fire a GitHub repository_dispatch to run the render worker.
+// 1) verify caller, 2) create a Supabase Storage signed upload URL for the raw
+// video, 3) insert a queued jobs row. The local poller (npx tsx src/poll.ts on
+// the Mac) claims and renders it — no GitHub Actions (paid on private repos) and
+// no R2 (ISP SNI-filters *.r2.cloudflarestorage.com in some regions).
 //
-// Env (Supabase function secrets):
-//   SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, SUPABASE_ANON_KEY
-//   R2_ACCOUNT_ID, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY, R2_BUCKET
-//   GH_DISPATCH_TOKEN (PAT with repo scope), GH_REPO (e.g. onurhuseyinkocak/CutSense)
+// Storage uses Supabase's own host (always reachable). Free tier caps objects at
+// 50MB, so the client must compress the raw before upload.
+//
+// Env (auto-injected by Supabase): SUPABASE_URL, SUPABASE_ANON_KEY, SUPABASE_SERVICE_ROLE_KEY
+// Optional: STORAGE_BUCKET (default "media")
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { AwsClient } from "https://esm.sh/aws4fetch@1.0.20";
 
 const cors = {
   "Access-Control-Allow-Origin": "*",
@@ -34,22 +36,15 @@ Deno.serve(async (req) => {
   const ext = typeof body.ext === "string" && /^[a-z0-9]{1,5}$/.test(body.ext) ? body.ext : "mp4";
 
   const admin = createClient(url, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
+  const bucket = Deno.env.get("STORAGE_BUCKET") || "media";
   const jobId = crypto.randomUUID();
   const rawKey = `raw/${jobId}.${ext}`;
 
-  // presign R2 PUT (1h)
-  const r2 = new AwsClient({
-    accessKeyId: Deno.env.get("R2_ACCESS_KEY_ID")!,
-    secretAccessKey: Deno.env.get("R2_SECRET_ACCESS_KEY")!,
-    region: "auto",
-    service: "s3",
-  });
-  const bucket = Deno.env.get("R2_BUCKET")!;
-  const endpoint = `https://${Deno.env.get("R2_ACCOUNT_ID")}.r2.cloudflarestorage.com/${bucket}/${rawKey}`;
-  const signed = await r2.sign(new Request(`${endpoint}?X-Amz-Expires=3600`, { method: "PUT" }), { aws: { signQuery: true } });
-  const uploadUrl = signed.url;
+  // signed upload URL (the client PUTs the raw video here; no service key exposed)
+  const { data: signed, error: signErr } = await admin.storage.from(bucket).createSignedUploadUrl(rawKey);
+  if (signErr || !signed) return json({ error: signErr?.message || "sign failed" }, 500);
 
-  // insert job
+  // insert queued job — the local poller claims it
   const { error: insErr } = await admin.from("jobs").insert({
     id: jobId,
     user_id: user.id,
@@ -59,18 +54,14 @@ Deno.serve(async (req) => {
   });
   if (insErr) return json({ error: insErr.message }, 500);
 
-  // fire GitHub render worker (best-effort; the row is queued either way)
-  const ghToken = Deno.env.get("GH_DISPATCH_TOKEN");
-  const ghRepo = Deno.env.get("GH_REPO");
-  if (ghToken && ghRepo) {
-    await fetch(`https://api.github.com/repos/${ghRepo}/dispatches`, {
-      method: "POST",
-      headers: { Authorization: `Bearer ${ghToken}`, Accept: "application/vnd.github+json", "Content-Type": "application/json" },
-      body: JSON.stringify({ event_type: "render-job", client_payload: { job_id: jobId, project_id: projectId } }),
-    }).catch(() => {});
-  }
-
-  return json({ job_id: jobId, upload_url: uploadUrl, raw_key: rawKey });
+  return json({
+    job_id: jobId,
+    raw_key: rawKey,
+    bucket,
+    upload_url: signed.signedUrl, // PUT the raw video here
+    upload_token: signed.token,   // or use supabase-js uploadToSignedUrl(path, token, file)
+    storage: "supabase",
+  });
 });
 
 function json(body: unknown, status = 200): Response {

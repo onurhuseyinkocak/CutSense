@@ -35,3 +35,22 @@ export async function saveManifest(jobId: string, manifest: EditManifest): Promi
   // Upsert latest version row (one current manifest per job; versions append).
   await client().from("edit_manifests").insert({ job_id: jobId, manifest });
 }
+
+/**
+ * Atomically claim the oldest queued job for the local poller (the Mac is the
+ * render worker; GitHub Actions needs paid minutes). The conditional update on
+ * status='queued' guards against double-claiming.
+ */
+export async function claimNextQueuedJob(): Promise<{ id: string; project_id: string | null } | null> {
+  const c = client();
+  const { data } = await c.from("jobs").select("id, project_id").eq("status", "queued").order("created_at", { ascending: true }).limit(1).maybeSingle();
+  if (!data) return null;
+  const { data: claimed } = await c
+    .from("jobs")
+    .update({ status: "normalizing", progress: 1, updated_at: new Date().toISOString() })
+    .eq("id", data.id)
+    .eq("status", "queued")
+    .select("id, project_id")
+    .maybeSingle();
+  return claimed ? { id: claimed.id as string, project_id: (claimed.project_id as string | null) ?? null } : null;
+}

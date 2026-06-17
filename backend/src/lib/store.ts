@@ -2,7 +2,7 @@ import { mkdir, copyFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import type { EditManifest, JobStatus } from "../manifest.js";
 import { log } from "./log.js";
-import * as r2 from "./r2.js";
+import * as blob from "./blob.js";
 import * as db from "./supabase.js";
 
 /**
@@ -24,7 +24,7 @@ export interface Store {
 
 export async function cloudStore(jobId: string, workDir: string): Promise<Store> {
   await mkdir(workDir, { recursive: true });
-  if (!r2.r2Configured()) throw new Error("R2 env not configured (R2_ACCOUNT_ID/...)");
+  if (!blob.configured()) throw new Error("Blob storage env not configured (Supabase Storage or R2)");
   if (!db.supabaseConfigured()) throw new Error("Supabase env not configured (SUPABASE_URL/...)");
   let rawLocal: string | null = null;
   return {
@@ -35,8 +35,8 @@ export async function cloudStore(jobId: string, workDir: string): Promise<Store>
       if (rawLocal) return rawLocal;
       const key = await db.getJobRawKey(jobId);
       if (!key) throw new Error(`job ${jobId} has no raw_r2_key`);
-      rawLocal = join(workDir, "raw.mp4");
-      await r2.downloadToFile(key, rawLocal);
+      rawLocal = join(workDir, "raw" + (key.endsWith(".mov") ? ".mov" : ".mp4"));
+      await blob.downloadToFile(key, rawLocal);
       return rawLocal;
     },
     async setStatus(status, progress) {
@@ -44,14 +44,14 @@ export async function cloudStore(jobId: string, workDir: string): Promise<Store>
     },
     async saveManifest(m) {
       await db.saveManifest(jobId, m);
-      await r2.uploadJson(`manifests/${jobId}.json`, m);
+      await blob.uploadJson(`manifests/${jobId}.json`, m);
     },
     async setError(msg) {
       await db.updateJob(jobId, { status: "failed", error: msg.slice(0, 4000) });
     },
     async uploadFinal(localPath) {
       const key = `final/${jobId}.mp4`;
-      await r2.uploadFile(key, localPath, "video/mp4");
+      await blob.uploadFile(key, localPath, "video/mp4");
       await db.updateJob(jobId, { final_r2_key: key });
       return key;
     },
