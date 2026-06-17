@@ -1,16 +1,10 @@
 name: iOS Tests
 
+# Manual-only. macOS runners need paid Actions minutes; the account's billing is
+# capped, so any auto-run (push/PR) fails at runner allocation and shows red.
+# Run on demand from the Actions tab once billing allows.
 on:
-  push:
-    branches: [main]
-    paths:
-      - 'ios/**'
-      - 'supabase/migrations/**'
-  pull_request:
-    branches: [main]
-    paths:
-      - 'ios/**'
-      - 'supabase/migrations/**'
+  workflow_dispatch:
 
 concurrency:
   group: ios-tests-${{ github.ref }}
