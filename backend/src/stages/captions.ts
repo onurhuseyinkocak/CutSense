@@ -72,5 +72,18 @@ export function buildCaptions(m: EditManifest, _ctx: Ctx): void {
       word_timings: g.map((w) => ({ word: w.text, start: w.start, duration: Math.max(0.05, w.end - w.start) })),
     };
   });
-  m.caption_events = events;
+
+  // Clamp to the clean timeline. Whisper pads the final word's end into trailing
+  // silence that the cut removed, so an unclamped caption can run past the end of
+  // the rendered clip (fails QA `captions_in_range` and shows a caption over black).
+  const limit = m.clean_duration && m.clean_duration > 0 ? m.clean_duration : events.at(-1)?.end ?? 0;
+  for (const e of events) {
+    e.start = Math.min(Math.max(0, e.start), limit);
+    e.end = Math.min(e.end, limit);
+    for (const wt of e.word_timings) {
+      wt.start = Math.min(Math.max(0, wt.start), limit);
+      wt.duration = Math.min(wt.duration, Math.max(0.05, limit - wt.start));
+    }
+  }
+  m.caption_events = events.filter((e) => e.end - e.start > 0.05);
 }

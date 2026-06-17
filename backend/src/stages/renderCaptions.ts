@@ -1,5 +1,6 @@
 import { writeFile, copyFile } from "node:fs/promises";
-import { ffmpeg } from "../lib/ffmpeg.js";
+import { ffmpeg, hasFilter } from "../lib/ffmpeg.js";
+import { warn } from "../lib/log.js";
 import type { CaptionEvent, EditManifest } from "../manifest.js";
 import type { Ctx } from "./ctx.js";
 
@@ -67,6 +68,16 @@ export async function renderCaptions(m: EditManifest, ctx: Ctx): Promise<void> {
     await copyFile(ctx.clean, ctx.final);
     return;
   }
+  // The ass filter needs an ffmpeg built with libass. Prod (ubuntu apt ffmpeg)
+  // has it; a libass-less local build would otherwise hard-fail the job. Fall
+  // back to the clean (uncaptioned) cut so the job still completes.
+  if (!(await hasFilter("ass"))) {
+    warn("captions", "ffmpeg has no libass (ass filter) — shipping clean cut without burned captions");
+    m.render.captions_burned = false;
+    await copyFile(ctx.clean, ctx.final);
+    return;
+  }
+  m.render.captions_burned = true;
   await writeFile(ctx.assPath, buildAss(m.caption_events));
   const args = ["-i", ctx.clean, "-vf", `ass=${ctx.assPath}`, "-c:v", "libx264", "-preset", "veryfast", "-crf", "20", "-pix_fmt", "yuv420p", "-movflags", "+faststart"];
   if (m.source?.has_audio) args.push("-c:a", "copy");

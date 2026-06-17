@@ -49,15 +49,28 @@ interface Sentence {
   text: string;
 }
 
-/** Group words into sentences by silence gaps (mirrors AutoCutPlanner phrasing). */
-function segment(words: TranscriptWord[], gap = 0.45): Sentence[] {
+/**
+ * Group words into sentences at TAKE boundaries. The primary, deterministic
+ * boundary is the ffmpeg-detected silence (`silence_ranges`) — whisper word
+ * end-times bleed into silences and vary run-to-run, so the raw word gap alone
+ * merges separate takes into one giant sentence (then an edit command swallows
+ * the good retake). A detected silence sitting in the inter-word gap is a hard
+ * break; the word gap is only a fallback when no silence was detected.
+ */
+function segment(words: TranscriptWord[], silences: { start: number; end: number }[], gap = 0.6): Sentence[] {
   const out: Sentence[] = [];
   let cur: TranscriptWord[] = [];
   for (let i = 0; i < words.length; i++) {
     const w = words[i]!;
-    if (cur.length && w.start - cur[cur.length - 1]!.end > gap) {
-      out.push(toSentence(cur));
-      cur = [];
+    if (cur.length) {
+      const prevEnd = cur[cur.length - 1]!.end;
+      // A silence range intersecting the gap between the previous word and this
+      // one is an authoritative take boundary (tolerant to whisper bleed).
+      const silenceBreak = silences.some((s) => s.start < w.start - 0.02 && s.end > prevEnd - 0.15);
+      if (silenceBreak || w.start - prevEnd > gap) {
+        out.push(toSentence(cur));
+        cur = [];
+      }
     }
     cur.push(w);
   }
@@ -99,33 +112,46 @@ export async function detectBadTakes(m: EditManifest, _ctx: Ctx): Promise<void> 
     m.bad_take_phrases = [];
     return;
   }
-  const sentences = segment(words);
+  const sentences = segment(words, m.silence_ranges ?? []);
+  const flagged = new Set<number>(); // sentence indices already marked bad
   const bad: BadTakePhrase[] = [];
+  const mark = (i: number, b: BadTakePhrase) => {
+    if (i < 0 || i >= sentences.length || flagged.has(i)) return;
+    flagged.add(i);
+    bad.push(b);
+  };
 
   for (let i = 0; i < sentences.length; i++) {
     const s = sentences[i]!;
     const n = norm(s.text);
 
-    // 1) explicit edit command anywhere in the sentence → this sentence is a bad take.
+    // 1) explicit edit command → this sentence is a bad take, AND so is the take
+    //    it corrects: the immediately preceding speech sentence ("burası olmadı,
+    //    tekrar alayım" means redo the previous attempt). Remove both, keep the retake.
     const cmd = EDIT_COMMANDS.find((c) => n.includes(c));
     if (cmd) {
-      bad.push({ start: s.start, end: s.end, text: s.text, kind: "edit_command", confidence: 0.92, reason: `edit command "${cmd}"` });
+      const prev = sentences[i - 1];
+      if (prev && !flagged.has(i - 1)) {
+        mark(i - 1, { start: prev.start, end: prev.end, text: prev.text, kind: "restart", confidence: 0.85, reason: `corrected take (followed by "${cmd}")` });
+      }
+      mark(i, { start: s.start, end: s.end, text: s.text, kind: "edit_command", confidence: 0.92, reason: `edit command "${cmd}"` });
       continue;
     }
 
     // 2) restart: this sentence is a truncated attempt re-said in the next.
     const next = sentences[i + 1];
     if (next && isRestart(s.text, next.text)) {
-      bad.push({ start: s.start, end: s.end, text: s.text, kind: "restart", confidence: 0.8, reason: "restarted — re-said immediately" });
+      mark(i, { start: s.start, end: s.end, text: s.text, kind: "restart", confidence: 0.8, reason: "restarted — re-said immediately" });
       continue;
     }
 
     // 3) near-duplicate: keep the later (usually the better/complete) take.
     if (next && jaccard(s.text, next.text) > 0.82 && s.words.length >= 3) {
-      bad.push({ start: s.start, end: s.end, text: s.text, kind: "duplicate", confidence: 0.75, reason: "duplicate of the next take" });
+      mark(i, { start: s.start, end: s.end, text: s.text, kind: "duplicate", confidence: 0.75, reason: "duplicate of the next take" });
     }
   }
 
+  bad.sort((a, b) => a.start - b.start);
   m.bad_take_phrases = await llmAudit(sentences, bad);
 }
 

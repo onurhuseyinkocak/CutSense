@@ -154,6 +154,7 @@ export interface RenderInfo {
   final_r2_key: string | null;
   preview_r2_key: string | null;
   canvas: [number, number];
+  captions_burned?: boolean; // false when ffmpeg lacked libass and captions were skipped
 }
 
 export interface EditManifest {

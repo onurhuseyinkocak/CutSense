@@ -28,6 +28,24 @@ export function run(bin: string, args: string[]): Promise<RunResult> {
 export const ffmpeg = (args: string[]) => run(FFMPEG, ["-hide_banner", "-loglevel", "error", "-y", ...args]);
 export const ffprobe = (args: string[]) => run(FFPROBE, ["-hide_banner", ...args]);
 
+// Whether this ffmpeg build exposes a given filter (e.g. "ass" needs libass).
+// Cached — the answer can't change within a run. Prod (ubuntu apt ffmpeg) has
+// libass; some local/brew builds don't, so callers fall back gracefully.
+const filterCache = new Map<string, boolean>();
+export async function hasFilter(name: string): Promise<boolean> {
+  const cached = filterCache.get(name);
+  if (cached !== undefined) return cached;
+  let ok = false;
+  try {
+    const { stdout } = await run(FFMPEG, ["-hide_banner", "-filters"]);
+    ok = new RegExp(`\\s${name}\\s`).test(stdout);
+  } catch {
+    ok = false;
+  }
+  filterCache.set(name, ok);
+  return ok;
+}
+
 export interface ProbeResult {
   duration: number;
   fps: number;
