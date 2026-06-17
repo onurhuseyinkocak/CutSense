@@ -42,19 +42,22 @@ function buildAss(events: CaptionEvent[]): string {
   const head = [
     "[Script Info]",
     "ScriptType: v4.00+",
-    "WrapStyle: 2",
+    // 0 = smart word-wrap (balanced lines within margins). Long captions wrap to
+    // a second line instead of overflowing / clipping at the frame edge.
+    "WrapStyle: 0",
     `PlayResX: ${PLAY_W}`,
     `PlayResY: ${PLAY_H}`,
     "ScaledBorderAndShadow: yes",
     "",
     "[V4+ Styles]",
     "Format: Name,Fontname,Fontsize,PrimaryColour,SecondaryColour,OutlineColour,BackColour,Bold,Italic,Underline,StrikeOut,ScaleX,ScaleY,Spacing,Angle,BorderStyle,Outline,Shadow,Alignment,MarginL,MarginR,MarginV,Encoding",
-    // sung = white, unsung = dim grey
-    styleLine("Default", 70, "&H00FFFFFF", "&H00BBBBBB", -1),
+    // sung = white, unsung = dim grey. Sizes kept so a ~5-word line fits 1080w
+    // with the 96px side margins (else it clips at the edge).
+    styleLine("Default", 66, "&H00FFFFFF", "&H00BBBBBB", -1),
     // hook = bright yellow sung
-    styleLine("Hook", 92, "&H0000F0FF", "&H00DDDDDD", -1),
+    styleLine("Hook", 74, "&H0000F0FF", "&H00DDDDDD", -1),
     // keyword = cyan sung
-    styleLine("Keyword", 78, "&H00F0E000", "&H00CCCCCC", -1),
+    styleLine("Keyword", 70, "&H00F0E000", "&H00CCCCCC", -1),
     "",
     "[Events]",
     "Format: Layer,Start,End,Style,Name,MarginL,MarginR,MarginV,Effect,Text",
