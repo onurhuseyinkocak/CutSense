@@ -1,25 +1,43 @@
 {
-  "name": "web",
+  "name": "cutsense-web",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "private": true,
+  "description": "CutSense public website, support, privacy policy, and terms.",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "dev": "next dev",
+    "build": "next build",
+    "lint": "eslint . --max-warnings=0",
+    "start": "next start",
+    "test": "node scripts/smoke.mjs",
+    "typecheck": "tsc --noEmit --incremental false"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
+  "keywords": [
+    "cutsense",
+    "video",
+    "silence-cutter"
+  ],
+  "author": "Vibe Coding Turkey",
+  "license": "UNLICENSED",
   "packageManager": "pnpm@10.30.2",
+  "engines": {
+    "node": ">=22 <25"
+  },
   "dependencies": {
-    "@supabase/supabase-js": "^2.105.4",
-    "next": "^16.2.6",
+    "next": "^16.2.10",
     "react": "^19.2.6",
     "react-dom": "^19.2.6"
   },
   "devDependencies": {
+    "eslint": "^9.39.1",
+    "eslint-config-next": "^16.2.10",
     "@types/node": "^25.8.0",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
     "typescript": "^6.0.3"
+  },
+  "pnpm": {
+    "overrides": {
+      "postcss": "8.5.10"
+    }
   }
 }
