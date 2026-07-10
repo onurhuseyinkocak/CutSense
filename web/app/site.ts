@@ -1,4 +1,4 @@
-const fallbackSiteUrl = "https://cutsense.vercel.app";
+const fallbackSiteUrl = "https://cutsense.onarika.net";
 
 function normalizeSiteUrl(value: string | undefined) {
   if (!value) {

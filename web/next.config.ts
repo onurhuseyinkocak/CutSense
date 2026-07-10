@@ -1,5 +1,18 @@
 import type { NextConfig } from "next";
 
+const canonicalHost = "cutsense.onarika.net";
+const legacyHosts = [
+  "cutsense.vercel.app",
+  "cutsense-onurs-projects-d25c20cf.vercel.app",
+  "web-seven-iota-53.vercel.app",
+];
+
+const appAdsHeaders = [
+  { key: "Content-Type", value: "text/plain; charset=utf-8" },
+  { key: "Cache-Control", value: "no-store, max-age=0, must-revalidate" },
+  { key: "Access-Control-Allow-Origin", value: "*" },
+];
+
 const securityHeaders = [
   {
     key: "Content-Security-Policy",
@@ -39,8 +52,24 @@ const securityHeaders = [
 
 const nextConfig: NextConfig = {
   poweredByHeader: false,
+  async redirects() {
+    return legacyHosts.map((host) => ({
+      source: "/:path((?!app-ads\\.txt$|ads\\.txt$).*)",
+      has: [{ type: "host", value: host }],
+      destination: `https://${canonicalHost}/:path*`,
+      permanent: true,
+    }));
+  },
   async headers() {
     return [
+      {
+        source: "/app-ads.txt",
+        headers: appAdsHeaders,
+      },
+      {
+        source: "/ads.txt",
+        headers: appAdsHeaders,
+      },
       {
         source: "/(.*)",
         headers: securityHeaders,
