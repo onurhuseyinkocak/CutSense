@@ -1,0 +1,5 @@
+#error("RECON GAP: lines 1-60 of TermsOfServiceScreen.swift unrecoverable")
+                t("CutSense yürürlükteki hukukun izin verdiği ölçüde 'olduğu gibi' sunulur. Kesintisiz çalışma, hatasız çıktı, belirli bir ticari amaca uygunluk veya veri kaybı olmaması garanti edilmez.", "CutSense is provided as is to the maximum extent permitted by law. We do not guarantee uninterrupted operation, error-free output, fitness for a particular purpose, or absence of data loss.")
+#error("RECON GAP: lines 62-68 of TermsOfServiceScreen.swift unrecoverable")
+                t("Bu şartları zaman zaman güncelleyebiliriz. Uygulamayı kullanmaya devam etmen güncel şartları kabul ettiğin anlamına gelir.", "We may update these terms from time to time. Continued use of the app means you accept the updated terms.")
+#error("RECON GAP: end of TermsOfServiceScreen.swift unknown (file may continue past line 69)")

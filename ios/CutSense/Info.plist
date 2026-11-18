@@ -33,8 +33,10 @@
 	<string>$(MARKETING_VERSION)</string>
 	<key>CFBundleVersion</key>
 	<string>$(CURRENT_PROJECT_VERSION)</string>
-	<key>LSSupportsOpeningDocumentsInPlace</key>
+	<key>ITSAppUsesNonExemptEncryption</key>
 	<false/>
+	<key>LSSupportsOpeningDocumentsInPlace</key>
+	<true/>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>CutSense may need microphone access for audio analysis.</string>
 	<key>NSPhotoLibraryAddUsageDescription</key>
@@ -43,10 +45,26 @@
 	<string>CutSense needs access to your photo library to import videos for editing.</string>
 	<key>NSSpeechRecognitionUsageDescription</key>
 	<string>CutSense uses speech recognition to transcribe your video for intelligent editing.</string>
+	<key>PEXELS_API_KEY</key>
+	<string>$(PEXELS_API_KEY)</string>
+	<key>POLLINATIONS_API_KEY</key>
+	<string>$(POLLINATIONS_API_KEY)</string>
 	<key>SUPABASE_ANON_KEY</key>
 	<string>$(SUPABASE_ANON_KEY)</string>
 	<key>SUPABASE_URL</key>
 	<string>$(SUPABASE_URL)</string>
+	<key>UIAppFonts</key>
+	<array>
+		<string>Poppins-Black.ttf</string>
+		<string>Poppins-ExtraBold.ttf</string>
+		<string>BebasNeue-Regular.ttf</string>
+		<string>Anton-Regular.ttf</string>
+		<string>Montserrat-Black.ttf</string>
+		<string>Inter-Bold.ttf</string>
+		<string>Oswald-Bold.ttf</string>
+		<string>Archivo-Black.ttf</string>
+		<string>PlusJakartaSans-ExtraBold.ttf</string>
+	</array>
 	<key>UILaunchScreen</key>
 	<dict>
 		<key>UIColorName</key>
@@ -54,6 +72,8 @@
 		<key>UIImageName</key>
 		<string>SplashLogo</string>
 	</dict>
+	<key>UIRequiresFullScreen</key>
+	<true/>
 	<key>UISupportedInterfaceOrientations</key>
 	<array>
 		<string>UIInterfaceOrientationPortrait</string>
@@ -65,6 +85,8 @@
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
+	<key>UISupportsDocumentBrowser</key>
+	<false/>
 	<key>UTExportedTypeDeclarations</key>
 	<array>
 		<dict>

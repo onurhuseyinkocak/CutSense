@@ -1,0 +1,5 @@
+#error("RECON GAP: lines 1-50 of SilenceCutPlannerTests.swift unrecoverable")
+        let ranges = SilenceCutPlanner.keptSpeechRanges(blocks: blocks, pad: 0.12, duration: 6)
+#error("RECON GAP: lines 52-75 of SilenceCutPlannerTests.swift unrecoverable")
+        let ranges = SilenceCutPlanner.keptSpeechRanges(blocks: blocks, pad: 0.12, duration: 6)
+#error("RECON GAP: end of SilenceCutPlannerTests.swift unknown (file may continue past line 76)")

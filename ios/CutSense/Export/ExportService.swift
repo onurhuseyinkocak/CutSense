@@ -385,13 +385,12 @@ final class ExportService {
 
         // Match the source framerate so we never re-time and judder.
         // Common sources: 30, 29.97 (1001/30000), 24 (1001/24000), 60, 25.
-        let configuration = AVVideoComposition.Configuration(
-            customVideoCompositorClass: CaptionOverlayCompositor.self,
-            frameDuration: Self.frameDuration(for: sourceFrameRate),
-            instructions: [instruction],
-            renderSize: renderSize
-        )
-        return AVVideoComposition(configuration: configuration)
+        let videoComposition = AVMutableVideoComposition()
+        videoComposition.customVideoCompositorClass = CaptionOverlayCompositor.self
+        videoComposition.frameDuration = Self.frameDuration(for: sourceFrameRate)
+        videoComposition.instructions = [instruction]
+        videoComposition.renderSize = renderSize
+        return videoComposition
     }
 
     /// Map a source framerate to the nearest common CMTime that AVFoundation handles cleanly.

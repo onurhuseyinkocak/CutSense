@@ -1,0 +1,20 @@
+{
+  "entries": [
+    { "id": "whoosh_med",   "kind": "whoosh",     "file": "sfx_whoosh.m4a",        "durationSeconds": 0.50 },
+    { "id": "whoosh_long",  "kind": "whoosh",     "file": "sfx_whoosh_long.m4a",   "durationSeconds": 0.70 },
+    { "id": "whoosh_short", "kind": "whoosh",     "file": "sfx_whoosh_short.m4a",  "durationSeconds": 0.30 },
+    { "id": "riser_med",    "kind": "riser",      "file": "sfx_riser.m4a",         "durationSeconds": 0.80 },
+    { "id": "riser_long",   "kind": "riser",      "file": "sfx_riser_long.m4a",    "durationSeconds": 1.20 },
+    { "id": "riser_synth",  "kind": "riser",      "file": "sfx_riser_synth.m4a",   "durationSeconds": 0.60 },
+    { "id": "pop_med",      "kind": "pop",        "file": "sfx_pop.m4a",           "durationSeconds": 0.10 },
+    { "id": "pop_high",     "kind": "pop",        "file": "sfx_pop_high.m4a",      "durationSeconds": 0.08 },
+    { "id": "pop_low",      "kind": "pop",        "file": "sfx_pop_low.m4a",       "durationSeconds": 0.12 },
+    { "id": "ding_med",     "kind": "ding",       "file": "sfx_ding.m4a",          "durationSeconds": 0.18 },
+    { "id": "ding_bright",  "kind": "ding",       "file": "sfx_ding_bright.m4a",   "durationSeconds": 0.30 },
+    { "id": "ding_soft",    "kind": "ding",       "file": "sfx_ding_soft.m4a",     "durationSeconds": 0.40 },
+    { "id": "impact_med",   "kind": "impact",     "file": "sfx_impact.m4a",        "durationSeconds": 0.20 },
+    { "id": "impact_thud",  "kind": "impact",     "file": "sfx_impact_thud.m4a",   "durationSeconds": 0.15 },
+    { "id": "impact_snap",  "kind": "impact",     "file": "sfx_impact_snap.m4a",   "durationSeconds": 0.10 },
+    { "id": "transition_low","kind": "transition","file": "sfx_transition_low.m4a","durationSeconds": 0.40 }
+  ]
+}

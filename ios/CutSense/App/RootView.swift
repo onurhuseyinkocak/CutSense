@@ -14,7 +14,7 @@ struct RootView: View {
                 // App is fully usable in "local mode" even without auth. AuthScreen is
                 // only opened when the user explicitly chooses to sign in (e.g. from
                 // AccountScreen) so cloud sync becomes available.
-                ProjectsScreen()
+                HomeShell()
             }
         }
         .task(id: hasSeenOnboarding) {

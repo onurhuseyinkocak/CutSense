@@ -30,13 +30,43 @@ targets:
       - path: CutSense
         excludes:
           - "Tests/**"
+          - "Ads/**"
+          - "QuickSilence/**"
           - "**/*.bak"
           - "**/*.DS_Store"
           - "**/._*"
           - "Resources/WhisperModels/**"
+          - "UGC/EDL/**"  # Exclude EDL from auto-include, we'll add explicitly
+          - "UGC/AI/**"
+          - "UGC/Transcription/**"
+          - "UGC/Captions/**"
+          - "UGC/Motion/**"
+          - "UGC/Transitions/**"
+          - "UGC/Color/**"
+          - "UGC/Effects/**"
+          - "UGC/Sound/**"
+          - "UGC/Styles/**"
       - path: CutSense/Resources/WhisperModels/openai_whisper-large-v3_turbo_954MB
         type: folder
         buildPhase: resources
+      # New EDL Architecture Files
+      - path: CutSense/UGC/EDL/EDLTypes.swift
+      - path: CutSense/UGC/EDL/EditHistory.swift
+      - path: CutSense/UGC/EDL/UGCProject.swift
+      - path: CutSense/UGC/EDL/ProjectMigration.swift
+      # AI Routing (Pollinations + Apple Foundation Models)
+      - path: CutSense/AI/DeviceCapabilityDetector.swift
+      - path: CutSense/AI/PollinationsLLMService.swift
+      - path: CutSense/AI/AIProviderRouter.swift
+      - path: CutSense/AI/AIProviderRouter+UGC.swift
+      - path: CutSense/UGC/Transcription/EnhancedTranscriptionService.swift
+      - path: CutSense/UGC/Captions/EnhancedCaptionEngine.swift
+      - path: CutSense/UGC/Motion/SmartMotionEngine.swift
+      - path: CutSense/UGC/Transitions/TransitionEngine.swift
+      - path: CutSense/UGC/Color/ColorGradingEngine.swift
+      - path: CutSense/UGC/Effects/VisualEffectsEngine.swift
+      - path: CutSense/UGC/Sound/SoundDesignEngine.swift
+      - path: CutSense/UGC/Styles/EditingStyleConfigurator.swift
     entitlements:
       path: CutSense/CutSense.entitlements
       properties:
@@ -87,6 +117,7 @@ targets:
         SUPABASE_URL: $(SUPABASE_URL)
         SUPABASE_ANON_KEY: $(SUPABASE_ANON_KEY)
         PEXELS_API_KEY: $(PEXELS_API_KEY)
+        POLLINATIONS_API_KEY: $(POLLINATIONS_API_KEY)
         UTExportedTypeDeclarations:
           - UTTypeIdentifier: com.cutsense.template
             UTTypeDescription: CutSense Template
