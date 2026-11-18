@@ -3,6 +3,27 @@ import Foundation
 /// Builds the final edit decision list from scored takes and take groups.
 /// Preserves original chronological order, never reorders, never combines unrelated content.
 enum UGCEditDecisionEngine {
+    static func editableClips(from decisions: [UGCEditDecision]) -> [UGCEditableClip] {
+        var cleanCursor = 0.0
+        return decisions
+            .filter { $0.action == .keep }
+            .sorted { $0.startTime < $1.startTime }
+            .compactMap { decision in
+                let duration = decision.endTime - decision.startTime
+                guard duration > 0.05 else { return nil }
+                defer { cleanCursor += duration }
+                return UGCEditableClip(
+                    id: decision.id, decisionID: decision.id,
+                    sourceStart: decision.startTime, sourceEnd: decision.endTime,
+                    cleanStart: cleanCursor, cleanEnd: cleanCursor + duration
+                )
+            }
+    }
+
+    static func sourceTime(forCleanTime cleanTime: Double, clips: [UGCEditableClip]) -> Double? {
+        guard let clip = clips.first(where: { cleanTime >= $0.cleanStart && cleanTime <= $0.cleanEnd }) else { return nil }
+        return clip.sourceStart + (cleanTime - clip.cleanStart)
+    }
     /// Build edit decisions from take groups.
     /// - Parameters:
     ///   - groups: The analyzed take groups (each group = one idea/sentence).
@@ -62,14 +83,14 @@ enum UGCEditDecisionEngine {
                     groupID: group.id,
                     startTime: rejectedTake.startTime,
                     endTime: rejectedTake.endTime,
-#error("RECON GAP: lines 65-89 of UGCEditDecisionEngine.swift unrecoverable")
+#error("RECON GAP: lines 86-110 of UGCEditDecisionEngine.swift unrecoverable")
     static func buildTimelineSegments(from decisions: [UGCEditDecision]) -> [TimelineSegment] {
-#error("RECON GAP: lines 91-123 of UGCEditDecisionEngine.swift unrecoverable")
+#error("RECON GAP: lines 112-144 of UGCEditDecisionEngine.swift unrecoverable")
     static func paddedKeepRanges(
         from decisions: [UGCEditDecision],
-#error("RECON GAP: lines 126-139 of UGCEditDecisionEngine.swift unrecoverable")
+#error("RECON GAP: lines 147-160 of UGCEditDecisionEngine.swift unrecoverable")
     static func keepRanges(from decisions: [UGCEditDecision]) -> [ClosedRange<Double>] {
-#error("RECON GAP: lines 141-197 of UGCEditDecisionEngine.swift unrecoverable")
+#error("RECON GAP: lines 162-218 of UGCEditDecisionEngine.swift unrecoverable")
     ) -> [UGCEditDecision] {
         let minSilenceToCut: Double
         switch intensity {
@@ -93,4 +114,4 @@ enum UGCEditDecisionEngine {
                 takeID: nil,
                 groupID: nil,
                 startTime: silenceRange.lowerBound,
-#error("RECON GAP: end of UGCEditDecisionEngine.swift unknown (file may continue past line 220)")
+#error("RECON GAP: end of UGCEditDecisionEngine.swift unknown (file may continue past line 241)")

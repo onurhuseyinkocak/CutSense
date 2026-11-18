@@ -26,6 +26,7 @@ enum HomeTab: String, CaseIterable, Identifiable {
 
 struct HomeShell: View {
     @State private var tab: HomeTab = .create
+    @State private var hidesHomeChrome = false
     @AppStorage(AppLanguage.storageKey) private var languageRaw = AppLanguage.systemDefault.rawValue
 
     private var language: AppLanguage { AppLanguage.value(from: languageRaw) }
@@ -36,17 +37,19 @@ struct HomeShell: View {
 
             Group {
                 switch tab {
-                case .create: CreateScreen()
+                case .create: CreateScreen(hidesHomeChrome: $hidesHomeChrome)
                 case .account: NavigationStack { AccountScreen() }
                 }
             }
-            .padding(.bottom, 76) // reserve space for floating tab bar
+            .padding(.bottom, hidesHomeChrome ? 0 : 76)
 
-            VStack {
-                Spacer()
-                GlassTabBar(selection: $tab, language: language)
-                    .padding(.horizontal, 18)
-                    .padding(.bottom, 14)
+            if !hidesHomeChrome {
+                VStack {
+                    Spacer()
+                    GlassTabBar(selection: $tab, language: language)
+                        .padding(.horizontal, 18)
+                        .padding(.bottom, 14)
+                }
             }
         }
         .preferredColorScheme(.dark)

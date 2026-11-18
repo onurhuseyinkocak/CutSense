@@ -1,3 +1,4 @@
+#error("RECON: S2 text unknown - this is the pre-Aug-8 (S1) text; 2 Aug 8-9 patch(es) could not be replayed")
 import AVFoundation
 import Accelerate
 

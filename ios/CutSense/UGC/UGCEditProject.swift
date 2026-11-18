@@ -5,7 +5,78 @@ import SwiftUI
 
 enum UGCFeatureFlag {
     /// Set to false to disable the Auto UGC Editor without affecting Silence Cutter.
-#error("RECON GAP: lines 8-79 of UGCEditProject.swift unrecoverable")
+    static let isEnabled = true
+}
+
+// MARK: - Editing Intensity
+
+enum UGCIntensity: String, CaseIterable, Identifiable, Sendable {
+    case conservative
+    case balanced
+    case aggressive
+
+    var id: String { rawValue }
+
+    var title: String {
+        title(for: .tr)
+    }
+
+    var detail: String {
+        detail(for: .tr)
+    }
+
+    func title(for language: AppLanguage) -> String {
+        switch self {
+        case .conservative:
+            appText(language, "Korumalı", "Conservative")
+        case .balanced:
+            appText(language, "Dengeli", "Balanced")
+        case .aggressive:
+            appText(language, "Cesur", "Aggressive")
+        }
+    }
+
+    func detail(for language: AppLanguage) -> String {
+        switch self {
+        case .conservative:
+            appText(language, "Yalnızca bariz hatalı çekimleri kaldırır. Belirsiz kararları onaya bırakır.", "Only removes obvious failed takes. Leaves uncertain decisions for review.")
+        case .balanced:
+            appText(language, "Muhtemel hataları kaldırır. Kırpma sınırlarını orta düzeyde tutar.", "Removes likely mistakes. Uses moderate cut boundaries.")
+        case .aggressive:
+            appText(language, "Dolgu ifadeleri fazla olan çekimleri kaldırır. Kırpma sınırlarını dar tutar.", "Removes filler-heavy takes. Uses tight cut boundaries.")
+        }
+    }
+
+    var similarityThreshold: Float {
+        switch self {
+        case .conservative: 0.85
+        case .balanced: 0.75
+        case .aggressive: 0.65
+        }
+    }
+
+    var uncertaintyThreshold: Float {
+        switch self {
+        case .conservative: 12
+        case .balanced: 8
+        case .aggressive: 5
+        }
+    }
+
+    var silencePadStart: Double {
+        switch self {
+        case .conservative: 0.20
+        case .balanced: 0.14
+        case .aggressive: 0.10
+        }
+    }
+
+    var silencePadEnd: Double {
+        switch self {
+        case .conservative: 0.25
+        case .balanced: 0.18
+        case .aggressive: 0.12
+        }
     }
 
     var minTakeDuration: Double {
@@ -13,6 +84,58 @@ enum UGCFeatureFlag {
         case .conservative: 0.5
         case .balanced: 0.5
         case .aggressive: 0.3
+        }
+    }
+}
+
+/// Spoken language is independent from the app interface language.
+enum UGCContentLanguage: String, CaseIterable, Identifiable, Sendable {
+    case automatic
+    case turkish
+    case english
+    case spanish
+    case german
+    case french
+    case arabic
+
+    var id: String { rawValue }
+
+    func title(for interfaceLanguage: AppLanguage) -> String {
+        switch self {
+        case .automatic: return appText(interfaceLanguage, "Otomatik", "Auto")
+        case .turkish: return "Türkçe"
+        case .english: return "English"
+        case .spanish: return "Español"
+        case .german: return "Deutsch"
+        case .french: return "Français"
+        case .arabic: return "العربية"
+        }
+    }
+
+    var locale: Locale {
+        switch self {
+        case .automatic, .turkish: return Locale(identifier: "tr-TR")
+        case .english: return Locale(identifier: "en-US")
+        case .spanish: return Locale(identifier: "es-ES")
+        case .german: return Locale(identifier: "de-DE")
+        case .french: return Locale(identifier: "fr-FR")
+        case .arabic: return Locale(identifier: "ar-SA")
+        }
+    }
+
+    /// Automatic must test the spoken content, not reuse the interface locale.
+    /// The list is deliberately bounded so a long video does not trigger an
+    /// unbounded recognition loop on device.
+    var recognitionLocales: [Locale] {
+        switch self {
+        case .automatic:
+            return [
+                Locale(identifier: "tr-TR"), Locale(identifier: "en-US"),
+                Locale(identifier: "es-ES"), Locale(identifier: "de-DE"),
+                Locale(identifier: "fr-FR"), Locale(identifier: "ar-SA")
+            ]
+        default:
+            return [locale]
         }
     }
 }
@@ -172,18 +295,152 @@ struct TimelineSegment: Identifiable, Sendable {
     let reasonCode: UGCReasonCode
     let reasonDescription: String
 
-#error("RECON GAP: lines 246-255 of UGCEditProject.swift unrecoverable")
+    enum SegmentType: String, Sendable {
+        case keptTake
+        case silence
+        case removedTake
+        case uncertain
+        case manuallyRestored
+    }
+}
+
+/// One visible timeline clip. `clean*` is what the user sees and edits;
+/// `source*` is what AVFoundation consumes during render.
+struct UGCEditableClip: Identifiable, Sendable {
+    let id: UUID
+    let decisionID: UUID
+    let sourceStart: Double
+    let sourceEnd: Double
+    let cleanStart: Double
+    let cleanEnd: Double
+
+    var duration: Double { cleanEnd - cleanStart }
+}
+
+/// A final edit decision list item.
 struct UGCEditDecision: Identifiable, Sendable {
     let id: UUID
     let takeID: UUID?
     let groupID: UUID?
     let startTime: Double
-#error("RECON GAP: lines 261-287 of UGCEditProject.swift unrecoverable")
-    case bestTakeSelected
-#error("RECON GAP: lines 289-321 of UGCEditProject.swift unrecoverable")
+    let endTime: Double
+#error("RECON GAP: lines 327-375 of UGCEditProject.swift unrecoverable")
+            return appText(language, "Aşırı tereddüt", "Severe hesitation")
+        case .accidentalSetupSpeech:
+            return appText(language, "Hazırlık konuşması", "Setup speech")
+        case .uncertainDuplicate:
+            return appText(language, "Belirsiz tekrar", "Uncertain duplicate")
+        case .manuallyRemoved:
+            return appText(language, "Kullanıcı tarafından kaldırıldı", "Manually removed")
+        case .manuallyRestored:
+            return appText(language, "Kullanıcı tarafından geri alındı", "Manually restored")
+        case .keptByUser:
+            return appText(language, "Kullanıcı tarafından seçildi", "Selected by user")
         case .bestTakeSelected:
-#error("RECON GAP: lines 323-349 of UGCEditProject.swift unrecoverable")
-    @Published var selectedCaptionStyle: String = "techKinetic"
-#error("RECON GAP: lines 351-367 of UGCEditProject.swift unrecoverable")
+            return appText(language, "En iyi çekim seçildi", "Best take selected")
+        }
+    }
+}
+
+/// Full UGC edit project state.
+@MainActor
+final class UGCEditProject: ObservableObject {
+    let id: UUID
+    let sourceVideoURL: URL
+    let originalDuration: Double
+
+    @Published var phase: Phase = .idle
+    @Published var intensity: UGCIntensity = .conservative
+    @Published var transcriptResult: TranscriptionResult?
+    @Published var audioSegments: [AudioSegment]?
+    @Published var takes: [UGCTake] = []
+    @Published var takeGroups: [UGCTakeGroup] = []
+    @Published var editDecisions: [UGCEditDecision] = []
+    @Published var timelineSegments: [TimelineSegment] = []
+    @Published var captions: [CaptionSegment] = []
+    @Published var finalCompositionURL: URL?
+    @Published var removedTakes: [UGCTake] = []
+    @Published var manuallyRestoredTakeIDs: Set<UUID> = []
+    @Published var manuallyRemovedTakeIDs: Set<UUID> = []
+    @Published var exportMetadata: UGCProcessor.ExportMetadata?
+    @Published var faceResults: [UUID: FacePresenceAnalysisService.FacePresenceResult] = [:]
+    @Published var silenceIntervals: [ClosedRange<Double>] = []
+    @Published var selectedCaptionStyle: String = "subtitleMinimal"
+    @Published var captionsEnabled: Bool = true
+    @Published var sourceLikelyHasBurnedCaptions: Bool = false
+    @Published var sfxEnabled: Bool = true
+
+    enum Phase: Sendable {
+        case idle
+        case importing
+        case analyzingAudio
+        case transcribing
+        case segmenting
+        case findingRepeats
+        case scoring
+        case buildingEdit
+        case reviewReady
+        case exporting
+        case done
+        case failed(String)
+    }
+
     init(id: UUID = UUID(), sourceVideoURL: URL, originalDuration: Double) {
-#error("RECON GAP: end of UGCEditProject.swift unknown (file may continue past line 368)")
+        self.id = id
+        self.sourceVideoURL = sourceVideoURL
+        self.originalDuration = originalDuration
+    }
+
+    // MARK: - Computed Properties
+
+    var originalDurationFormatted: String {
+        formatDuration(originalDuration)
+    }
+
+    var editedDuration: Double {
+        timelineSegments
+            .filter { $0.type == .keptTake || $0.type == .manuallyRestored }
+            .reduce(0) { $0 + ($1.endTime - $1.startTime) }
+    }
+
+    var editedDurationFormatted: String {
+        formatDuration(editedDuration)
+    }
+
+    var timeSaved: Double {
+        max(0, originalDuration - editedDuration)
+    }
+
+    var timeSavedFormatted: String {
+        formatDuration(timeSaved)
+    }
+
+    var silenceSegmentCount: Int {
+        editDecisions.filter { $0.reasonCode == .silence || $0.reasonCode == .longPause }.count
+    }
+
+    var removedTakeCount: Int {
+        editDecisions.filter { $0.action == .remove && $0.reasonCode != .silence && $0.reasonCode != .longPause }.count
+    }
+
+    var uncertainDecisionCount: Int {
+        editDecisions.filter { $0.action == .uncertain }.count
+    }
+
+    var takeGroupCount: Int {
+        takeGroups.count
+    }
+
+    var failedTakeCount: Int {
+        takes.filter { $0.status == .rejected }.count
+    }
+
+    var hasUncertainDecisions: Bool {
+        uncertainDecisionCount > 0
+    }
+
+    private func formatDuration(_ seconds: Double) -> String {
+        let s = Int(max(0, seconds.rounded()))
+        return String(format: "%d:%02d", s / 60, s % 60)
+    }
+}

@@ -8,6 +8,9 @@ struct CleanTimeline: @unchecked Sendable {
     let totalDuration: CMTime
     let sourceRanges: [TimelineRange]
     let sourceTransform: CGAffineTransform
+
+    /// True only when source audio was successfully copied into the timeline.
+    var hasAudio: Bool { !audioTrack.segments.isEmpty }
 }
 
 enum CleanTimelineBuilder {

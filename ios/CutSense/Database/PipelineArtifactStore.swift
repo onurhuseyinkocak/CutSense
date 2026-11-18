@@ -343,13 +343,10 @@ enum PipelineArtifactStore {
                     ? "Quality gate failed"
                     : validatedReport.failedChecks.map { "\($0.name): \($0.detail)" }.joined(separator: " | ")
                 snapshot.markFailed(.qualityChecked, message: failureMessage)
-                snapshot.export = nil
-                snapshot.markFailed(.exported, message: "Export blocked by failed quality gate")
-                try write(snapshot)
-                throw PipelineArtifactStoreError.invalidStageCompletion(
-                    stage: .exported,
-                    reason: "Export blocked by failed quality gate"
-                )
+                // Quality failures are actionable warnings, not a reason to
+                // discard a fully rendered and independently verified video.
+                // The user must be able to review or export the result and
+                // decide whether to revise it.
             }
         } else {
             snapshot.export = nil

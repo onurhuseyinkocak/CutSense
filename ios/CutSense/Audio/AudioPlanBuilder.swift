@@ -99,11 +99,15 @@ public struct AudioPlanBuilder {
         }
 
         if cleanDuration > 1.40 {
-            append(kind: .riser, at: 0.05, gain: 0.34, minimumGap: 0.30)
+            // These are foreground editorial cues, not nearly inaudible UI
+            // taps. The previous 0.24–0.34 gains were masked by phone-shot
+            // dialogue/room tone and made a technically inserted SFX feel
+            // absent to the user.
+            append(kind: .riser, at: 0.05, gain: 0.70, minimumGap: 0.30)
         }
 
         for range in speechRanges.dropFirst().prefix(6) {
-            append(kind: .whoosh, at: range.cleanStart - 0.04, gain: 0.34, minimumGap: 0.80)
+            append(kind: .whoosh, at: range.cleanStart - 0.04, gain: 0.62, minimumGap: 0.80)
         }
 
         let accentTokens: Set<String> = [
@@ -124,15 +128,15 @@ public struct AudioPlanBuilder {
             case 2: kind = .impact
             default: kind = .pop
             }
-            append(kind: kind, at: cleanTime, gain: kind == .impact ? 0.26 : 0.30, minimumGap: 1.15)
+            append(kind: kind, at: cleanTime, gain: kind == .impact ? 0.62 : 0.58, minimumGap: 1.15)
             accentCount += 1
         }
 
         if placements.isEmpty {
-            append(kind: .pop, at: min(0.45, cleanDuration * 0.25), gain: 0.28, minimumGap: 0.20)
+            append(kind: .pop, at: min(0.45, cleanDuration * 0.25), gain: 0.58, minimumGap: 0.20)
         }
         if placements.count == 1, cleanDuration > 2.0 {
-            append(kind: .transition, at: min(cleanDuration - 0.45, 1.40), gain: 0.24, minimumGap: 0.80)
+            append(kind: .transition, at: min(cleanDuration - 0.45, 1.40), gain: 0.55, minimumGap: 0.80)
         }
 
         return placements.sorted { $0.cleanTime < $1.cleanTime }
@@ -178,6 +182,6 @@ public struct AudioPlanBuilder {
 
     private static func ratioOfAllCapsWords(in text: String) -> Double {
         let words = text.split(separator: " ").map(String.init)
-#error("RECON GAP: lines 181-196 of AudioPlanBuilder.swift unrecoverable")
+#error("RECON GAP: lines 185-200 of AudioPlanBuilder.swift unrecoverable")
         speechRanges: [SpeechRange],
-#error("RECON GAP: end of AudioPlanBuilder.swift unknown (file may continue past line 197)")
+#error("RECON GAP: end of AudioPlanBuilder.swift unknown (file may continue past line 201)")

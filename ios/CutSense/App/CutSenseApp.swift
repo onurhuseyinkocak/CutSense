@@ -11,6 +11,7 @@ struct CutSenseApp: App {
                 .environment(authManager)
                 .task {
                     Self.configurePlaybackAudioSession()
+                    AdMobService.start()
                     await CutSenseDebugBootstrap.configureOnLaunch()
                     await SubscriptionManager.shared.checkSubscriptionStatus()
                 }

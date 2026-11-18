@@ -47,8 +47,8 @@
 	<string>CutSense uses speech recognition to transcribe your video for intelligent editing.</string>
 	<key>PEXELS_API_KEY</key>
 	<string>$(PEXELS_API_KEY)</string>
-	<key>POLLINATIONS_API_KEY</key>
-	<string>$(POLLINATIONS_API_KEY)</string>
+	<key>GADApplicationIdentifier</key>
+	<string>ca-app-pub-6644397387275334~9083790273</string>
 	<key>SUPABASE_ANON_KEY</key>
 	<string>$(SUPABASE_ANON_KEY)</string>
 	<key>SUPABASE_URL</key>

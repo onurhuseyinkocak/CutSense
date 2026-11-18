@@ -40,6 +40,28 @@ struct RoughCutResult: Sendable {
     let keepSegments: [RoughCutDecision]
     let cutSegments: [RoughCutDecision]
     let reviewSegments: [RoughCutDecision]
+
+    /// Explicit no-cut result used by conservative templates and export tests.
+    static func intactClip(duration: Double) -> RoughCutResult {
+        let safeDuration = max(0, duration)
+        let decision = RoughCutDecision(
+            startTime: 0,
+            endTime: safeDuration,
+            action: .keep,
+            reason: "Intact source clip",
+            confidence: 1,
+            linkedTranscriptText: nil,
+            requiresReview: false
+        )
+        return RoughCutResult(
+            decisions: [decision],
+            originalDuration: safeDuration,
+            cleanDuration: safeDuration,
+            keepSegments: [decision],
+            cutSegments: [],
+            reviewSegments: []
+        )
+    }
 }
 
 struct TechInfluencerTimelinePlan: Sendable {

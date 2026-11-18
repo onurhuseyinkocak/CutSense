@@ -11,29 +11,17 @@ final class CutSenseSmokeUITests: XCTestCase {
         let app = XCUIApplication()
         app.launchEnvironment["CUTSENSE_DISABLE_ADS"] = "1"
         app.launch()
+        dismissOnboardingIfNecessary(in: app)
 
-        XCTAssertTrue(app.buttons["chooseVideoButton"].waitForExistence(timeout: 5), app.debugDescription)
-        XCTAssertTrue(app.buttons["language_en"].waitForExistence(timeout: 5), app.debugDescription)
-        XCTAssertTrue(app.buttons["language_tr"].waitForExistence(timeout: 5), app.debugDescription)
-
-        let englishTitle = app.staticTexts["Cut Silence"]
-        let turkishTitle = app.staticTexts["Sessizlik Kes"]
+        let studio = app.buttons["openUGCStudioButton"]
+        XCTAssertTrue(studio.waitForExistence(timeout: 8), app.debugDescription)
+        studio.tap()
         XCTAssertTrue(
-            englishTitle.waitForExistence(timeout: 5) || turkishTitle.waitForExistence(timeout: 5),
+            app.staticTexts["Auto UGC Düzenleyici"].waitForExistence(timeout: 8) ||
+            app.staticTexts["Auto UGC Editor"].exists,
             app.debugDescription
         )
-
-        if englishTitle.exists {
-            app.buttons["language_tr"].tap()
-            XCTAssertTrue(turkishTitle.waitForExistence(timeout: 8), app.debugDescription)
-            app.buttons["language_en"].tap()
-            XCTAssertTrue(englishTitle.waitForExistence(timeout: 8), app.debugDescription)
-        } else {
-            app.buttons["language_en"].tap()
-            XCTAssertTrue(englishTitle.waitForExistence(timeout: 8), app.debugDescription)
-            app.buttons["language_tr"].tap()
-            XCTAssertTrue(turkishTitle.waitForExistence(timeout: 8), app.debugDescription)
-        }
+        XCTAssertTrue(app.buttons["Video Seç"].exists || app.buttons["Choose Video"].exists, app.debugDescription)
     }
 
     @MainActor
@@ -42,7 +30,16 @@ final class CutSenseSmokeUITests: XCTestCase {
         app.launchEnvironment["CUTSENSE_DISABLE_ADS"] = "1"
         app.launchEnvironment["CUTSENSE_AUTORUN_VIDEO_URL"] = "/tmp/cutsense-stress/cutsense_5min_speech_silence.mp4"
         app.launch()
+        dismissOnboardingIfNecessary(in: app)
 
         XCTAssertTrue(app.buttons["newVideoButton"].waitForExistence(timeout: 120), app.debugDescription)
+    }
+
+    @MainActor
+    private func dismissOnboardingIfNecessary(in app: XCUIApplication) {
+        let skip = app.buttons["Skip"]
+        if skip.waitForExistence(timeout: 2) {
+            skip.tap()
+        }
     }
 }

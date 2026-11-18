@@ -308,7 +308,7 @@ struct QuickSilenceView: View {
     private func startPickedVideo(_ item: PhotosPickerItem) {
         let jobID = UUID()
         processingTask?.cancel()
-        importService.cancelImport(language: appLanguage)
+        importService.cancelImport()
         activeJobID = jobID
         processingTask = Task { await handlePick(item, jobID: jobID) }
     }
@@ -473,7 +473,7 @@ struct QuickSilenceView: View {
         processingAdTask = nil
         processingAdOverlay = nil
         completedProcessingAdBreaks = 0
-        importService.cancelImport(language: appLanguage)
+        importService.cancelImport()
         if returnToIdle {
             activeJobID = nil
             workEvents = []
@@ -504,7 +504,7 @@ struct QuickSilenceView: View {
             }
         }
 
-        await importService.importVideo(from: item, language: appLanguage)
+        await importService.importVideo(from: item)
         tracker.cancel()
         await tracker.value
         try Task.checkCancellation()

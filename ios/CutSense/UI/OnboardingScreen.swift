@@ -1,5 +1,4 @@
 import SwiftUI
-import Lottie
 
 struct OnboardingScreen: View {
     @AppStorage("hasSeenOnboarding") private var hasSeenOnboarding = false
@@ -9,19 +8,19 @@ struct OnboardingScreen: View {
     private let pages: [OnboardingPage] = [
         OnboardingPage(
             showLogo: true,
-            animation: "onboarding_welcome",
-            title: "Welcome to CutSense",
-            subtitle: "AI-powered video editing that understands your content"
+            animation: "sparkles.rectangle.stack",
+            title: "CutSense Studio",
+            subtitle: "Videonu otomatik düzenle, sonra her ayrıntıya kendin dokun."
         ),
         OnboardingPage(
-            animation: "onboarding_ai",
-            title: "Smart Analysis",
-            subtitle: "Automatically detects silences, filler words, restarts, and picks the best take"
+            animation: "waveform.badge.magnifyingglass",
+            title: "Konuşmayı anla",
+            subtitle: "Konuşma dilini seç, altyazıyı kontrol et, hatalı kelimeleri düzelt."
         ),
         OnboardingPage(
-            animation: "onboarding_export",
-            title: "One-Tap Export",
-            subtitle: "Add captions, choose a style, and export — all with a single tap"
+            animation: "timeline.selection",
+            title: "Son söz sende",
+            subtitle: "Klipleri, altyazıları, efektleri ve sesleri zaman çizgisinden düzenle."
         ),
     ]
 
@@ -38,6 +37,7 @@ struct OnboardingScreen: View {
                                 hasSeenOnboarding = true
                             }
                         }
+                        .accessibilityIdentifier("onboardingSkipButton")
                         .font(.subheadline.weight(.medium))
                         .foregroundStyle(.white.opacity(0.5))
                         .padding(.trailing, 24)
@@ -102,6 +102,7 @@ struct OnboardingScreen: View {
                         .foregroundStyle(.black)
                         .clipShape(RoundedRectangle(cornerRadius: 14))
                 }
+                .accessibilityIdentifier("onboardingContinueButton")
                 .padding(.horizontal, 24)
                 .padding(.bottom, 48)
             }
@@ -137,11 +138,11 @@ private struct OnboardingPageView: View {
             Spacer()
 
             ZStack {
-                LottieView(animation: .named(page.animation))
-                    .playbackMode(isActive ? .playing(.toProgress(1, loopMode: .loop)) : .paused)
-                    .animationSpeed(0.7)
+                Image(systemName: page.animation)
+                    .font(.system(size: 90, weight: .medium))
+                    .symbolRenderingMode(.hierarchical)
+                    .foregroundStyle(.mint)
                     .frame(width: 240, height: 240)
-                    .allowsHitTesting(false)
 
                 if page.showLogo {
                     Image("SplashLogo")

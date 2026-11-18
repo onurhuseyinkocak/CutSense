@@ -66,20 +66,9 @@ final class AuthManager {
             #endif
         }
 
-        #if DEBUG
-        // Dev convenience: auto sign in anonymously so the pipeline can persist
-        // to Supabase (RLS policies require a valid auth.uid()).
-        do {
-            let session = try await supabase.auth.signInAnonymously()
-            currentUser = session.user
-            isAuthenticated = true
-            print("[Auth] Anonymous sign-in OK userId=\(session.user.id)")
-            return
-        } catch {
-            print("[Auth] Anonymous sign-in failed: \(error)")
-        }
-        #endif
-
+        // Local editing must never depend on a network request or a billable
+        // backend session. Users can explicitly sign in from Account when they
+        // want cloud sync.
         isAuthenticated = false
         currentUser = nil
     }

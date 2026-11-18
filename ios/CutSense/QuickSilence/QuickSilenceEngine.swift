@@ -160,16 +160,18 @@ enum QuickSilenceEngine {
             options: intensity.analysisOptions
         ) { processedSeconds, duration in
             let audioFraction = duration > 0 ? min(max(processedSeconds / duration, 0), 1) : 0
-            progress(.update(
-                .analyzingAudio,
-                0.08 + audioFraction * 0.10,
-                appText(language, "Ses taranıyor", "Scanning audio"),
-                appText(
-                    language,
-                    "\(compactTime(processedSeconds, language: language)) / \(compactTime(duration, language: language)) ses penceresi işlendi.",
-                    "\(compactTime(processedSeconds, language: language)) / \(compactTime(duration, language: language)) of audio processed."
-                )
-            ))
+            Task { @MainActor in
+                progress(.update(
+                    .analyzingAudio,
+                    0.08 + audioFraction * 0.10,
+                    appText(language, "Ses taranıyor", "Scanning audio"),
+                    appText(
+                        language,
+                        "\(compactTime(processedSeconds, language: language)) / \(compactTime(duration, language: language)) ses penceresi işlendi.",
+                        "\(compactTime(processedSeconds, language: language)) / \(compactTime(duration, language: language)) of audio processed."
+                    )
+                ))
+            }
         }
         let duration = analysis.duration
         guard analysis.segments.contains(where: { $0.type == .speech || $0.type == .clipping }) else {
@@ -318,6 +320,6 @@ enum QuickSilenceEngine {
         let outputURL: URL?
 
         init(completed: Bool, failureMessage: String?, outputURL: URL? = nil) {
-#error("RECON GAP: lines 321-331 of QuickSilenceEngine.swift unrecoverable")
+#error("RECON GAP: lines 323-333 of QuickSilenceEngine.swift unrecoverable")
         init(_ session: AVAssetExportSession) {
-#error("RECON GAP: end of QuickSilenceEngine.swift unknown (file may continue past line 332)")
+#error("RECON GAP: end of QuickSilenceEngine.swift unknown (file may continue past line 334)")

@@ -412,8 +412,14 @@ final class CaptionOverlayCompositor: NSObject, AVVideoCompositing, @unchecked S
     // MARK: - Visual Effects
 
     private func applyVisualEffects(_ effects: [EditDecision], context: CGContext, width: Int, height: Int, currentTime: Double) {
+        // An EditDecision is a bounded event, not a permanent state. Previously
+        // finished zoom/transition decisions remained in this array and
+        // `effectProgress` clamped them to 1, so a single early zoom could stay
+        // applied for the remainder of the export. That is the source of the
+        // "one fast, unrelated zoom" observed in the device output.
+        let activeEffects = effects.filter { isActive($0, at: currentTime) }
         // Zoom effect: visible creator-style punch without losing framing.
-        if let zoom = effects
+        if let zoom = activeEffects
             .filter({ $0.type == .zoom })
             .max(by: { $0.intensity < $1.intensity }) {
             let progress = effectProgress(zoom, at: currentTime)
@@ -427,7 +433,7 @@ final class CaptionOverlayCompositor: NSObject, AVVideoCompositing, @unchecked S
         }
 
         // Cut transitions get actual camera motion, not just a black dip.
-        if let cut = effects.first(where: { $0.type == .cutTransition }) {
+        if let cut = activeEffects.first(where: { $0.type == .cutTransition }) {
             let progress = effectProgress(cut, at: currentTime)
             let curve = sin(progress * .pi)
             let scale = 1.0 + CGFloat(cut.intensity) * 0.11 * curve
@@ -440,7 +446,7 @@ final class CaptionOverlayCompositor: NSObject, AVVideoCompositing, @unchecked S
         }
 
         // Shake effect: short motion accent for impact moments.
-        if let shake = effects.first(where: { $0.type == .shake }) {
+        if let shake = activeEffects.first(where: { $0.type == .shake }) {
             let progress = effectProgress(shake, at: currentTime)
             let envelope = max(0, 1 - progress)
             let magnitude = CGFloat(shake.intensity) * 8.0 * envelope
@@ -452,7 +458,7 @@ final class CaptionOverlayCompositor: NSObject, AVVideoCompositing, @unchecked S
     }
 
     private func drawFlashEffect(_ effects: [EditDecision], context: CGContext, frameRect: CGRect, currentTime: Double) {
-        guard let flash = effects.first(where: { $0.type == .flash }) else { return }
+        guard let flash = effects.first(where: { $0.type == .flash && isActive($0, at: currentTime) }) else { return }
         let progress = effectProgress(flash, at: currentTime)
         let envelope: CGFloat
         if progress < 0.28 {
@@ -471,7 +477,7 @@ final class CaptionOverlayCompositor: NSObject, AVVideoCompositing, @unchecked S
     }
 
     private func drawColorShiftEffect(_ effects: [EditDecision], context: CGContext, frameRect: CGRect, currentTime: Double) {
-        guard let color = effects.first(where: { $0.type == .colorShift }) else { return }
+        guard let color = effects.first(where: { $0.type == .colorShift && isActive($0, at: currentTime) }) else { return }
         let progress = effectProgress(color, at: currentTime)
         let eased = smoothstep(progress)
         let reason = color.reason.lowercased()
@@ -492,7 +498,7 @@ final class CaptionOverlayCompositor: NSObject, AVVideoCompositing, @unchecked S
     }
 
     private func drawCutTransitionEffect(_ effects: [EditDecision], context: CGContext, frameRect: CGRect, currentTime: Double) {
-        guard let cut = effects.first(where: { $0.type == .cutTransition }) else { return }
+        guard let cut = effects.first(where: { $0.type == .cutTransition && isActive($0, at: currentTime) }) else { return }
         let progress = effectProgress(cut, at: currentTime)
         // V-shaped opacity: peaks at midpoint then fades out (brief black dip)
         let midAlpha = CGFloat(cut.intensity) * 0.34
@@ -513,6 +519,10 @@ final class CaptionOverlayCompositor: NSObject, AVVideoCompositing, @unchecked S
     private func effectProgress(_ effect: EditDecision, at time: Double) -> CGFloat {
         let elapsed = time - effect.time
         return CGFloat(min(max(elapsed / effect.duration, 0), 1))
+    }
+
+    private func isActive(_ effect: EditDecision, at time: Double) -> Bool {
+        time >= effect.time && time < effect.time + max(effect.duration, 0.001)
     }
 
     private func smoothstep(_ t: CGFloat) -> CGFloat {
@@ -579,7 +589,7 @@ final class CaptionOverlayCompositor: NSObject, AVVideoCompositing, @unchecked S
     }
 
     private func captionBaseYPosition(for caption: CaptionSegment, canvasHeight height: CGFloat) -> CGFloat {
-        height * CGFloat(CaptionLayoutTuning.baseYRatio(for: caption))
+        height * CGFloat(caption.verticalPosition)
     }
 
     // MARK: - Caption Drawing
@@ -624,7 +634,7 @@ final class CaptionOverlayCompositor: NSObject, AVVideoCompositing, @unchecked S
         paragraphStyle.alignment = config.alignment
         paragraphStyle.lineSpacing = max(2, 4 * metricScale)
 
-        let font = UIFont.systemFont(ofSize: max(28, config.fontSize * metricScale), weight: config.fontWeight)
+        let font = UIFont.systemFont(ofSize: max(28, config.fontSize * metricScale * CGFloat(caption.fontScale)), weight: config.fontWeight)
 
         let text = caption.text as NSString
         let textAttributes: [NSAttributedString.Key: Any] = [

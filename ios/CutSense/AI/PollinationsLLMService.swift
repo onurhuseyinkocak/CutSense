@@ -1,9 +1,12 @@
 import Foundation
 import os
 
-/// Pollinations.ai LLM chat completion API integration.
-/// Uses the provided API key for authenticated requests.
-/// Routes to cloud LLM when local Apple Intelligence is unavailable.
+/// Cloud fallback for the AI router.
+///
+/// The app never contains the Pollinations credential. Requests go through the
+/// `ai-completion` Supabase Edge Function, where the production credential is
+/// stored as an Edge Function secret. This keeps a recoverable app binary from
+/// becoming a reusable API-key distribution channel.
 struct PollinationsLLMService: Sendable {
 
     private static let logger = Logger(subsystem: "CutSense", category: "PollinationsLLM")
@@ -11,8 +14,8 @@ struct PollinationsLLMService: Sendable {
     // MARK: - Configuration
 
     struct Config: Sendable {
-        let apiKey: String
-        let baseURL: String
+        let endpointURL: URL?
+        let anonKey: String
         let model: String
         let maxTokens: Int
         let temperature: Double
@@ -20,8 +23,8 @@ struct PollinationsLLMService: Sendable {
         let maxRetries: Int
 
         static let `default` = Config(
-            apiKey: PollinationsLLMService.apiKeyFromInfoPlist(),
-            baseURL: "https://text.pollinations.ai",
+            endpointURL: PollinationsLLMService.edgeFunctionURL(),
+            anonKey: PollinationsLLMService.supabaseAnonKey(),
             model: "openai",
             maxTokens: 1024,
             temperature: 0.7,
@@ -36,16 +39,17 @@ struct PollinationsLLMService: Sendable {
         self.config = config
     }
 
-    /// Read Pollinations API key from Info.plist (populated by Secrets.xcconfig)
-    /// SECURITY NOTE: The key is compiled into Info.plist via xcconfig. For production,
-    /// move this to a backend proxy (Supabase Edge Function) to avoid exposing the key.
-    static func apiKeyFromInfoPlist() -> String {
-        guard let key = Bundle.main.object(forInfoDictionaryKey: "POLLINATIONS_API_KEY") as? String,
-              !key.isEmpty else {
-            Self.logger.error("POLLINATIONS_API_KEY not found in Info.plist — AI features disabled")
-            return ""
+    private static func edgeFunctionURL() -> URL? {
+        guard let base = Bundle.main.object(forInfoDictionaryKey: "SUPABASE_URL") as? String,
+              let url = URL(string: base + "/functions/v1/ai-completion") else {
+            logger.error("SUPABASE_URL is unavailable — cloud AI disabled")
+            return nil
         }
-        return key
+        return url
+    }
+
+    private static func supabaseAnonKey() -> String {
+        (Bundle.main.object(forInfoDictionaryKey: "SUPABASE_ANON_KEY") as? String) ?? ""
     }
 
 
@@ -97,23 +101,17 @@ struct PollinationsLLMService: Sendable {
         return await chatCompletion(messages: messages, jsonMode: jsonMode, temperature: temperature)
     }
 
-    /// Log API key prefix for debugging (first 8 chars only)
-    private var keyPrefix: String {
-        String(config.apiKey.prefix(8)) + "..."
-    }
-
     /// Send a multi-message chat completion request.
     func chatCompletion(
         messages: [ChatMessage],
         jsonMode: Bool = false,
         temperature: Double? = nil
     ) async -> String? {
-        guard !config.apiKey.isEmpty else {
-            Self.logger.error("Pollinations API key is empty — cannot make requests")
+        guard config.endpointURL != nil, !config.anonKey.isEmpty else {
+            Self.logger.error("Cloud AI endpoint is not configured")
             return nil
         }
 
-        Self.logger.info("Pollinations request using key: \(self.keyPrefix)")
         let request = ChatRequest(
             model: config.model,
             messages: messages,
@@ -179,15 +177,16 @@ struct PollinationsLLMService: Sendable {
     // MARK: - Private
 
     private func executeRequest(_ request: ChatRequest) async -> String? {
-        guard let url = URL(string: "\(config.baseURL)/v1/chat/completions") else {
-            Self.logger.error("Invalid URL")
+        guard let url = config.endpointURL else {
+            Self.logger.error("Cloud AI endpoint is unavailable")
             return nil
         }
 
         var urlRequest = URLRequest(url: url)
         urlRequest.httpMethod = "POST"
         urlRequest.timeoutInterval = config.timeoutSeconds
-        urlRequest.setValue("Bearer \(config.apiKey)", forHTTPHeaderField: "Authorization")
+        urlRequest.setValue("Bearer \(config.anonKey)", forHTTPHeaderField: "Authorization")
+        urlRequest.setValue(config.anonKey, forHTTPHeaderField: "apikey")
         urlRequest.setValue("application/json", forHTTPHeaderField: "Content-Type")
 
         do {

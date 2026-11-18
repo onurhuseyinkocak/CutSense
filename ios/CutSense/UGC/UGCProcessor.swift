@@ -1,299 +1,85 @@
-import Foundation
-@preconcurrency import AVFoundation
-import Speech
-import NaturalLanguage
-
-/// Main orchestrator for the Auto UGC Editor pipeline.
-/// Runs all analysis locally on device using Apple frameworks.
-actor UGCProcessor {
-    /// Cap on the best-effort AI transcript analysis so the core edit
-    /// pipeline is never blocked for long on a network call.
-    private static let aiAnalysisTimeoutNanos: UInt64 = 15_000_000_000
-
-    enum ProcessingError: Error, LocalizedError {
-        case noAudioTrack
-        case speechRecognitionUnavailable(String)
-        case noSpeechDetected
-        case transcriptionFailed(String)
-        case exportFailed(String)
-        case cancelled
-
-        var errorDescription: String? {
-            switch self {
-            case .noAudioTrack:
-                return "Bu videoda ses bulunamadı. / This video has no audio track."
-            case .speechRecognitionUnavailable(let detail):
-                return "Konuşma tanıma kullanılamıyor: \(detail) / Speech recognition unavailable: \(detail)"
-            case .noSpeechDetected:
-                return "Videoda konuşma tespit edilemedi. / No speech detected in this video."
-            case .transcriptionFailed(let msg):
-                return "Transkripsiyon başarısız: \(msg) / Transcription failed: \(msg)"
-            case .exportFailed(let msg):
-                return "Dışa aktarım başarısız: \(msg) / Export failed: \(msg)"
-            case .cancelled:
-                return "İşlem iptal edildi. / Process was cancelled."
-            }
-        }
-    }
-
-    struct ProcessingResult: Sendable {
-        let takeGroups: [UGCTakeGroup]
-        let editDecisions: [UGCEditDecision]
-        let timelineSegments: [TimelineSegment]
-        let outputURL: URL
-        let originalDuration: Double
-        let editedDuration: Double
-        let exportMetadata: ExportMetadata?
-        let faceResults: [UUID: FacePresenceAnalysisService.FacePresenceResult]
-        let silenceIntervals: [ClosedRange<Double>]
-    }
-
-    struct ExportMetadata: Sendable {
-        let successfulPreset: String
-        let exportDuration: TimeInterval
-        let numberOfAttempts: Int
-        let requiredFallback: Bool
-        let outputFileSize: Int64
-    }
-
-    enum Stage: String, Sendable {
-        case preparing
-        case analyzingAudio
-        case transcribing
-        case segmentingTakes
-        case findingRepeats
-        case checkingFraming
-        case scoring
-        case buildingEdit
-        case exporting
-        case done
-    }
-
-    struct ProgressUpdate: Sendable {
-        let stage: Stage
-        let fraction: Double
-        let title: String
-        let detail: String
-    }
-
-    // MARK: - Main Processing Pipeline
-
-    static func process(
-        url: URL,
-        intensity: UGCIntensity = .conservative,
-        language: AppLanguage = .tr,
-        captionStyle: String = "techKinetic",
-        sfxEnabled: Bool = true,
-        progress: @escaping @Sendable (ProgressUpdate) -> Void
-    ) async throws -> ProcessingResult {
-        let asset = AVURLAsset(url: url)
-        let duration = try await asset.load(.duration).seconds
-        let languageCode = language == .tr ? "tr" : "en"
-
-        progress(ProgressUpdate(
-            stage: .preparing,
-            fraction: 0.02,
-            title: appText(language, "Video hazırlanıyor", "Preparing video"),
-            detail: appText(language, "Video doğrulanıyor ve ses parçası kontrol ediliyor.", "Validating video and checking audio track.")
-        ))
-
-        let audioTracks = try await asset.loadTracks(withMediaType: .audio)
-        guard !audioTracks.isEmpty else { throw ProcessingError.noAudioTrack }
-
-        try Task.checkCancellation()
-
-        // Step 1: Analyze audio
-        progress(ProgressUpdate(
-            stage: .analyzingAudio,
-            fraction: 0.05,
-            title: appText(language, "Ses analiz ediliyor", "Analyzing audio"),
-            detail: appText(language, "Sessizlik ve konuşma bölgeleri tespit ediliyor.", "Detecting silence and speech regions.")
-        ))
-
-        let audioAnalysis = try await AudioAnalysisService.analyze(url: url)
-
-        try Task.checkCancellation()
-
-        // Step 2: Speech Recognition
-        progress(ProgressUpdate(
-            stage: .transcribing, fraction: 0.18,
-            title: appText(language, "Konuşma tanınıyor", "Transcribing speech"),
-            detail: appText(language, "Apple Speech ile cihaz üstünde transkripsiyon yapılıyor.", "On-device transcription using Apple Speech.")
-        ))
-
-        let recognizer = SFSpeechRecognizer(locale: language == .tr ? Locale(identifier: "tr-TR") : Locale(identifier: "en-US"))
-        let isOnDeviceSupported = recognizer?.supportsOnDeviceRecognition ?? false
-        if !isOnDeviceSupported {
-            throw ProcessingError.speechRecognitionUnavailable(
-                appText(language,
-                       "Cihaz üstü konuşma tanıma bu dil için kullanılamıyor. Lütfen farklı bir dil seçin veya Silence Cutter modunu kullanın.",
-                       "On-device speech recognition is not available for this language. Please try a different language or use Silence Cutter mode.")
-            )
-        }
-
-        let transcriptionService = SpeechTranscriptionService()
-        let locale = language == .tr ? Locale(identifier: "tr-TR") : Locale(identifier: "en-US")
-
-        let transcriptResult: TranscriptionResult
-        do {
-            transcriptResult = try await transcriptionService.transcribe(url: url, locale: locale)
-        } catch {
-            if let transcriptError = error as? SpeechTranscriptionService.TranscriptionError {
-                switch transcriptError {
-                case .notAuthorized:
-                    throw ProcessingError.speechRecognitionUnavailable("Konuşma tanıma izni gerekli / Speech recognition authorization required")
-                case .noRecognizer:
-                    throw ProcessingError.speechRecognitionUnavailable("Konuşma tanıyıcı kullanılamıyor / Speech recognizer not available")
-                case .emptyTranscript, .noUsableSpeech:
-                    throw ProcessingError.noSpeechDetected
-                default:
-                    throw ProcessingError.transcriptionFailed(error.localizedDescription)
-                }
-            }
-            throw ProcessingError.transcriptionFailed(error.localizedDescription)
-        }
-
-        try Task.checkCancellation()
-
-        // Step 3: Segment into takes
-        progress(ProgressUpdate(
-            stage: .segmentingTakes, fraction: 0.55,
-            title: appText(language, "Çekimler bölünüyor", "Segmenting takes"),
-            detail: appText(language, "Cümleler ve çekimler belirleniyor.", "Identifying sentences and takes.")
-        ))
-
-        let takes = TranscriptSegmentationService.segmentIntoTakes(
-            transcriptSegments: transcriptResult.segments,
-            audioSegments: audioAnalysis.segments,
-            language: languageCode
-        )
-
-        guard !takes.isEmpty else { throw ProcessingError.noSpeechDetected }
-
-        try Task.checkCancellation()
-
-        // Step 4: Find repeated takes
-        progress(ProgressUpdate(
-            stage: .findingRepeats, fraction: 0.62,
-            title: appText(language, "Tekrarlar bulunuyor", "Finding repeats"),
-            detail: appText(language, "Tekrarlanan çekimler gruplandırılıyor.", "Grouping repeated takes.")
-        ))
-
-        let groups = TakeSimilarityService.groupRepeatedTakes(
-            takes, language: languageCode, threshold: intensity.similarityThreshold
-        )
-
-        try Task.checkCancellation()
-
-        // Step 4.5: Face presence analysis
-        progress(ProgressUpdate(
-            stage: .checkingFraming, fraction: 0.66,
-            title: appText(language, "Kadraj kontrol ediliyor", "Checking framing"),
-            detail: appText(language, "Yüz görünürlüğü taranıyor.", "Scanning face visibility.")
-        ))
-
-        let faceService = FacePresenceAnalysisService()
-        var faceResults: [UUID: FacePresenceAnalysisService.FacePresenceResult] = [:]
-        let allTakes = groups.flatMap(\.takes).sorted { $0.startTime < $1.startTime }
-
-        let batchSize = 5
-        for batchStart in stride(from: 0, to: allTakes.count, by: batchSize) {
-            try Task.checkCancellation()
-            let batch = allTakes[batchStart..<min(batchStart + batchSize, allTakes.count)]
-            for take in batch {
-                let result = await faceService.analyzeFacePresence(asset: asset, startTime: take.startTime, endTime: take.endTime)
-                faceResults[take.id] = result
-                let takeIndex = allTakes.firstIndex(where: { $0.id == take.id }) ?? 0
-                let overallFraction = 0.66 + (Double(takeIndex + 1) / Double(allTakes.count)) * 0.04
-                progress(ProgressUpdate(
-                    stage: .checkingFraming, fraction: overallFraction,
-                    title: appText(language, "Kadraj kontrol ediliyor", "Checking framing"),
-                    detail: appText(language, "Çekim \(takeIndex + 1)/\(allTakes.count) yüz tarandı.", "Take \(takeIndex + 1)/\(allTakes.count) face scanned.")
-                ))
-            }
-        }
-
-        try Task.checkCancellation()
-
-        // Step 5: Score takes
-        progress(ProgressUpdate(
-            stage: .scoring, fraction: 0.70,
-            title: appText(language, "Çekimler puanlanıyor", "Scoring takes"),
-            detail: appText(language, "Her çekim yedi faktöre göre değerlendiriliyor.", "Each take is scored across seven factors.")
-        ))
-
-        let audioQuality = audioAnalysis.averageEnergy > 0
-            ? min(Float(audioAnalysis.averageEnergy * 5), 1.0) : 0.7
-
-        // AI-assisted transcript analysis (runs on best available provider)
-        // Best-effort: ~15s cap so a slow/dead network never stalls the core
-        // edit pipeline. AI failure must never stop the edit.
-        let aiRouter = AIProviderRouter()
-        let transcriptAnalysis = await withTaskGroup(of: AIProviderRouter.TranscriptAnalysis?.self) { group in
-            group.addTask {
-                await aiRouter.analyzeTranscript(
-                    transcript: transcriptResult.fullText,
-                    language: languageCode
-                )
-            }
-            // Timeout task returns nil after ~15s; first result wins, then cancel all
-            group.addTask {
-#error("RECON GAP: lines 241-284 of UGCProcessor.swift unrecoverable")
-        let editDecisions = UGCEditDecisionEngine.buildEditDecisions(
-            groups: scoredGroups, originalDuration: duration,
-            silenceIntervals: audioAnalysis.silenceIntervals, intensity: intensity
-        )
-
-        let timelineSegments = UGCEditDecisionEngine.buildTimelineSegments(from: editDecisions)
-
-        let paddedRanges = UGCEditDecisionEngine.paddedKeepRanges(
-            from: editDecisions, padStart: intensity.silencePadStart, padEnd: intensity.silencePadEnd
-        )
-
-        try Task.checkCancellation()
-
-        // Step 7: Build composition for export
-        progress(ProgressUpdate(
-            stage: .exporting, fraction: 0.85,
-            title: appText(language, "Video oluşturuluyor", "Creating video"),
-            detail: appText(language, "Düzenlenmiş video dışa aktarılıyor.", "Exporting the edited video.")
-        ))
-
-        let keepRanges = paddedRanges
-        guard !keepRanges.isEmpty else {
-            throw ProcessingError.exportFailed(appText(language, "Korunacak bölüm bulunamadı.", "No segments to keep found."))
-        }
-
-        let (outputURL, exportMeta) = try await exportWithFallback(
-            url: url, keepRanges: keepRanges,
-            transcript: transcriptResult, languageCode: languageCode,
-            captionStyle: captionStyle, sfxEnabled: sfxEnabled,
-            progress: { fraction, message in
-                let mapped = 0.85 + fraction * 0.14
-                progress(ProgressUpdate(
-                    stage: .exporting, fraction: mapped,
-                    title: appText(language, "Video oluşturuluyor", "Creating video"), detail: message
-                ))
-            }
-        )
-
-        try Task.checkCancellation()
-
-        progress(ProgressUpdate(
-            stage: .done, fraction: 1.0,
-            title: appText(language, "Hazır", "Ready"),
-            detail: appText(language, "Video düzenlendi.", "Video edited.")
-        ))
-
-        let editedDuration = keepRanges.reduce(0) { $0 + ($1.upperBound - $1.lowerBound) }
-
-        return ProcessingResult(
-            takeGroups: scoredGroups, editDecisions: editDecisions,
-            timelineSegments: timelineSegments, outputURL: outputURL,
-            originalDuration: duration, editedDuration: editedDuration,
+#error("RECON GAP: lines 1-133 of UGCProcessor.swift unrecoverable")
+        let supportedLocales = contentLanguage.recognitionLocales.filter {
+#error("RECON GAP: lines 135-373 of UGCProcessor.swift unrecoverable")
             exportMetadata: exportMeta, faceResults: faceResults,
-            silenceIntervals: audioAnalysis.silenceIntervals
+            silenceIntervals: audioAnalysis.silenceIntervals,
+            transcriptResult: transcriptResult,
+            detectedLanguageCode: languageCode
         )
+    }
+
+    private static func bestAutomaticTranscript(from candidates: [TranscriptionResult]) -> TranscriptionResult? {
+        candidates.max { lhs, rhs in
+            automaticTranscriptScore(lhs) < automaticTranscriptScore(rhs)
+        }
+    }
+
+    private static func automaticTranscriptScore(_ result: TranscriptionResult) -> Double {
+        let words = result.fullText.split(whereSeparator: { $0.isWhitespace }).count
+        let coverage = min(Double(words), 160) / 160
+#error("RECON GAP: lines 390-399 of UGCProcessor.swift unrecoverable")
+    }
+
+    /// Samples the lower caption-safe area in three source frames. We fail safe:
+    /// a readable text hit in two frames means we preserve the source captions
+    /// instead of burning a second layer into the export.
+    private static func detectBurnedCaptions(url: URL) async -> Bool {
+        let asset = AVURLAsset(url: url)
+        guard let duration = try? await asset.load(.duration).seconds, duration > 2 else { return false }
+        let generator = AVAssetImageGenerator(asset: asset)
+        generator.appliesPreferredTrackTransform = true
+        generator.maximumSize = CGSize(width: 720, height: 1280)
+        var hits = 0
+        for point in [duration * 0.18, duration * 0.52, duration * 0.82] {
+            guard let cgImage = try? generator.copyCGImage(at: CMTime(seconds: point, preferredTimescale: 600), actualTime: nil) else { continue }
+            let request = VNRecognizeTextRequest()
+            request.recognitionLevel = .fast
+            request.usesLanguageCorrection = false
+            request.regionOfInterest = CGRect(x: 0.04, y: 0.02, width: 0.92, height: 0.38)
+            let handler = VNImageRequestHandler(cgImage: cgImage)
+            try? handler.perform([request])
+            let textCount = (request.results ?? []).reduce(0) { $0 + (($1.topCandidates(1).first?.string.count ?? 0) >= 3 ? 1 : 0) }
+            if textCount > 0 { hits += 1 }
+        }
+        return hits >= 2
+    }
+
+    /// Re-renders the exact editable project state. This is deliberately separate
+    /// from analysis so a text/style/timing change never re-transcribes the source.
+    static func renderEdited(
+        sourceURL: URL,
+        editDecisions: [UGCEditDecision],
+        captions: [CaptionSegment],
+        intensity: UGCIntensity,
+        language: AppLanguage,
+        captionStyle: String,
+        captionsEnabled: Bool,
+        sfxEnabled: Bool,
+        progress: @escaping @Sendable (Double, String) -> Void
+    ) async throws -> (URL, ExportMetadata?) {
+        // This path renders explicit user edits from the Studio. Do not reapply
+        // automatic silence padding here: doing so silently changes a trim the
+        // user has made on the timeline. Initial AI processing still applies its
+        // pacing policy before opening the Studio; every subsequent Apply uses
+        // the exact non-destructive EDL boundaries the user sees.
+        let keepRanges = UGCEditDecisionEngine.keepRanges(from: editDecisions)
+        guard !keepRanges.isEmpty else {
+            throw ProcessingError.exportFailed(appText(language, "Dışa aktarılacak bir klip kalmadı.", "There are no clips left to export."))
+        }
+        let visibleCaptions = captionsEnabled ? captions.filter(\.isVisible) : []
+        let transcript = TranscriptionResult(fullText: "", segments: [], language: language == .tr ? "tr" : "en", overallConfidence: 0)
+        let result = try await exportWithFallback(
+            url: sourceURL,
+            keepRanges: keepRanges,
+            transcript: transcript,
+            languageCode: language == .tr ? "tr" : "en",
+            captionStyle: captionStyle,
+            captionsEnabled: captionsEnabled,
+            captionOverride: visibleCaptions,
+            sfxEnabled: sfxEnabled,
+            progress: progress
+        )
+        return (result.outputURL, result.metadata)
     }
 
     // MARK: - Build Composition
@@ -305,7 +91,78 @@ actor UGCProcessor {
         let asset = AVURLAsset(url: url)
         let srcVideo = try await asset.loadTracks(withMediaType: .video).first
         let srcAudio = try await asset.loadTracks(withMediaType: .audio).first
-#error("RECON GAP: lines 351-499 of UGCProcessor.swift unrecoverable")
+
+        guard let srcVideo else {
+            throw ProcessingError.exportFailed("Video parçası bulunamadı / No video track found")
+        }
+
+        let composition = AVMutableComposition()
+        guard let compVideo = composition.addMutableTrack(
+            withMediaType: .video, preferredTrackID: kCMPersistentTrackID_Invalid
+        ) else {
+            throw ProcessingError.exportFailed("Video zaman çizgisi oluşturulamadı / Could not create video timeline")
+        }
+
+        let compAudio: AVMutableCompositionTrack?
+        if srcAudio != nil {
+            compAudio = composition.addMutableTrack(
+                withMediaType: .audio, preferredTrackID: kCMPersistentTrackID_Invalid
+            )
+        } else {
+            compAudio = nil
+        }
+
+        compVideo.preferredTransform = try await srcVideo.load(.preferredTransform)
+        let scale: CMTimeScale = 600
+        var cursor = CMTime.zero
+
+        for range in keepRanges {
+            try Task.checkCancellation()
+            let start = CMTime(seconds: max(0, range.lowerBound), preferredTimescale: scale)
+            let end = CMTime(seconds: min(range.upperBound, 86400), preferredTimescale: scale)
+            let timeRange = CMTimeRange(start: start, end: end)
+            guard timeRange.duration.seconds > 0.05 else { continue }
+
+            do {
+                try compVideo.insertTimeRange(timeRange, of: srcVideo, at: cursor)
+                if let compAudio, let srcAudio {
+                    try compAudio.insertTimeRange(timeRange, of: srcAudio, at: cursor)
+                }
+                cursor = cursor + timeRange.duration
+            } catch {
+                throw ProcessingError.exportFailed("Zaman çizgisi oluşturulamadı: \(error.localizedDescription)")
+            }
+        }
+
+        guard cursor.seconds > 0.05 else {
+            throw ProcessingError.exportFailed("Oluşturulan video çok kısa / Output video is too short")
+        }
+
+        return (composition, compVideo, cursor)
+    }
+
+    // MARK: - Caption Segment Building
+
+    /// Remap source-timeline captions to clean-timeline using keepRanges.
+    private static func buildCaptionSegments(
+        transcript: TranscriptionResult,
+        keepRanges: [ClosedRange<Double>],
+        cleanDuration: Double,
+        captionStyle: String
+#error("RECON GAP: lines 531-623 of UGCProcessor.swift unrecoverable")
+        var cleanStart = 0.0
+        for range in keepRanges {
+            let duration = range.upperBound - range.lowerBound
+            guard duration > 0.05 else { continue }
+            ranges.append(SpeechRange(
+                sourceStart: range.lowerBound,
+                sourceEnd: range.upperBound,
+                cleanStart: cleanStart
+            ))
+            cleanStart += duration
+        }
+        return ranges
+    }
 
     // MARK: - SFX Plan Building
 
@@ -336,19 +193,56 @@ actor UGCProcessor {
         composition: AVMutableComposition,
         compVideoTrack: AVCompositionTrack,
         captions: [CaptionSegment],
+        keepRanges: [ClosedRange<Double>],
         cleanDuration: Double,
         renderSize: CGSize,
-        sourceURL: URL
+        sourceURL: URL,
+        captionStyle: String
     ) -> AVVideoComposition? {
-        guard !captions.isEmpty else { return nil }
+        var visualEffects = captions.compactMap { caption -> EditDecision? in
+            switch caption.sceneBehavior {
+            case .hookImpact, .punchIn:
+                return EditDecision(time: caption.startTime, duration: min(0.72, max(0.45, caption.endTime - caption.startTime)), type: .zoom, reason: "Caption controlled punch", intensity: 0.24)
+            case .subtleZoom, .conclusionHold:
+                return EditDecision(time: caption.startTime, duration: max(2.8, caption.endTime - caption.startTime), type: .zoom, reason: "Caption slow push", intensity: 0.20)
+            case .transitionWhoosh:
+                return EditDecision(time: caption.startTime, duration: 0.32, type: .cutTransition, reason: "Caption transition", intensity: 0.55)
+            case .focusBlur, .underlineReveal, .keywordLockOn:
+                return EditDecision(time: caption.startTime, duration: min(0.45, caption.endTime - caption.startTime), type: .colorShift, reason: "Caption focus", intensity: 0.38)
+            case .none: return nil
+            }
+        }
+        // Make cuts feel intentional. Caption-only effect planning meant a
+        // video with sparse text could contain no visual editorial cues at all.
+        // Add short, restrained transitions only where the source actually had
+        // a meaningful gap; never put a zoom on every sentence.
+        var cleanCursor = 0.0
+        for (index, range) in keepRanges.enumerated() {
+            defer { cleanCursor += range.upperBound - range.lowerBound }
+            guard index > 0 else { continue }
+            let previous = keepRanges[index - 1]
+            let sourceGap = range.lowerBound - previous.upperBound
+            guard sourceGap >= 0.32 else { continue }
+            visualEffects.append(EditDecision(
+                time: max(0, cleanCursor - 0.12), duration: 0.24,
+                type: .cutTransition, reason: "Timeline cut transition", intensity: 0.26
+            ))
+            if index.isMultiple(of: 2) {
+                visualEffects.append(EditDecision(
+                    time: cleanCursor, duration: 1.65,
+                    type: .zoom, reason: "Timeline gentle push", intensity: 0.12
+                ))
+            }
+        }
+        guard !captions.isEmpty || !visualEffects.isEmpty else { return nil }
 
         let instruction = CaptionCompositionInstruction(
             timeRange: CMTimeRange(start: .zero, duration: CMTime(seconds: cleanDuration, preferredTimescale: 600)),
             sourceTrackID: compVideoTrack.trackID,
             captions: captions,
-            editDecisions: [],
+            editDecisions: visualEffects,
             colorGrade: .none,
-            captionTheme: .premiumGold,
+            captionTheme: captionTheme(for: captionStyle),
             renderSize: renderSize,
             showWatermark: false,
             sourceTransform: .identity
@@ -360,6 +254,17 @@ actor UGCProcessor {
         videoComposition.renderSize = renderSize
         videoComposition.instructions = [instruction]
         return videoComposition
+    }
+
+    private static func captionTheme(for style: String) -> TemplateConfig.CaptionTheme {
+        switch style {
+        case "karaoke", "techKinetic", "hookImpact":
+            return .neonViral
+        case "subtitleMinimal", "lowerThird":
+            return .monoClean
+        default:
+            return .premiumGold
+        }
     }
 
     private static func detectRenderSize(from url: URL) async -> CGSize {
@@ -384,9 +289,11 @@ actor UGCProcessor {
         transcript: TranscriptionResult,
         languageCode: String,
         captionStyle: String,
+        captionsEnabled: Bool,
+        captionOverride: [CaptionSegment]? = nil,
         sfxEnabled: Bool,
         progress: @escaping @Sendable (Double, String) -> Void
-    ) async throws -> (outputURL: URL, metadata: ExportMetadata?) {
+    ) async throws -> (outputURL: URL, metadata: ExportMetadata?, captions: [CaptionSegment]) {
         let (composition, compVideo, cursor) = try await buildComposition(url: url, keepRanges: keepRanges)
         let cleanDuration = cursor.seconds
 
@@ -402,12 +309,14 @@ actor UGCProcessor {
         }
 
         // Build caption segments
-        let captions = buildCaptionSegments(
-            transcript: transcript,
-            keepRanges: keepRanges,
-            cleanDuration: cleanDuration,
-            captionStyle: captionStyle
-        )
+        let captions = captionOverride ?? (captionsEnabled
+            ? buildCaptionSegments(
+                transcript: transcript,
+                keepRanges: keepRanges,
+                cleanDuration: cleanDuration,
+                captionStyle: captionStyle
+            )
+            : [])
 
         // Build video composition with captions
         let renderSize = await detectRenderSize(from: url)
@@ -415,9 +324,11 @@ actor UGCProcessor {
             composition: composition,
             compVideoTrack: compVideo,
             captions: captions,
+            keepRanges: keepRanges,
             cleanDuration: cleanDuration,
             renderSize: renderSize,
-            sourceURL: url
+            sourceURL: url,
+            captionStyle: captionStyle
         )
 
         // Build audio mix with SFX
@@ -428,21 +339,23 @@ actor UGCProcessor {
                 cleanDuration: cleanDuration,
                 languageCode: languageCode
             )
-            if !sfxPlan.sfxPlacements.isEmpty {
-                do {
-                    let mixOutput = try await AudioMixBuilder.build(
-                        composition: composition,
-                        sourceVoiceTrack: compVideo,
-                        plan: sfxPlan,
-                        cleanDuration: cleanDuration
-                    )
-                    audioMix = mixOutput.audioMix
-                } catch {
-                    #if DEBUG
-                    print("[UGC] AudioMixBuilder failed: \(error), exporting without SFX")
-                    #endif
-                }
+            guard !sfxPlan.sfxPlacements.isEmpty else {
+                throw ProcessingError.exportFailed(appText(languageCode == "tr" ? .tr : .en,
+                                                           "Ses efekti planı oluşturulamadı. Sessiz export yapılmadı.",
+                                                           "Sound effects could not be planned. A silent export was not created."))
             }
+            let mixOutput = try await AudioMixBuilder.build(
+                composition: composition,
+                sourceVoiceTrack: compVideo,
+                plan: sfxPlan,
+                cleanDuration: cleanDuration
+            )
+            guard !mixOutput.sfxTrackIDs.isEmpty else {
+                throw ProcessingError.exportFailed(appText(languageCode == "tr" ? .tr : .en,
+                                                           "Ses efektleri videoya eklenemedi. Sessiz export yapılmadı.",
+                                                           "Sound effects could not be inserted. A silent export was not created."))
+            }
+            audioMix = mixOutput.audioMix
         }
 
         let outputDuration = cursor.seconds
@@ -476,35 +389,10 @@ actor UGCProcessor {
                 outputFileSize: result.outputFileSize
             )
 
-            return (outURL, meta)
+            return (outURL, meta, captions)
 
         } catch let error as VideoExportCoordinator.ExportError {
             throw ProcessingError.exportFailed(errorDescription(for: error, language: .tr))
         } catch {
             throw ProcessingError.exportFailed(error.localizedDescription)
-        }
-    }
-
-    // MARK: - Error Display
-
-    private static func errorDescription(for error: VideoExportCoordinator.ExportError, language: AppLanguage) -> String {
-        switch error {
-        case .noCompatiblePreset:
-            return appText(language, "Bu video için uyumlu dışa aktarım formatı bulunamadı.", "No compatible export format was found for this video.")
-        case .allPresetsFailed:
-            return appText(language, "Dışa aktarım tüm formatlarda başarısız oldu. Lütfen videoyu kısaltıp tekrar deneyin.", "Export failed on all formats. Please try a shorter video.")
-        case .sessionCreationFailed:
-            return appText(language, "Dışa aktarım oturumu oluşturulamadı.", "Could not create an export session.")
-        case .outputEmpty:
-            return appText(language, "Oluşturulan dosya boş görünüyor.", "The exported file appears to be empty.")
-        case .validationFailed:
-            return appText(language, "Dışa aktarılan video doğrulanamadı.", "The exported video could not be validated.")
-        case .notEnoughStorage:
-            return appText(language, "Yeterli depolama alanı yok.", "Not enough free storage space.")
-        case .cancelled:
-            return appText(language, "Dışa aktarım iptal edildi.", "Export was cancelled.")
-        case .unsupportedFormat(let detail):
-            return appText(language, "Desteklenmeyen format: \(detail)", "Unsupported format: \(detail)")
-        case .noVideoTrack:
-            return appText(language, "Düzenlenen video hiç video parçası içermiyor.", "The edited video contains no video track.")
-#error("RECON GAP: end of UGCProcessor.swift unknown (file may continue past line 700)")
+#error("RECON GAP: end of UGCProcessor.swift unknown (file may continue past line 868)")

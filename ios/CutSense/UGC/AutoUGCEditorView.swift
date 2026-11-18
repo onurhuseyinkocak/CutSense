@@ -15,12 +15,17 @@ struct AutoUGCEditorView: View {
     @State private var activeJobID: UUID?
     @State private var processingTask: Task<Void, Never>?
     @State private var intensity: UGCIntensity = .conservative
-    @State private var showReview = false
+    @State private var contentLanguage: UGCContentLanguage = .automatic
     @State private var isExporting = false
     @State private var saved = false
     @State private var exportedURL: URL?
-    @State private var captionStyle: String = "techKinetic"
+    // Start with a readable lower-safe caption treatment. The high-impact
+    // treatment remains an explicit style choice, rather than making every
+    // newly imported video look like an oversized meme subtitle.
+    @State private var captionStyle: String = "subtitleMinimal"
+    @State private var captionsEnabled = true
     @State private var sfxEnabled: Bool = true
+    @State private var processingStartedAt: Date?
 
     @AppStorage(AppLanguage.storageKey) private var languageRaw = AppLanguage.systemDefault.rawValue
 
@@ -55,9 +60,10 @@ struct AutoUGCEditorView: View {
                 processingContent(state: state)
             case .review:
                 if let project {
-                    UGCReviewScreen(
+                    UGCStudioView(
                         project: project,
                         onBack: { backToIdle() },
+                        onRender: { renderProjectEdits() },
                         onExport: { startExport() },
                         onReanalyze: { reanalyze() }
                     )
@@ -86,6 +92,7 @@ struct AutoUGCEditorView: View {
             importSection
             Spacer(minLength: 0)
             intensityPicker
+            contentLanguagePicker
             LanguageSwitcher()
         }
         .padding(.horizontal, 24)
@@ -112,7 +119,8 @@ struct AutoUGCEditorView: View {
     }
 
     private var importSection: some View {
-        VStack(spacing: 14) {
+        let chooseVideoTitle = appText(language, "Video Seç", "Choose Video")
+        return VStack(spacing: 14) {
             PhotosPicker(selection: $pickerItem, matching: .videos, photoLibrary: .shared()) {
                 VStack(spacing: 12) {
                     Image(systemName: "plus.circle.fill")
@@ -120,7 +128,7 @@ struct AutoUGCEditorView: View {
                         .foregroundStyle(
                             LinearGradient(colors: [.purple, .pink], startPoint: .leading, endPoint: .trailing)
                         )
-                    Text(appText(language, "Video Seç", "Choose Video"))
+                    Text(chooseVideoTitle)
                         .font(.headline.weight(.bold))
                 }
                 .frame(maxWidth: .infinity)
@@ -160,231 +168,148 @@ struct AutoUGCEditorView: View {
         .frame(maxWidth: .infinity)
     }
 
-    // MARK: - Processing
-
-    private func processingContent(state: ProcessingState) -> some View {
-        ScrollView(showsIndicators: false) {
-            VStack(spacing: 18) {
-                VStack(spacing: 10) {
-                    ProgressView(value: state.progress)
-                        .tint(.white)
-                        .frame(maxWidth: 280)
-
-                    Text(state.title)
-                        .font(.system(.headline, design: .rounded).weight(.bold))
-                        .foregroundStyle(.white)
-                    Text(state.detail)
-                        .font(.footnote)
-                        .multilineTextAlignment(.center)
-                        .foregroundStyle(.white.opacity(0.65))
-                    Text("\(Int(state.progress * 100))%")
-                        .font(.system(.title3, design: .rounded).weight(.semibold))
-                        .foregroundStyle(.white)
+    private var contentLanguagePicker: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text(appText(language, "Videodaki konuşma dili", "Spoken language"))
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(.white.opacity(0.7))
+            Picker("", selection: $contentLanguage) {
+                ForEach(UGCContentLanguage.allCases) { item in
+                    Text(item.title(for: language)).tag(item)
                 }
-                .padding(.top, 60)
-
-                WorkTimelineUGC(events: state.events)
-                    .padding(.horizontal, 24)
-
-                Button {
-                    cancelProcessing()
-                } label: {
-                    Label(appText(language, "İptal", "Cancel"), systemImage: "xmark.circle.fill")
-                        .frame(maxWidth: .infinity)
-                }
-                .buttonStyle(.plain)
-                .font(.headline)
-                .padding(.vertical, 14)
-                .frame(maxWidth: .infinity)
-                .background(.white.opacity(0.08))
-                .foregroundStyle(.white)
-                .clipShape(RoundedRectangle(cornerRadius: 14))
-                .padding(.horizontal, 24)
             }
-        }
-        .padding(.vertical, 44)
-        .background(Color(red: 0.05, green: 0.06, blue: 0.09).ignoresSafeArea())
-    }
-
-    // MARK: - Exporting
-
-    private var exportingContent: some View {
-        VStack(spacing: 20) {
-            ProgressView()
-                .tint(.white)
-                .scaleEffect(1.5)
-            Text(appText(language, "Dışa aktarılıyor…", "Exporting…"))
-                .font(.headline)
-                .foregroundStyle(.white)
+#error("RECON GAP: lines 181-273 of AutoUGCEditorView.swift unrecoverable")
+                        statItem(value: "-" + project.timeSavedFormatted, label: appText(language, "Kesildi", "Removed"))
+#error("RECON GAP: lines 275-349 of AutoUGCEditorView.swift unrecoverable")
+                .foregroundStyle(.white.opacity(0.8))
+                .padding(.horizontal, 24)
+            Button {
+                backToIdle()
+            } label: {
+                Text(appText(language, "Tekrar Dene", "Try Again"))
+                    .font(.headline)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 16)
+                    .background(.white)
+                    .foregroundStyle(.black)
+                    .clipShape(RoundedRectangle(cornerRadius: 14))
+            }
+            .padding(.horizontal, 24)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Color(red: 0.05, green: 0.06, blue: 0.09).ignoresSafeArea())
     }
 
-    // MARK: - Done
+    // MARK: - Actions
 
-    private func doneContent(url: URL) -> some View {
-        ScrollView(showsIndicators: false) {
-            VStack(spacing: 20) {
-                Image(systemName: "checkmark.circle.fill")
-                    .font(.system(size: 48))
-                    .foregroundStyle(.green)
-
-                Text(appText(language, "Düzenleme Tamamlandı", "Edit Complete"))
-                    .font(.system(size: 28, weight: .bold, design: .rounded))
-                    .foregroundStyle(.white)
-
-                if let project {
-                    HStack(spacing: 20) {
-                        statItem(value: project.originalDurationFormatted, label: appText(language, "Orijinal", "Original"))
-                        statItem(value: project.editedDurationFormatted, label: appText(language, "Düzenlenmiş", "Edited"))
-#error("RECON GAP: lines 241-337 of AutoUGCEditorView.swift unrecoverable")
     private func startProcessing(_ item: PhotosPickerItem) {
-#error("RECON GAP: lines 339-344 of AutoUGCEditorView.swift unrecoverable")
-    private func handleProcessing(_ item: PhotosPickerItem, jobID: UUID) async {
-#error("RECON GAP: lines 346-375 of AutoUGCEditorView.swift unrecoverable")
-            let project = UGCEditProject(sourceVideoURL: inputURL, originalDuration: result.originalDuration)
-#error("RECON GAP: lines 377-406 of AutoUGCEditorView.swift unrecoverable")
-    private func importVideo(_ item: PhotosPickerItem, jobID: UUID) async throws -> URL {
-#error("RECON GAP: lines 408-469 of AutoUGCEditorView.swift unrecoverable")
-                switch result {
-                case .success:
-                    saved = true
-                case .failure(let error):
-                    #if DEBUG
-                    print("[UGC] Save failed: \(error.localizedDescription)")
-                    #endif
-                }
-            }
-        }
-    }
-
-    private func reanalyze() {
-        guard let inputURL = project?.sourceVideoURL else { return }
-        // Sync settings from project before clearing
-        if let proj = project {
-            captionStyle = proj.selectedCaptionStyle
-            sfxEnabled = proj.sfxEnabled
-        }
         let jobID = UUID()
         processingTask?.cancel()
         activeJobID = jobID
-        project = nil
-        exportedURL = nil
-        workEvents = []
-        processingTask = Task { await handleReanalysis(url: inputURL, jobID: jobID) }
+        processingTask = Task { await handleProcessing(item, jobID: jobID) }
     }
 
-    private func handleReanalysis(url: URL, jobID: UUID) async {
+    private func handleProcessing(_ item: PhotosPickerItem, jobID: UUID) async {
+        processingStartedAt = Date()
         let lang = await safeLanguage()
         phase = .processing(ProcessingState(
             stage: .preparing,
             progress: 0.01,
-            title: appText(lang, "Yeniden analiz ediliyor", "Re-analyzing"),
-            detail: appText(lang, "Video yeniden işleniyor.", "Video is being reprocessed."),
+            title: appText(lang, "Video içe aktarılıyor", "Importing video"),
+            detail: appText(lang, "Dosya kaynağı hazırlanıyor.", "Preparing the selected file."),
             events: []
         ))
 
         do {
+            let inputURL = try await importVideo(item, jobID: jobID)
+            guard isActive(jobID) else { return }
+
+            workEvents = []
             let currentLang = await safeLanguage()
             let result = try await UGCProcessor.process(
-                url: url,
+                url: inputURL,
                 intensity: intensity,
                 language: currentLang,
+                contentLanguage: contentLanguage,
                 captionStyle: captionStyle,
+                captionsEnabled: captionsEnabled,
                 sfxEnabled: sfxEnabled
             ) { [jobID] update in
                 Task { @MainActor in
                     self.applyProgress(update, jobID: jobID)
                 }
             }
+
             guard isActive(jobID) else { return }
 
-            let project = UGCEditProject(sourceVideoURL: url, originalDuration: result.originalDuration)
+            // Create project state
+            let project = UGCEditProject(sourceVideoURL: inputURL, originalDuration: result.originalDuration)
             project.takeGroups = result.takeGroups
             project.editDecisions = result.editDecisions
             project.timelineSegments = result.timelineSegments
+            project.captions = result.captions
+            project.transcriptResult = result.transcriptResult
             project.finalCompositionURL = result.outputURL
             project.phase = .reviewReady
             project.intensity = intensity
             project.exportMetadata = result.exportMetadata
             project.faceResults = result.faceResults
             project.silenceIntervals = result.silenceIntervals
+            project.selectedCaptionStyle = captionStyle
+            project.captionsEnabled = captionsEnabled
+            project.sourceLikelyHasBurnedCaptions = result.sourceLikelyHasBurnedCaptions
+            project.sfxEnabled = sfxEnabled
             self.project = project
+
             exportedURL = result.outputURL
             phase = .review
+
         } catch is CancellationError {
             if isActive(jobID) { backToIdle() }
         } catch {
             guard isActive(jobID) else { return }
-            let msg = (error as? UGCProcessor.ProcessingError)?.errorDescription ?? error.localizedDescription
-            phase = .failed(msg)
-        }
-    }
-
-    private func cancelProcessing() {
-        processingTask?.cancel()
-        processingTask = nil
-        activeJobID = nil
-        workEvents = []
-        phase = .idle
-    }
-
-    private func backToIdle() {
-        processingTask?.cancel()
-        processingTask = nil
-        activeJobID = nil
-        project = nil
-        exportedURL = nil
-        saved = false
-        isExporting = false
-        workEvents = []
-        phase = .idle
-    }
-
-    private func isActive(_ jobID: UUID) -> Bool {
-        activeJobID == jobID && !Task.isCancelled
-    }
-
-    // Accessed from processing closures that run on background actors.
-    // Use `language` directly only in view body or MainActor-marked functions.
-    private var language: AppLanguage {
-        AppLanguage.value(from: languageRaw)
-    }
-
-    /// Safely read the current language from any context by hopping to MainActor.
-    private nonisolated func safeLanguage() async -> AppLanguage {
-        await MainActor.run { AppLanguage.value(from: languageRaw) }
-    }
-
-
-}
-
-// MARK: - Supporting Views
-
-private struct WorkTimelineUGC: View {
-    let events: [String]
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            ForEach(Array(events.enumerated()), id: \.offset) { index, event in
-                HStack(alignment: .top, spacing: 9) {
-                    Circle()
-                        .fill(index == 0 ? .white : .white.opacity(0.35))
-                        .frame(width: 7, height: 7)
-                        .padding(.top, 5)
-                    Text(event)
-                        .font(.caption)
-                        .foregroundStyle(index == 0 ? .white.opacity(0.9) : .white.opacity(0.55))
-                        .lineLimit(2)
-                    Spacer(minLength: 0)
-                }
+            let message: String
+            if let procError = error as? UGCProcessor.ProcessingError {
+                message = procError.errorDescription ?? error.localizedDescription
+            } else if let transcriptError = error as? SpeechTranscriptionService.TranscriptionError {
+                message = transcriptError.errorDescription ?? error.localizedDescription
+            } else {
+                message = error.localizedDescription
             }
+            phase = .failed(message)
         }
-        .padding(14)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(.white.opacity(0.07))
-        .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: 8, style: .continuous).stroke(.white.opacity(0.1)))
     }
-}
+
+    private func importVideo(_ item: PhotosPickerItem, jobID: UUID) async throws -> URL {
+        await importService.importVideo(from: item)
+        try Task.checkCancellation()
+        guard isActive(jobID) else { throw CancellationError() }
+
+        if let errorMessage = importService.errorMessage {
+            throw NSError(domain: "UGC", code: 1, userInfo: [NSLocalizedDescriptionKey: errorMessage])
+        }
+        guard let url = importService.importedVideoURL else {
+            let lang2 = await safeLanguage()
+            throw NSError(domain: "UGC", code: 2, userInfo: [NSLocalizedDescriptionKey: appText(lang2, "Video yüklenemedi.", "Could not load video.")])
+#error("RECON GAP: lines 460-512 of AutoUGCEditorView.swift unrecoverable")
+                let result = try await UGCProcessor.renderEdited(
+#error("RECON GAP: lines 514-518 of AutoUGCEditorView.swift unrecoverable")
+                    captionStyle: project.selectedCaptionStyle,
+                    captionsEnabled: project.captionsEnabled,
+                    sfxEnabled: project.sfxEnabled
+#error("RECON GAP: lines 522-543 of AutoUGCEditorView.swift unrecoverable")
+                    #if DEBUG
+#error("RECON GAP: lines 545-555 of AutoUGCEditorView.swift unrecoverable")
+            captionStyle = proj.selectedCaptionStyle
+            captionsEnabled = proj.captionsEnabled
+            sfxEnabled = proj.sfxEnabled
+#error("RECON GAP: lines 559-585 of AutoUGCEditorView.swift unrecoverable")
+                captionStyle: captionStyle,
+                captionsEnabled: captionsEnabled,
+                sfxEnabled: sfxEnabled
+#error("RECON GAP: lines 589-606 of AutoUGCEditorView.swift unrecoverable")
+            project.selectedCaptionStyle = captionStyle
+            project.captionsEnabled = captionsEnabled
+            project.sourceLikelyHasBurnedCaptions = result.sourceLikelyHasBurnedCaptions
+            project.sfxEnabled = sfxEnabled
+#error("RECON GAP: end of AutoUGCEditorView.swift unknown (file may continue past line 610)")

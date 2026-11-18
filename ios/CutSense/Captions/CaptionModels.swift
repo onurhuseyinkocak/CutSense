@@ -9,6 +9,12 @@ struct CaptionSegment: Sendable, Identifiable {
     var role: CaptionRole
     var style: CaptionStyle
     var sceneBehavior: CaptionSceneBehavior
+    /// Hidden captions are retained for undo and can be restored in the studio.
+    var isVisible: Bool = true
+    /// User-facing presentation controls, persisted in the editable project.
+    var fontScale: Double = 1.0
+    /// Relative canvas Y, constrained to the readable lower-safe region on render.
+    var verticalPosition: Double = 0.74
     /// Per-word timing for accurate karaoke: [(word, startTime, duration)]
     var wordTimings: [(word: String, start: Double, duration: Double)] = []
 
@@ -20,6 +26,9 @@ struct CaptionSegment: Sendable, Identifiable {
         role: CaptionRole,
         style: CaptionStyle,
         sceneBehavior: CaptionSceneBehavior = .none,
+        isVisible: Bool = true,
+        fontScale: Double = 1.0,
+        verticalPosition: Double = 0.74,
         wordTimings: [(word: String, start: Double, duration: Double)] = []
     ) {
         self.id = id
@@ -29,6 +38,9 @@ struct CaptionSegment: Sendable, Identifiable {
         self.role = role
         self.style = style
         self.sceneBehavior = sceneBehavior
+        self.isVisible = isVisible
+        self.fontScale = fontScale
+        self.verticalPosition = verticalPosition
         self.wordTimings = wordTimings
     }
 }

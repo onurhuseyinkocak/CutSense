@@ -50,6 +50,8 @@ func appText(_ language: AppLanguage, _ tr: String, _ en: String) -> String {
 extension AudioAnalysisError {
     func message(for language: AppLanguage) -> String {
         switch self {
+        case .noAudioTrack:
+            appText(language, "Bu videoda ses parçası yok. Konuşma içeren bir video seç.", "This video has no audio track. Choose a video with speech.")
         case .cannotAddAudioOutput:
             appText(language, "Ses analizörü video sesini okuyamadı.", "The audio analyzer could not read this video's audio.")
         case .readerStartFailed(let message):

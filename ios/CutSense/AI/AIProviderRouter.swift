@@ -1,5 +1,8 @@
 import Foundation
 import os
+#if canImport(FoundationModels)
+import FoundationModels
+#endif
 
 /// Routes AI requests between Apple Foundation Models (local) and Pollinations (cloud).
 ///
@@ -78,16 +81,14 @@ struct AIProviderRouter: Sendable {
             ) {
                 return result
             }
-            // Fallback to Pollinations
-            Self.logger.warning("Apple Foundation Model failed, falling back to Pollinations")
-            return await pollinations.chatCompletion(
-                systemPrompt: systemPrompt,
-                userMessage: userMessage,
-                jsonMode: jsonMode,
-                temperature: temperature
-            )
+            Self.logger.warning("Apple Foundation Model failed; zero-cost local fallback selected")
+            return nil
 
         case .pollinations:
+            guard DeviceCapabilityDetector.cloudFallbackEnabled else {
+                Self.logger.info("Cloud AI is disabled by the zero-cost policy")
+                return nil
+            }
             return await pollinations.chatCompletion(
                 systemPrompt: systemPrompt,
                 userMessage: userMessage,
@@ -112,10 +113,11 @@ struct AIProviderRouter: Sendable {
 
         switch primary {
         case .appleFoundationModel:
-            // Apple Foundation Models only supports single-message completion currently
-            return await pollinations.chatCompletion(messages: messages, jsonMode: jsonMode, temperature: temperature)
+            // Multi-message cloud inference is disabled in the zero-cost build.
+            return nil
 
         case .pollinations:
+            guard DeviceCapabilityDetector.cloudFallbackEnabled else { return nil }
             return await pollinations.chatCompletion(messages: messages, jsonMode: jsonMode, temperature: temperature)
 
         case .heuristicOnly:
@@ -144,14 +146,10 @@ struct AIProviderRouter: Sendable {
             ) {
                 return result
             }
-            // Fallback to Pollinations
-            return await pollinations.structuredCompletion(
-                systemPrompt: systemPrompt,
-                userMessage: userMessage,
-                responseType: responseType
-            )
+            return nil
 
         case .pollinations:
+            guard DeviceCapabilityDetector.cloudFallbackEnabled else { return nil }
             return await pollinations.structuredCompletion(
                 systemPrompt: systemPrompt,
                 userMessage: userMessage,
@@ -176,12 +174,30 @@ struct AIProviderRouter: Sendable {
             return nil
         }
 
-        // TODO: Apple Foundation Models on-device inference.
-        // Apple has not yet published a public API for on-device LLM inference.
-        // When it ships (likely tied to an Apple Intelligence system-model API),
-        // integrate it HERE. Until then, returning nil routes to Pollinations,
-        // which keeps AI features working on every device without a hard dependency.
-        Self.logger.info("Apple Foundation Models API not yet public — falling back to Pollinations")
+        #if canImport(FoundationModels)
+        if #available(iOS 26.0, *) {
+            let model = SystemLanguageModel.default
+            guard model.isAvailable else {
+                Self.logger.info("Apple Foundation Model is not ready")
+                return nil
+            }
+
+            do {
+                let session = LanguageModelSession(model: model, instructions: systemPrompt)
+                let options = GenerationOptions(
+                    temperature: temperature,
+                    maximumResponseTokens: jsonMode ? 1_024 : 512
+                )
+                let response = try await session.respond(to: userMessage, options: options)
+                return response.content.trimmingCharacters(in: .whitespacesAndNewlines)
+            } catch {
+                Self.logger.error("Apple Foundation Model failed: \(error.localizedDescription)")
+                return nil
+            }
+        }
+        #endif
+
+        Self.logger.info("Foundation Models is unavailable on this OS")
         return nil
     }
 

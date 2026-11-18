@@ -1,12 +1,20 @@
 import Foundation
 import DeviceCheck
 import os
+#if canImport(FoundationModels)
+import FoundationModels
+#endif
 
 /// Detects whether the device can run Apple Intelligence / on-device LLM locally.
 /// iPhone 15 Pro Max (A17 Pro) and newer get local AI; older devices fall back to Pollinations.
 enum DeviceCapabilityDetector {
 
     private static let logger = Logger(subsystem: "CutSense", category: "DeviceCapability")
+
+    /// CutSense ships as a zero-cost product. Cloud generation can incur
+    /// provider or infrastructure charges, so it is intentionally disabled.
+    /// Older devices use the deterministic on-device edit heuristics instead.
+    static let cloudFallbackEnabled = false
 
     // MARK: - Chip Detection
 
@@ -35,8 +43,9 @@ enum DeviceCapabilityDetector {
             return .appleIntelligenceCapable
         }
 
-        // iPhone 15 Pro / Pro Max (A17 Pro) — iPhone16,1 / iPhone16,2 identifiers
-        if hwMachine == "iPhone16,1" || hwMachine == "iPhone16,2" {
+        // Product policy: only iPhone 15 Pro Max and later use the local AI path.
+        // iPhone16,1 is the 15 Pro; it deliberately uses the cloud fallback.
+        if hwMachine == "iPhone16,2" {
             return .appleIntelligenceCapable
         }
 
@@ -59,11 +68,12 @@ enum DeviceCapabilityDetector {
     /// Whether Apple Intelligence features are actually enabled on this device
     /// (user can toggle it off in Settings > Apple Intelligence & Siri).
     static var isAppleIntelligenceEnabled: Bool {
-        // On iOS 18.1+, check if the system reports AFM availability
-        // For now, we use chip tier as the primary signal
-        if #available(iOS 18.1, *) {
-            return hasAppleIntelligence
+        guard hasAppleIntelligence else { return false }
+        #if canImport(FoundationModels)
+        if #available(iOS 26.0, *) {
+            return SystemLanguageModel.default.isAvailable
         }
+        #endif
         return false
     }
 
@@ -93,8 +103,9 @@ enum DeviceCapabilityDetector {
             return .appleFoundationModel
         }
 
-        // If local isn't available but network is, use Pollinations
-        if networkAvailable {
+        // A cloud model is an opt-in future capability, never an implicit
+        // fallback in the zero-cost build.
+        if cloudFallbackEnabled && networkAvailable {
             return .pollinations
         }
 

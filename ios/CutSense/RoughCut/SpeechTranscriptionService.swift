@@ -488,7 +488,11 @@ actor SpeechTranscriptionService {
         durationSeconds: Double,
         primaryLanguage: String
     ) -> Bool {
-        guard primaryLanguage != "en", durationSeconds > 0, durationSeconds <= 90 else { return false }
+        // The editor language is not necessarily the spoken language. For a
+        // Turkish-first device, always score an English pass as well instead
+        // of trusting a plausible-but-wrong Turkish transcription.
+        guard primaryLanguage != "en", durationSeconds > 0, durationSeconds <= 180 else { return false }
+        if result.fullText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty { return true }
         let text = result.fullText.lowercased()
         let containsEnglishProductTerms = [
             "ai",
@@ -501,9 +505,10 @@ actor SpeechTranscriptionService {
             "startup"
         ].contains { text.localizedStandardContains($0) }
 
-        if Self.artifactRiskScore(in: result.fullText) > 0 { return true }
-        if result.overallConfidence < 0.82 { return true }
-        return containsEnglishProductTerms && result.overallConfidence < 0.88
+        // A language mismatch can still produce an apparently high confidence
+        // transcript, so confidence alone must never suppress the comparison.
+        _ = containsEnglishProductTerms
+        return true
     }
 
     nonisolated private static func preferredTranscript(

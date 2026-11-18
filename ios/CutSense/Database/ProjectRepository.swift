@@ -8,6 +8,7 @@ struct ProjectRepository: Sendable {
     @MainActor
     func fetchProjects(userId: UUID) async throws -> [Project] {
         let local = LocalProjectStore.load(userId: userId)
+        guard SupabaseConfig.isConfigured else { return local }
         do {
             let cloud: [Project] = try await supabase
                 .from("projects")
@@ -48,6 +49,7 @@ struct ProjectRepository: Sendable {
             updatedAt: now
         )
         LocalProjectStore.upsert(localProject)
+        guard SupabaseConfig.isConfigured else { return localProject }
 
         // Best-effort cloud insert. We do NOT throw on failure.
         let request = CreateProjectRequest(
@@ -87,6 +89,7 @@ struct ProjectRepository: Sendable {
             project.status = status
         }
 
+        guard SupabaseConfig.isConfigured else { return }
         // Best-effort cloud update; local store is already the offline source of truth.
         do {
             try await supabase
@@ -106,6 +109,11 @@ struct ProjectRepository: Sendable {
         // Delete from local store first so UI reflects deletion even if cloud is unreachable
         LocalProjectStore.deleteById(projectId)
         PipelineArtifactStore.delete(projectId: projectId)
+
+        guard SupabaseConfig.isConfigured else {
+            if let path = localVideoPath { try? FileManager.default.removeItem(atPath: path) }
+            return
+        }
 
         // Best-effort cloud cascade
         do {

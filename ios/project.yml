@@ -11,12 +11,12 @@ packages:
   Supabase:
     url: https://github.com/supabase/supabase-swift
     from: "2.0.0"
-  Lottie:
-    url: https://github.com/airbnb/lottie-ios
-    from: "4.4.0"
   WhisperKit:
     url: https://github.com/argmaxinc/WhisperKit
     from: "0.10.0"
+  GoogleMobileAds:
+    url: https://github.com/googleads/swift-package-manager-google-mobile-ads.git
+    from: "13.7.0"
 
 configFiles:
   Debug: Secrets.xcconfig
@@ -30,8 +30,9 @@ targets:
       - path: CutSense
         excludes:
           - "Tests/**"
-          - "Ads/**"
-          - "QuickSilence/**"
+          # Real Ads live in Ads/. Keep the legacy no-op definitions out so
+          # QuickSilence uses the production AdMob implementation.
+          - "QuickSilence/AdStubs.swift"
           - "**/*.bak"
           - "**/*.DS_Store"
           - "**/._*"
@@ -117,7 +118,7 @@ targets:
         SUPABASE_URL: $(SUPABASE_URL)
         SUPABASE_ANON_KEY: $(SUPABASE_ANON_KEY)
         PEXELS_API_KEY: $(PEXELS_API_KEY)
-        POLLINATIONS_API_KEY: $(POLLINATIONS_API_KEY)
+        GADApplicationIdentifier: ca-app-pub-6644397387275334~9083790273
         UTExportedTypeDeclarations:
           - UTTypeIdentifier: com.cutsense.template
             UTTypeDescription: CutSense Template
@@ -137,8 +138,8 @@ targets:
           UIImageName: SplashLogo
     dependencies:
       - package: Supabase
-      - package: Lottie
       - package: WhisperKit
+      - package: GoogleMobileAds
 
   CutSenseTests:
     type: bundle.unit-test
@@ -147,6 +148,7 @@ targets:
       - path: CutSense/Tests
         excludes:
           - "**/.gitkeep"
+          - "CutSenseUITests/**"
       - path: CutSense/Tests/CutSenseQualityTests/cutsense_test_video.mp4
         type: file
         buildPhase: resources
@@ -158,5 +160,21 @@ targets:
     settings:
       base:
         SWIFT_VERSION: "6.0"
+        DEVELOPMENT_TEAM: 6HCP552XP8
+        CODE_SIGN_STYLE: Automatic
         ENABLE_TESTING_SEARCH_PATHS: YES
+        GENERATE_INFOPLIST_FILE: YES
+
+  CutSenseUITests:
+    type: bundle.ui-testing
+    platform: iOS
+    sources:
+      - path: CutSense/Tests/CutSenseUITests
+    dependencies:
+      - target: CutSense
+    settings:
+      base:
+        SWIFT_VERSION: "6.0"
+        DEVELOPMENT_TEAM: 6HCP552XP8
+        CODE_SIGN_STYLE: Automatic
         GENERATE_INFOPLIST_FILE: YES
