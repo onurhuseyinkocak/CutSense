@@ -278,23 +278,114 @@ final class BannerHostView: UIView {
     }
 }
 
-#error("RECON GAP: lines 281-298 of AdMobService.swift unrecoverable")
+/// Bottom-anchored adaptive banner sized to the available width.
+struct AdBannerSlot: View {
+    var body: some View {
+        GeometryReader { proxy in
+            let size = largeAnchoredAdaptiveBanner(width: max(proxy.size.width, 320))
+            AdBannerView(adSize: size)
+                .frame(width: size.size.width, height: size.size.height)
+                .frame(maxWidth: .infinity)
+        }
+        .frame(height: largeAnchoredAdaptiveBanner(width: 375).size.height)
+        .accessibilityLabel("Advertisement")
+    }
+}
+
 enum RewardedInterstitialAdResult: Sendable {
-#error("RECON GAP: lines 300-314 of AdMobService.swift unrecoverable")
+    case unavailable
+    case presented(rewarded: Bool)
+
+    var wasPresented: Bool {
+        if case .presented = self { return true }
+        return false
+    }
+}
+
+/// Loads one rewarded interstitial at a time and presents it on demand.
+/// `showIfAvailable` suspends until the ad is dismissed so processing can resume.
+@MainActor
 final class RewardedInterstitialAdController: NSObject, ObservableObject, FullScreenContentDelegate {
-#error("RECON GAP: lines 316-324 of AdMobService.swift unrecoverable")
+    @Published private(set) var isReady = false
+
+    private var ad: RewardedInterstitialAd?
     private var isLoading = false
-#error("RECON GAP: lines 326-330 of AdMobService.swift unrecoverable")
+    private var loadToken = UUID()
+    private var earnedReward = false
+    private var dismissContinuation: CheckedContinuation<RewardedInterstitialAdResult, Never>?
+    private static let loadTimeout: Duration = .seconds(10)
+
+    func preload() {
         guard ad == nil, !isReady, !isLoading else { return }
-#error("RECON GAP: lines 332-336 of AdMobService.swift unrecoverable")
+        Task { await load() }
+    }
+
+    func load() async {
+        guard AdMobService.isEnabled else { return }
         guard !isLoading else {
-#error("RECON GAP: lines 338-338 of AdMobService.swift unrecoverable")
+            // Another caller is loading; wait for it instead of starting a second request.
             while isLoading && !Task.isCancelled {
-#error("RECON GAP: lines 340-351 of AdMobService.swift unrecoverable")
+                try? await Task.sleep(for: .milliseconds(200))
+            }
+            return
+        }
+        guard ad == nil else { return }
+        guard await AdMobService.prepareForAdRequest() else { return }
+
         isLoading = true
-#error("RECON GAP: lines 353-354 of AdMobService.swift unrecoverable")
+        let token = UUID()
+        loadToken = token
+        let timeout = Task { @MainActor [weak self] in
+            try? await Task.sleep(for: Self.loadTimeout)
             guard let self, self.isLoading, self.loadToken == token else { return }
             self.isLoading = false
-#error("RECON GAP: lines 357-364 of AdMobService.swift unrecoverable")
-                isLoading = false
-#error("RECON GAP: end of AdMobService.swift unknown (file may continue past line 365)")
+        }
+        defer { timeout.cancel() }
+
+        do {
+            let loaded = try await RewardedInterstitialAd.load(
+                with: AdMobIDs.activeRewardedInterstitialAdUnitID,
+                request: Request()
+            )
+            guard loadToken == token, isLoading else { return }
+            loaded.fullScreenContentDelegate = self
+            ad = loaded
+            isReady = true
+        } catch {
+            #if DEBUG
+            print("[AdMob] Rewarded interstitial failed to load: \(error.localizedDescription)")
+            #endif
+        }
+        if loadToken == token { isLoading = false }
+    }
+
+    func showIfAvailable() async -> RewardedInterstitialAdResult {
+        guard let ad, isReady, dismissContinuation == nil else { return .unavailable }
+        guard let root = AdMobService.rootViewController else { return .unavailable }
+        earnedReward = false
+        isReady = false
+        return await withCheckedContinuation { continuation in
+            dismissContinuation = continuation
+            ad.present(from: root) { [weak self] in
+                self?.earnedReward = true
+            }
+        }
+    }
+
+    private func finish(presented: Bool) {
+        ad = nil
+        isReady = false
+        let continuation = dismissContinuation
+        dismissContinuation = nil
+        continuation?.resume(returning: presented ? .presented(rewarded: earnedReward) : .unavailable)
+        preload()
+    }
+
+    nonisolated func adDidDismissFullScreenContent(_ ad: FullScreenPresentingAd) {
+        Task { @MainActor in self.finish(presented: true) }
+    }
+
+    nonisolated func ad(_ ad: FullScreenPresentingAd, didFailToPresentFullScreenContentWithError error: Error) {
+        Task { @MainActor in self.finish(presented: false) }
+    }
+}

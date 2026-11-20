@@ -1,4 +1,3 @@
-#error("RECON: S2 text unknown - this is the pre-Aug-8 (S1) text; 2 Aug 8-9 patch(es) could not be replayed")
 import AVFoundation
 import Accelerate
 
@@ -25,6 +24,7 @@ struct AudioAnalysisResult: Sendable {
 }
 
 enum AudioAnalysisError: Error, LocalizedError, Sendable {
+    case noAudioTrack
     case cannotAddAudioOutput
     case readerStartFailed(String)
     case readerFailed(String)
@@ -32,6 +32,8 @@ enum AudioAnalysisError: Error, LocalizedError, Sendable {
 
     var errorDescription: String? {
         switch self {
+        case .noAudioTrack:
+            "This video has no audio track."
         case .cannotAddAudioOutput:
             "Audio analyzer could not attach the asset reader output."
         case .readerStartFailed(let message):
@@ -45,6 +47,7 @@ enum AudioAnalysisError: Error, LocalizedError, Sendable {
 }
 
 struct AudioAnalysisOptions: Sendable {
+    /// Used when the clip is too short to estimate a noise floor.
     var silenceThresholdDB: Float
     var minSilenceDuration: Double
 
@@ -54,61 +57,156 @@ struct AudioAnalysisOptions: Sendable {
 }
 
 enum AudioAnalysisService {
-    /// Base silence threshold in dB — used as fallback if adaptive detection fails
-    private static let baseSilenceThresholdDB: Float = -35
-    /// Minimum silence duration to consider (seconds) — shorter silences are natural pauses
-    private static let minSilenceDuration: Double = 0.3
-    /// Window size for energy analysis (seconds)
-    private static let windowDuration: Double = 0.05
-    /// Clipping threshold (0-1 range)
+    private static let sampleRate = 16_000.0
+    private static let windowDuration = 0.05
     private static let clippingThreshold: Float = 0.95
+    /// Report progress roughly every 5 s of audio.
+    private static let progressStepSeconds = 5.0
 
-    static func analyze(url: URL) async throws -> AudioAnalysisResult {
+    /// Streams the audio track once, computes RMS per 50 ms window, then
+    /// classifies windows against an adaptive threshold (noise floor + 6 dB).
+    static func analyze(
+        url: URL,
+        options: AudioAnalysisOptions = .tight,
+        progress: (@Sendable (_ processedSeconds: Double, _ duration: Double) -> Void)? = nil
+    ) async throws -> AudioAnalysisResult {
         let asset = AVURLAsset(url: url)
-        let audioTracks = try await asset.loadTracks(withMediaType: .audio)
-
-        guard let audioTrack = audioTracks.first else {
-            return AudioAnalysisResult(
-                segments: [],
-                silenceIntervals: [],
-                averageEnergy: 0,
-                peakEnergy: 0,
-                duration: 0
-            )
+        guard let audioTrack = try await asset.loadTracks(withMediaType: .audio).first else {
+            throw AudioAnalysisError.noAudioTrack
         }
-
         let duration = try await asset.load(.duration).seconds
 
-        // Read audio samples
         let reader = try AVAssetReader(asset: asset)
-        let outputSettings: [String: Any] = [
+        let output = AVAssetReaderTrackOutput(track: audioTrack, outputSettings: [
             AVFormatIDKey: kAudioFormatLinearPCM,
             AVLinearPCMBitDepthKey: 16,
             AVLinearPCMIsFloatKey: false,
             AVLinearPCMIsBigEndianKey: false,
             AVNumberOfChannelsKey: 1,
-            AVSampleRateKey: 16000
-        ]
-
-        let output = AVAssetReaderTrackOutput(track: audioTrack, outputSettings: outputSettings)
-        guard reader.canAdd(output) else {
-            throw AudioAnalysisError.cannotAddAudioOutput
-        }
+            AVSampleRateKey: sampleRate
+        ])
+        output.alwaysCopiesSampleData = false
+        guard reader.canAdd(output) else { throw AudioAnalysisError.cannotAddAudioOutput }
         reader.add(output)
         guard reader.startReading() else {
             throw AudioAnalysisError.readerStartFailed(reader.error?.localizedDescription ?? "unknown reader error")
         }
 
-#error("RECON GAP: lines 101-123 of AudioAnalysisService.swift unrecoverable")
-            throw AudioAnalysisError.readerFailed(reader.error?.localizedDescription ?? "\(reader.status)")
-#error("RECON GAP: lines 125-127 of AudioAnalysisService.swift unrecoverable")
-            throw AudioAnalysisError.noSamplesRead(duration: duration)
-#error("RECON GAP: lines 129-255 of AudioAnalysisService.swift unrecoverable")
-            throw AudioAnalysisError.cannotAddAudioOutput
-#error("RECON GAP: lines 257-259 of AudioAnalysisService.swift unrecoverable")
-            throw AudioAnalysisError.readerStartFailed(reader.error?.localizedDescription ?? "unknown reader error")
-#error("RECON GAP: lines 261-287 of AudioAnalysisService.swift unrecoverable")
-            throw AudioAnalysisError.readerFailed(reader.error?.localizedDescription ?? "\(reader.status)")
-#error("RECON GAP: lines 289-291 of AudioAnalysisService.swift unrecoverable")
-            throw AudioAnalysisError.noSamplesRead(duration: duration)
-#error("RECON GAP: end of AudioAnalysisService.swift unknown (file may continue past line 292)")
+        let windowSamples = Int(windowDuration * sampleRate)
+        var windowRMS: [Float] = []
+        windowRMS.reserveCapacity(Int(duration / windowDuration) + 1)
+        var pending: [Float] = []
+        pending.reserveCapacity(windowSamples * 2)
+        var totalSamples = 0
+        var nextProgressAt = progressStepSeconds
+
+        while let sampleBuffer = output.copyNextSampleBuffer() {
+            try Task.checkCancellation()
+            guard let blockBuffer = CMSampleBufferGetDataBuffer(sampleBuffer) else { continue }
+            let length = CMBlockBufferGetDataLength(blockBuffer)
+            let count = length / MemoryLayout<Int16>.size
+            guard count > 0 else { continue }
+            var ints = [Int16](repeating: 0, count: count)
+            let status = ints.withUnsafeMutableBytes { raw -> OSStatus in
+                guard let base = raw.baseAddress else { return kCMBlockBufferBadPointerParameterErr }
+                return CMBlockBufferCopyDataBytes(blockBuffer, atOffset: 0, dataLength: count * MemoryLayout<Int16>.size, destination: base)
+            }
+            guard status == kCMBlockBufferNoErr else { continue }
+            var floats = [Float](repeating: 0, count: count)
+            vDSP_vflt16(ints, 1, &floats, 1, vDSP_Length(count))
+            var scale: Float = 1.0 / 32768.0
+            vDSP_vsmul(floats, 1, &scale, &floats, 1, vDSP_Length(count))
+            pending.append(contentsOf: floats)
+            totalSamples += count
+
+            var offset = 0
+            while pending.count - offset >= windowSamples {
+                windowRMS.append(rms(pending[offset..<(offset + windowSamples)]))
+                offset += windowSamples
+            }
+            pending.removeFirst(offset)
+
+            let processed = Double(totalSamples) / sampleRate
+            if processed >= nextProgressAt {
+                progress?(processed, duration)
+                nextProgressAt = processed + progressStepSeconds
+            }
+        }
+        if !pending.isEmpty { windowRMS.append(rms(pending[...])) }
+
+        if reader.status == .failed || reader.status == .cancelled {
+            throw AudioAnalysisError.readerFailed(reader.error?.localizedDescription ?? "\(reader.status.rawValue)")
+        }
+        guard totalSamples > 0 else { throw AudioAnalysisError.noSamplesRead(duration: duration) }
+        progress?(duration, duration)
+
+        let threshold = silenceThreshold(windowRMS: windowRMS, fallback: options.silenceThresholdDB)
+        return classify(windowRMS: windowRMS, thresholdDB: threshold, minSilence: options.minSilenceDuration, duration: duration)
+    }
+
+    /// Noise floor = 10th-percentile window RMS; silence = floor + 6 dB, clamped to [-50, -20] dB.
+    static func silenceThreshold(windowRMS: [Float], fallback: Float) -> Float {
+        guard windowRMS.count > 20 else { return fallback }
+        let sorted = windowRMS.sorted()
+        let floorRMS = sorted[min(sorted.count / 10, sorted.count - 1)]
+        let floorDB: Float = floorRMS > 0 ? 20 * log10(floorRMS) : -100
+        return max(min(floorDB + 6, -20), -50)
+    }
+
+    static func classify(windowRMS: [Float], thresholdDB: Float, minSilence: Double, duration: Double) -> AudioAnalysisResult {
+        var segments: [AudioSegment] = []
+        segments.reserveCapacity(windowRMS.count)
+        var silenceIntervals: [ClosedRange<Double>] = []
+        var energySum: Float = 0
+        var peak: Float = 0
+        var silenceStart: Double?
+
+        for (i, value) in windowRMS.enumerated() {
+            let dB: Float = value > 0 ? 20 * log10(value) : -100
+            energySum += value
+            peak = max(peak, value)
+            let start = Double(i) * windowDuration
+            let end = min(start + windowDuration, max(duration, start + windowDuration))
+
+            let type: AudioSegmentType
+            if value > clippingThreshold {
+                type = .clipping
+            } else if dB < thresholdDB {
+                type = .silence
+            } else if dB < thresholdDB + 8 {
+                type = .lowEnergy
+            } else {
+                type = .speech
+            }
+            segments.append(AudioSegment(startTime: start, endTime: end, type: type, energy: value))
+
+            if type == .silence {
+                if silenceStart == nil { silenceStart = start }
+            } else if let s = silenceStart {
+                if start - s >= minSilence { silenceIntervals.append(s...start) }
+                silenceStart = nil
+            }
+        }
+        if let s = silenceStart {
+            let end = Double(windowRMS.count) * windowDuration
+            if end - s >= minSilence { silenceIntervals.append(s...end) }
+        }
+
+        return AudioAnalysisResult(
+            segments: segments,
+            silenceIntervals: silenceIntervals,
+            averageEnergy: windowRMS.isEmpty ? 0 : energySum / Float(windowRMS.count),
+            peakEnergy: peak,
+            duration: duration
+        )
+    }
+
+    private static func rms(_ slice: ArraySlice<Float>) -> Float {
+        var value: Float = 0
+        slice.withUnsafeBufferPointer { buffer in
+            guard let base = buffer.baseAddress, !buffer.isEmpty else { return }
+            vDSP_rmsqv(base, 1, &value, vDSP_Length(buffer.count))
+        }
+        return value
+    }
+}

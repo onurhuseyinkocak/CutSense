@@ -1,16 +1,169 @@
-#error("RECON GAP: lines 1-2 of NativeAdCard.swift unrecoverable")
+import SwiftUI
+import UIKit
 import GoogleMobileAds
-#error("RECON GAP: lines 4-10 of NativeAdCard.swift unrecoverable")
-    private var isLoading = false
-#error("RECON GAP: lines 12-14 of NativeAdCard.swift unrecoverable")
-        guard !isLoading else { return }
-        isLoading = true
-#error("RECON GAP: lines 17-19 of NativeAdCard.swift unrecoverable")
-                isLoading = false
-#error("RECON GAP: lines 21-35 of NativeAdCard.swift unrecoverable")
-        isLoading = false
-#error("RECON GAP: lines 37-42 of NativeAdCard.swift unrecoverable")
-        isLoading = false
-#error("RECON GAP: lines 44-50 of NativeAdCard.swift unrecoverable")
+
+/// Native ad shown while a video is processing. Renders nothing until an ad loads.
 struct NativeAdCard: View {
-#error("RECON GAP: end of NativeAdCard.swift unknown (file may continue past line 51)")
+    @StateObject private var loader = NativeAdLoader()
+
+    var body: some View {
+        Group {
+            if let ad = loader.nativeAd {
+                NativeAdRepresentable(nativeAd: ad)
+                    .frame(height: 236)
+                    .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+            }
+        }
+        .task { await loader.loadIfNeeded() }
+    }
+}
+
+@MainActor
+final class NativeAdLoader: NSObject, ObservableObject, NativeAdLoaderDelegate {
+    @Published private(set) var nativeAd: NativeAd?
+    private var adLoader: AdLoader?
+
+    func loadIfNeeded() async {
+        guard AdMobService.isEnabled, nativeAd == nil, adLoader == nil else { return }
+        guard await AdMobService.prepareForAdRequest() else { return }
+        let loader = AdLoader(
+            adUnitID: AdMobIDs.activeNativeAdUnitID,
+            rootViewController: AdMobService.rootViewController,
+            adTypes: [.native],
+            options: nil
+        )
+        loader.delegate = self
+        adLoader = loader
+        loader.load(Request())
+    }
+
+    nonisolated func adLoader(_ adLoader: AdLoader, didReceive nativeAd: NativeAd) {
+        // The SDK calls loader delegates on the main thread.
+        nonisolated(unsafe) let ad = nativeAd
+        MainActor.assumeIsolated { self.nativeAd = ad }
+    }
+
+    nonisolated func adLoader(_ adLoader: AdLoader, didFailToReceiveAdWithError error: Error) {
+        #if DEBUG
+        print("[AdMob] Native ad failed: \(error.localizedDescription)")
+        #endif
+    }
+}
+
+private struct NativeAdRepresentable: UIViewRepresentable {
+    let nativeAd: NativeAd
+
+    func makeUIView(context: Context) -> NativeAdView {
+        CutSenseNativeAdView()
+    }
+
+    func updateUIView(_ view: NativeAdView, context: Context) {
+        (view as? CutSenseNativeAdView)?.populate(with: nativeAd)
+    }
+}
+
+/// Programmatic layout: "Ad" badge, icon, headline, media, body, call to action.
+/// The SDK places the AdChoices icon in a corner automatically.
+private final class CutSenseNativeAdView: NativeAdView {
+    private let badge = UILabel()
+    private let icon = UIImageView()
+    private let headline = UILabel()
+    private let bodyLabel = UILabel()
+    private let media = MediaView()
+    private let cta = UIButton(type: .system)
+
+    override init(frame: CGRect) {
+        super.init(frame: frame)
+        backgroundColor = UIColor.white.withAlphaComponent(0.07)
+
+        badge.text = "Ad"
+        badge.font = .preferredFont(forTextStyle: .caption2).withWeight(.bold)
+        badge.textColor = .black
+        badge.backgroundColor = UIColor(red: 0.98, green: 0.8, blue: 0.2, alpha: 1)
+        badge.textAlignment = .center
+        badge.layer.cornerRadius = 3
+        badge.layer.masksToBounds = true
+
+        icon.contentMode = .scaleAspectFill
+        icon.layer.cornerRadius = 6
+        icon.clipsToBounds = true
+
+        headline.font = .preferredFont(forTextStyle: .subheadline).withWeight(.semibold)
+        headline.textColor = .white
+        headline.numberOfLines = 1
+        headline.adjustsFontForContentSizeCategory = true
+
+        bodyLabel.font = .preferredFont(forTextStyle: .caption1)
+        bodyLabel.textColor = UIColor.white.withAlphaComponent(0.72)
+        bodyLabel.numberOfLines = 2
+        bodyLabel.adjustsFontForContentSizeCategory = true
+
+        media.contentMode = .scaleAspectFill
+        media.clipsToBounds = true
+
+        var config = UIButton.Configuration.filled()
+        config.baseBackgroundColor = .white
+        config.baseForegroundColor = .black
+        config.cornerStyle = .medium
+        cta.configuration = config
+        cta.isUserInteractionEnabled = false // SDK handles the tap
+
+        let header = UIStackView(arrangedSubviews: [icon, headline, badge])
+        header.spacing = 8
+        header.alignment = .center
+        let footer = UIStackView(arrangedSubviews: [bodyLabel, cta])
+        footer.spacing = 10
+        footer.alignment = .center
+        let stack = UIStackView(arrangedSubviews: [header, media, footer])
+        stack.axis = .vertical
+        stack.spacing = 8
+        stack.translatesAutoresizingMaskIntoConstraints = false
+        addSubview(stack)
+
+        NSLayoutConstraint.activate([
+            stack.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 12),
+            stack.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -12),
+            stack.topAnchor.constraint(equalTo: topAnchor, constant: 12),
+            stack.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -12),
+            icon.widthAnchor.constraint(equalToConstant: 28),
+            icon.heightAnchor.constraint(equalToConstant: 28),
+            badge.widthAnchor.constraint(equalToConstant: 26),
+            badge.heightAnchor.constraint(equalToConstant: 16),
+            cta.heightAnchor.constraint(greaterThanOrEqualToConstant: 44),
+            media.heightAnchor.constraint(greaterThanOrEqualToConstant: 120)
+        ])
+        cta.setContentHuggingPriority(.required, for: .horizontal)
+        cta.setContentCompressionResistancePriority(.required, for: .horizontal)
+        headline.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+
+        iconView = icon
+        headlineView = headline
+        bodyView = bodyLabel
+        mediaView = media
+        callToActionView = cta
+    }
+
+    @available(*, unavailable)
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+
+    func populate(with ad: NativeAd) {
+        headline.text = ad.headline
+        bodyLabel.text = ad.body
+        bodyLabel.isHidden = ad.body == nil
+        icon.image = ad.icon?.image
+        icon.isHidden = ad.icon == nil
+        media.mediaContent = ad.mediaContent
+        cta.configuration?.title = ad.callToAction
+        cta.isHidden = ad.callToAction == nil
+        nativeAd = ad
+    }
+}
+
+private extension UIFont {
+    func withWeight(_ weight: UIFont.Weight) -> UIFont {
+        let descriptor = fontDescriptor.addingAttributes([.traits: [UIFontDescriptor.TraitKey.weight: weight]])
+        return UIFont(descriptor: descriptor, size: 0)
+    }
+}

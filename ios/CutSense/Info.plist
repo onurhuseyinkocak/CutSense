@@ -6,19 +6,6 @@
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
 	<string>CutSense</string>
-	<key>CFBundleDocumentTypes</key>
-	<array>
-		<dict>
-			<key>CFBundleTypeName</key>
-			<string>CutSense Template</string>
-			<key>LSHandlerRank</key>
-			<string>Owner</string>
-			<key>LSItemContentTypes</key>
-			<array>
-				<string>com.cutsense.template</string>
-			</array>
-		</dict>
-	</array>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -33,38 +20,14 @@
 	<string>$(MARKETING_VERSION)</string>
 	<key>CFBundleVersion</key>
 	<string>$(CURRENT_PROJECT_VERSION)</string>
+	<key>GADApplicationIdentifier</key>
+	<string>ca-app-pub-6644397387275334~9083790273</string>
 	<key>ITSAppUsesNonExemptEncryption</key>
 	<false/>
-	<key>LSSupportsOpeningDocumentsInPlace</key>
-	<true/>
-	<key>NSMicrophoneUsageDescription</key>
-	<string>CutSense may need microphone access for audio analysis.</string>
 	<key>NSPhotoLibraryAddUsageDescription</key>
 	<string>CutSense needs permission to save edited videos to your photo library.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>CutSense needs access to your photo library to import videos for editing.</string>
-	<key>NSSpeechRecognitionUsageDescription</key>
-	<string>CutSense uses speech recognition to transcribe your video for intelligent editing.</string>
-	<key>PEXELS_API_KEY</key>
-	<string>$(PEXELS_API_KEY)</string>
-	<key>GADApplicationIdentifier</key>
-	<string>ca-app-pub-6644397387275334~9083790273</string>
-	<key>SUPABASE_ANON_KEY</key>
-	<string>$(SUPABASE_ANON_KEY)</string>
-	<key>SUPABASE_URL</key>
-	<string>$(SUPABASE_URL)</string>
-	<key>UIAppFonts</key>
-	<array>
-		<string>Poppins-Black.ttf</string>
-		<string>Poppins-ExtraBold.ttf</string>
-		<string>BebasNeue-Regular.ttf</string>
-		<string>Anton-Regular.ttf</string>
-		<string>Montserrat-Black.ttf</string>
-		<string>Inter-Bold.ttf</string>
-		<string>Oswald-Bold.ttf</string>
-		<string>Archivo-Black.ttf</string>
-		<string>PlusJakartaSans-ExtraBold.ttf</string>
-	</array>
 	<key>UILaunchScreen</key>
 	<dict>
 		<key>UIColorName</key>
@@ -77,36 +40,6 @@
 	<key>UISupportedInterfaceOrientations</key>
 	<array>
 		<string>UIInterfaceOrientationPortrait</string>
-	</array>
-	<key>UISupportedInterfaceOrientations~ipad</key>
-	<array>
-		<string>UIInterfaceOrientationPortrait</string>
-		<string>UIInterfaceOrientationPortraitUpsideDown</string>
-		<string>UIInterfaceOrientationLandscapeLeft</string>
-		<string>UIInterfaceOrientationLandscapeRight</string>
-	</array>
-	<key>UISupportsDocumentBrowser</key>
-	<false/>
-	<key>UTExportedTypeDeclarations</key>
-	<array>
-		<dict>
-			<key>UTTypeConformsTo</key>
-			<array>
-				<string>public.json</string>
-				<string>public.data</string>
-			</array>
-			<key>UTTypeDescription</key>
-			<string>CutSense Template</string>
-			<key>UTTypeIdentifier</key>
-			<string>com.cutsense.template</string>
-			<key>UTTypeTagSpecification</key>
-			<dict>
-				<key>public.filename-extension</key>
-				<array>
-					<string>cutsensetemplate</string>
-				</array>
-			</dict>
-		</dict>
 	</array>
 </dict>
 </plist>

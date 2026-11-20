@@ -23,6 +23,11 @@ targets:
           - "AdStubs.swift"
       - path: CutSense/Ads
       - path: CutSense/Services/AppLanguage.swift
+      - path: CutSense/RoughCut/AudioAnalysisService.swift
+      - path: CutSense/UI/LanguageSwitcher.swift
+      - path: CutSense/UI/SettingsScreen.swift
+      - path: CutSense/Video/VideoImportService.swift
+      - path: CutSense/Video/PhotosSaveService.swift
       - path: CutSense/Resources/Assets.xcassets
       - path: CutSense/Resources/PrivacyInfo.xcprivacy
     settings:

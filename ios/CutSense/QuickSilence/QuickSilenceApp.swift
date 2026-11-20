@@ -5,7 +5,9 @@ import AVFoundation
 struct QuickSilenceApp: App {
     var body: some Scene {
         WindowGroup {
-            QuickSilenceView()
+            NavigationStack {
+                QuickSilenceView()
+            }
                 .task {
                     try? AVAudioSession.sharedInstance().setCategory(.playback, mode: .moviePlayback)
                     AdMobService.start()

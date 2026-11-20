@@ -312,14 +312,190 @@ enum QuickSilenceEngine {
         return Result(outputURL: outURL, originalDuration: duration, outputDuration: cursor.seconds, segmentsKept: kept)
     }
 
-    /// Runs one export pass with the given preset. Returns true only on a
-    /// completed export, so the caller can fall back to a different preset.
+    // MARK: - Cut planning
+
+    /// Shrinks every detected silence by `pad` on each side so speech keeps a
+    /// little air, then drops pauses too short to be worth a jump cut.
+    /// Silence touching the start or end of the clip is cut all the way to the edge.
+    static func protectedCutRanges(
+        silence: [ClosedRange<Double>],
+        pad: Double,
+        minimumRemovedGap: Double,
+        duration: Double
+    ) -> [ClosedRange<Double>] {
+        silence.sorted { $0.lowerBound < $1.lowerBound }.compactMap { range in
+            let lower = range.lowerBound <= 0.001 ? 0 : range.lowerBound + pad
+            let upper = range.upperBound >= duration - 0.001 ? duration : range.upperBound - pad
+            guard upper - lower >= minimumRemovedGap else { return nil }
+            return lower...upper
+        }
+    }
+
+    /// Complement of the cut ranges inside `0...duration`.
+    static func keepRanges(silence cuts: [ClosedRange<Double>], duration: Double) -> [ClosedRange<Double>] {
+        guard duration > 0 else { return [] }
+        var keep: [ClosedRange<Double>] = []
+        var cursor = 0.0
+        for cut in cuts.sorted(by: { $0.lowerBound < $1.lowerBound }) {
+            let lower = max(cut.lowerBound, 0)
+            if lower > cursor { keep.append(cursor...lower) }
+            cursor = max(cursor, min(cut.upperBound, duration))
+        }
+        if duration > cursor { keep.append(cursor...duration) }
+        return keep
+    }
+
+    /// Joins kept ranges separated by less than `gap`, so tiny removals don't
+    /// produce stuttering jump cuts.
+    static func merged(_ ranges: [ClosedRange<Double>], gap: Double) -> [ClosedRange<Double>] {
+        var result: [ClosedRange<Double>] = []
+        for range in ranges.sorted(by: { $0.lowerBound < $1.lowerBound }) {
+            if let last = result.last, range.lowerBound - last.upperBound < gap {
+                result[result.count - 1] = last.lowerBound...max(last.upperBound, range.upperBound)
+            } else {
+                result.append(range)
+            }
+        }
+        return result
+    }
+
+    static func compactTime(_ seconds: Double, language: AppLanguage) -> String {
+        let total = max(0, Int(seconds.rounded()))
+        if total < 60 { return appText(language, "\(total) sn", "\(total)s") }
+        return String(format: "%d:%02d", total / 60, total % 60)
+    }
+
+    // MARK: - Export
+
     private struct ExportAttempt: Sendable {
         let completed: Bool
         let failureMessage: String?
         let outputURL: URL?
 
         init(completed: Bool, failureMessage: String?, outputURL: URL? = nil) {
-#error("RECON GAP: lines 323-333 of QuickSilenceEngine.swift unrecoverable")
-        init(_ session: AVAssetExportSession) {
-#error("RECON GAP: end of QuickSilenceEngine.swift unknown (file may continue past line 334)")
+            self.completed = completed
+            self.failureMessage = failureMessage
+            self.outputURL = outputURL
+        }
+    }
+
+    /// Passthrough export should finish in a fraction of real time; if progress
+    /// stops moving this long, give up and re-encode instead.
+    static func fastExportStallLimit(for seconds: Double) -> Duration {
+        .seconds(max(20, min(90, seconds * 0.5)))
+    }
+
+    static func fastExportTimeout(for seconds: Double) -> Duration {
+        .seconds(max(60, min(900, seconds * 3)))
+    }
+
+    /// Runs one export pass and polls its progress. Cancels and reports failure
+    /// on stall or timeout so the caller can try another preset.
+    private static func runExport(
+        _ composition: AVComposition,
+        to url: URL,
+        preset: String,
+        stage: ProgressUpdate.Stage,
+        progressBase: Double,
+        progressCeiling: Double,
+        title: String,
+        detail: String,
+        stallFallbackAfter: Duration,
+        timeoutAfter: Duration,
+        language: AppLanguage,
+        progress: @escaping @MainActor (ProgressUpdate) -> Void
+    ) async throws -> ExportAttempt {
+        try? FileManager.default.removeItem(at: url)
+        guard let session = AVAssetExportSession(asset: composition, presetName: preset) else {
+            return ExportAttempt(completed: false, failureMessage: appText(language, "\(preset) kullanılamıyor", "\(preset) is unavailable"))
+        }
+        guard session.supportedFileTypes.contains(.mp4) else {
+            return ExportAttempt(completed: false, failureMessage: appText(language, "\(preset) MP4 desteklemiyor", "\(preset) does not support MP4"))
+        }
+        session.outputURL = url
+        session.outputFileType = .mp4
+        session.shouldOptimizeForNetworkUse = true
+        session.exportAsynchronously {}
+
+        let clock = ContinuousClock()
+        let started = clock.now
+        var lastChange = started
+        var lastProgress: Float = -1
+
+        while session.status == .waiting || session.status == .exporting || session.status == .unknown {
+            do {
+                try await Task.sleep(for: .milliseconds(250))
+            } catch {
+                session.cancelExport()
+                throw error
+            }
+            let now = clock.now
+            let current = session.progress
+            if current > lastProgress + 0.001 {
+                lastProgress = current
+                lastChange = now
+                let fraction = progressBase + Double(current) * (progressCeiling - progressBase)
+                await progress(.update(stage, fraction, title, "\(detail) %\(Int(current * 100))"))
+            }
+            if now - lastChange > stallFallbackAfter {
+                session.cancelExport()
+                return ExportAttempt(completed: false, failureMessage: appText(language, "dışa aktarım ilerlemedi", "export stopped progressing"))
+            }
+            if now - started > timeoutAfter {
+                session.cancelExport()
+                return ExportAttempt(completed: false, failureMessage: appText(language, "dışa aktarım zaman aşımına uğradı", "export timed out"))
+            }
+        }
+
+        guard session.status == .completed else {
+            let reason = session.error?.localizedDescription ?? "status \(session.status.rawValue)"
+            return ExportAttempt(completed: false, failureMessage: reason)
+        }
+        return ExportAttempt(completed: true, failureMessage: nil, outputURL: url)
+    }
+
+    /// Re-encodes with progressively more conservative presets until one finishes.
+    private static func runFallbackExports(
+        _ composition: AVComposition,
+        baseURL: URL,
+        language: AppLanguage,
+        progress: @escaping @MainActor (ProgressUpdate) -> Void
+    ) async throws -> ExportAttempt {
+        let presets = [AVAssetExportPresetHighestQuality, AVAssetExportPreset1920x1080, AVAssetExportPreset1280x720]
+        let seconds = composition.duration.seconds
+        var lastFailure: String?
+        for (index, preset) in presets.enumerated() {
+            let url = baseURL.deletingPathExtension().appendingPathExtension("\(index).mp4")
+            let attempt = try await runExport(
+                composition,
+                to: url,
+                preset: preset,
+                stage: .fallbackExport,
+                progressBase: 0.50,
+                progressCeiling: 0.94,
+                title: appText(language, "Uyumluluk modu", "Compatibility mode"),
+                detail: appText(language, "Güvenli MP4 oluşturuluyor.", "Creating a safe MP4."),
+                stallFallbackAfter: .seconds(60),
+                timeoutAfter: .seconds(max(120, min(1800, seconds * 6))),
+                language: language,
+                progress: progress
+            )
+            if attempt.completed { return attempt }
+            try? FileManager.default.removeItem(at: url)
+            lastFailure = attempt.failureMessage
+        }
+        return ExportAttempt(completed: false, failureMessage: lastFailure)
+    }
+
+    private static func replaceOutput(from source: URL, to destination: URL) throws {
+        let fm = FileManager.default
+        if fm.fileExists(atPath: destination.path) { try fm.removeItem(at: destination) }
+        try fm.moveItem(at: source, to: destination)
+    }
+
+    /// A completed export can still be an empty container; reject anything under 1 KB.
+    private static func validateOutput(at url: URL) throws {
+        let size = (try? FileManager.default.attributesOfItem(atPath: url.path)[.size] as? Int64) ?? 0
+        guard size >= 1024 else { throw Failure.outputEmpty(size) }
+    }
+}
