@@ -29,35 +29,40 @@ final class VideoImportService {
         }
     }
 
+    private var importToken = UUID()
+
     func importVideo(from item: PhotosPickerItem) async {
         cancelImport()
+        let token = UUID()
+        importToken = token
         if let previous = importedVideoURL { try? FileManager.default.removeItem(at: previous) }
         importedVideoURL = nil
         errorMessage = nil
         downloadProgress = -1
         isImporting = true
         defer {
-            isImporting = false
-            loadProgress = nil
-            downloadProgress = -1
+            // A superseded import must not touch the newer import's state.
+            if importToken == token {
+                isImporting = false
+                loadProgress = nil
+                downloadProgress = -1
+            }
         }
 
+        var copiedURL: URL?
         do {
             let movie = try await loadMovie(item)
+            copiedURL = movie.url
             try Task.checkCancellation()
+            guard importToken == token else { throw CancellationError() }
             let asset = AVURLAsset(url: movie.url)
-            guard try await !asset.loadTracks(withMediaType: .video).isEmpty else {
-                try? FileManager.default.removeItem(at: movie.url)
-                throw ImportError.noVideo
-            }
-            guard try await !asset.loadTracks(withMediaType: .audio).isEmpty else {
-                try? FileManager.default.removeItem(at: movie.url)
-                throw ImportError.missingAudio
-            }
+            guard try await !asset.loadTracks(withMediaType: .video).isEmpty else { throw ImportError.noVideo }
+            guard try await !asset.loadTracks(withMediaType: .audio).isEmpty else { throw ImportError.missingAudio }
+            guard importToken == token, !Task.isCancelled else { throw CancellationError() }
             importedVideoURL = movie.url
-        } catch is CancellationError {
-            return
         } catch {
+            if let copiedURL { try? FileManager.default.removeItem(at: copiedURL) }
+            guard importToken == token, !(error is CancellationError) else { return }
             #if DEBUG
             print("[VideoImport] failed: \(error)")
             #endif

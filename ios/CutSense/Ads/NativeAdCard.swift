@@ -24,7 +24,7 @@ final class NativeAdLoader: NSObject, ObservableObject, NativeAdLoaderDelegate {
     private var adLoader: AdLoader?
 
     func loadIfNeeded() async {
-        guard AdMobService.isEnabled, nativeAd == nil, adLoader == nil else { return }
+        guard AdMobService.isEnabled, !AdFreePass.isActive, nativeAd == nil, adLoader == nil else { return }
         guard await AdMobService.prepareForAdRequest() else { return }
         let loader = AdLoader(
             adUnitID: AdMobIDs.activeNativeAdUnitID,
@@ -38,9 +38,8 @@ final class NativeAdLoader: NSObject, ObservableObject, NativeAdLoaderDelegate {
     }
 
     nonisolated func adLoader(_ adLoader: AdLoader, didReceive nativeAd: NativeAd) {
-        // The SDK calls loader delegates on the main thread.
         nonisolated(unsafe) let ad = nativeAd
-        MainActor.assumeIsolated { self.nativeAd = ad }
+        Task { @MainActor in self.nativeAd = ad }
     }
 
     nonisolated func adLoader(_ adLoader: AdLoader, didFailToReceiveAdWithError error: Error) {
@@ -108,7 +107,8 @@ private final class CutSenseNativeAdView: NativeAdView {
         cta.configuration = config
         cta.isUserInteractionEnabled = false // SDK handles the tap
 
-        let header = UIStackView(arrangedSubviews: [icon, headline, badge])
+        // Badge on the left; the SDK puts AdChoices in the top-right corner.
+        let header = UIStackView(arrangedSubviews: [badge, icon, headline])
         header.spacing = 8
         header.alignment = .center
         let footer = UIStackView(arrangedSubviews: [bodyLabel, cta])

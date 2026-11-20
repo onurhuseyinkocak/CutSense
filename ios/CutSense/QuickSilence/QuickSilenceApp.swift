@@ -3,6 +3,10 @@ import AVFoundation
 
 @main
 struct QuickSilenceApp: App {
+    init() {
+        QuickSilenceEngine.sweepTemporaryFiles()
+    }
+
     var body: some Scene {
         WindowGroup {
             NavigationStack {

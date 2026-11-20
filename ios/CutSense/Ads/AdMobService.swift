@@ -124,13 +124,14 @@ enum AdMobService {
             Task { @MainActor in
                 do {
                     try await ConsentForm.loadAndPresentIfRequired(from: rootViewController)
-                    box.resume(true)
                 } catch {
                     #if DEBUG
                     print("[AdMob] Consent form failed: \(error.localizedDescription)")
                     #endif
-                    box.resume(true)
                 }
+                // The form can outlive the timeout; start ads as soon as it is answered.
+                startMobileAdsIfAllowed()
+                box.resume(true)
             }
             Task { @MainActor in
                 try? await Task.sleep(for: consentTimeout)
@@ -165,6 +166,13 @@ enum AdMobService {
             .first { $0.isKeyWindow }
 
         return topViewController(from: window?.rootViewController)
+    }
+
+    /// True when a sheet (share sheet, Photos picker, alert) covers the app.
+    static var hasPresentedContent: Bool {
+        let scenes = UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }
+        let root = scenes.flatMap(\.windows).first { $0.isKeyWindow }?.rootViewController
+        return root?.presentedViewController != nil
     }
 
     private static func topViewController(from root: UIViewController?) -> UIViewController? {
@@ -278,17 +286,46 @@ final class BannerHostView: UIView {
     }
 }
 
-/// Bottom-anchored adaptive banner sized to the available width.
+/// Bottom-anchored adaptive banner. `height` is also used as the content inset.
 struct AdBannerSlot: View {
+    static var adSize: AdSize {
+        let width = UIApplication.shared.connectedScenes
+            .compactMap { ($0 as? UIWindowScene)?.screen.bounds.width }
+            .first ?? 390
+        return largeAnchoredAdaptiveBanner(width: width)
+    }
+
+    static var height: CGFloat { adSize.size.height }
+
     var body: some View {
-        GeometryReader { proxy in
-            let size = largeAnchoredAdaptiveBanner(width: max(proxy.size.width, 320))
-            AdBannerView(adSize: size)
-                .frame(width: size.size.width, height: size.size.height)
-                .frame(maxWidth: .infinity)
-        }
-        .frame(height: largeAnchoredAdaptiveBanner(width: 375).size.height)
-        .accessibilityLabel("Advertisement")
+        let size = Self.adSize
+        AdBannerView(adSize: size)
+            .frame(width: size.size.width, height: size.size.height)
+            .frame(maxWidth: .infinity)
+            .accessibilityLabel("Advertisement")
+    }
+}
+
+/// Reward for watching a rewarded interstitial: no banner/native ads for 24 h
+/// (stackable, capped at 72 h).
+enum AdFreePass {
+    private static let key = "ad_free_until"
+    private static let grant: TimeInterval = 24 * 3600
+    private static let cap: TimeInterval = 72 * 3600
+
+    static var expiry: Date? {
+        let value = UserDefaults.standard.double(forKey: key)
+        guard value > 0 else { return nil }
+        let date = Date(timeIntervalSince1970: value)
+        return date > .now ? date : nil
+    }
+
+    static var isActive: Bool { expiry != nil }
+
+    static func grantReward() {
+        let base = max(expiry ?? .now, .now)
+        let until = min(base.addingTimeInterval(grant), Date.now.addingTimeInterval(cap))
+        UserDefaults.standard.set(until.timeIntervalSince1970, forKey: key)
     }
 }
 
@@ -347,7 +384,7 @@ final class RewardedInterstitialAdController: NSObject, ObservableObject, FullSc
                 with: AdMobIDs.activeRewardedInterstitialAdUnitID,
                 request: Request()
             )
-            guard loadToken == token, isLoading else { return }
+            guard ad == nil else { return }
             loaded.fullScreenContentDelegate = self
             ad = loaded
             isReady = true

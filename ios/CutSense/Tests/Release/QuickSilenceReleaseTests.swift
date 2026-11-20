@@ -67,4 +67,16 @@ final class QuickSilenceReleaseTests: XCTestCase {
         } catch AudioAnalysisError.noAudioTrack {
         }
     }
+
+    @MainActor
+    func testAdFreePassGrantsAndCaps() {
+        UserDefaults.standard.removeObject(forKey: "ad_free_until")
+        XCTAssertFalse(AdFreePass.isActive)
+        AdFreePass.grantReward()
+        let first = try? XCTUnwrap(AdFreePass.expiry)
+        XCTAssertEqual(first?.timeIntervalSinceNow ?? 0, 24 * 3600, accuracy: 5)
+        for _ in 0..<5 { AdFreePass.grantReward() }
+        XCTAssertEqual(AdFreePass.expiry?.timeIntervalSinceNow ?? 0, 72 * 3600, accuracy: 5)
+        UserDefaults.standard.removeObject(forKey: "ad_free_until")
+    }
 }

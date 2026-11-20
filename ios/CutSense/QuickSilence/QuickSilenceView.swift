@@ -25,6 +25,9 @@ struct QuickSilenceView: View {
     @State private var privacyOptionsRequired = false
     @State private var currentInputURL: URL?
     @State private var didStartAutorun = false
+    @State private var player: AVPlayer?
+    /// Last exported file; deleted when replaced or when the user starts over.
+    @State private var lastOutputURL: URL?
     @AppStorage(AppLanguage.storageKey) private var languageRaw = AppLanguage.systemDefault.rawValue
 
     enum Phase {
@@ -66,7 +69,7 @@ struct QuickSilenceView: View {
             }
             .padding(.horizontal, 24)
             .padding(.vertical, 44)
-            .padding(.bottom, showsPersistentBanner ? 132 : 0)
+            .padding(.bottom, showsPersistentBanner ? AdBannerSlot.height + 8 : 0)
 
             if showsPersistentBanner {
                 AdBannerSlot()
@@ -111,14 +114,10 @@ struct QuickSilenceView: View {
             }
             startAutorunIfRequested()
         }
-        .onDisappear {
-            cancelActiveWork(returnToIdle: false)
-            saveTask?.cancel()
-        }
     }
 
     private var showsPersistentBanner: Bool {
-        guard AdMobService.isEnabled else { return false }
+        guard AdMobService.isEnabled, !AdFreePass.isActive else { return false }
         switch phase {
         case .idle, .working:
             return true
@@ -128,7 +127,7 @@ struct QuickSilenceView: View {
     }
 
     private var showsProcessingAdSurface: Bool {
-        guard AdMobService.isEnabled else { return false }
+        guard AdMobService.isEnabled, !AdFreePass.isActive else { return false }
         switch phase {
         case .working:
             return processingAdOverlay == nil
@@ -214,9 +213,6 @@ struct QuickSilenceView: View {
                     }
 
                     WorkTimeline(events: state.events)
-                    if showsProcessingAdSurface {
-                        WaitingAdSurface(language: appLanguage)
-                    }
 
                     Button {
                         cancelActiveWork(returnToIdle: true)
@@ -225,6 +221,11 @@ struct QuickSilenceView: View {
                             .frame(maxWidth: .infinity)
                     }
                     .buttonStyle(QSSecondary())
+
+                    // Below Cancel so a late-loading ad never shifts the button.
+                    if showsProcessingAdSurface {
+                        WaitingAdSurface(language: appLanguage)
+                    }
                 }
                 .animation(.easeInOut(duration: 0.22), value: processingAdOverlay)
             }
@@ -238,7 +239,7 @@ struct QuickSilenceView: View {
                     }
                     .transition(.opacity)
                 }
-                VideoPlayer(player: AVPlayer(url: result.outputURL))
+                VideoPlayer(player: player)
                         .frame(height: min(300, UIScreen.main.bounds.height * 0.34))
                     .clipShape(RoundedRectangle(cornerRadius: 18))
                 HStack(spacing: 26) {
@@ -429,6 +430,9 @@ struct QuickSilenceView: View {
         saved = false
         saveError = nil
         saveNeedsSettings = false
+        if let old = lastOutputURL, old != result.outputURL { try? FileManager.default.removeItem(at: old) }
+        lastOutputURL = result.outputURL
+        player = AVPlayer(url: result.outputURL)
         phase = .done(result)
         startResultAdBreakIfNeeded(jobID: jobID, totalBreaks: adBreakCount)
     }
@@ -468,6 +472,9 @@ struct QuickSilenceView: View {
         saveTask?.cancel()
         savingURL = nil
         workEvents = []
+        player = nil
+        if let old = lastOutputURL { try? FileManager.default.removeItem(at: old) }
+        lastOutputURL = nil
         phase = .idle
         rewardedAd.preload()
     }
@@ -548,9 +555,9 @@ struct QuickSilenceView: View {
         return 1
     }
 
-    /// Rewarded interstitial after a finished cut. AdMob policy requires an
-    /// intro with an opt-out before a rewarded interstitial opens, so show a
-    /// 3 s countdown with Skip first.
+    /// Rewarded interstitial after a finished cut. The intro states the reward
+    /// (24 h without banner ads) and offers Skip, as AdMob requires. Shown only
+    /// if the ad is ready within 3 s and nothing (share sheet, alert) covers the app.
     private func startResultAdBreakIfNeeded(jobID: UUID, totalBreaks: Int) {
         guard AdMobService.isEnabled, totalBreaks > completedProcessingAdBreaks else { return }
         processingAdTask?.cancel()
@@ -558,29 +565,49 @@ struct QuickSilenceView: View {
             try? await Task.sleep(for: .milliseconds(850))
             guard !Task.isCancelled, isActive(jobID), isDone else { return }
             if !rewardedAd.isReady {
-                await rewardedAd.load()
+                Task { await rewardedAd.load() }
+                for _ in 0..<15 where !rewardedAd.isReady {
+                    try? await Task.sleep(for: .milliseconds(200))
+                }
             }
-            guard !Task.isCancelled, isActive(jobID), isDone, rewardedAd.isReady else { return }
+            guard canShowResultAd(jobID: jobID) else { return }
 
             for number in stride(from: 3, through: 1, by: -1) {
                 processingAdOverlay = ProcessingAdState(
                     countdown: number,
-                    status: t("Reklam birazdan açılacak. İstemiyorsan atla.", "Ad opens shortly. Skip if you don't want it."),
+                    status: t(
+                        "Kısa bir reklam izle, 24 saat banner reklam görme. İstemiyorsan atla.",
+                        "Watch a short ad and get 24 hours without banner ads. Skip if you'd rather not."
+                    ),
                     isOpening: false,
                     canSkip: true
                 )
                 try? await Task.sleep(for: .seconds(1))
-                guard !Task.isCancelled, isActive(jobID), isDone else {
+                guard !Task.isCancelled, canShowResultAd(jobID: jobID) else {
                     processingAdOverlay = nil
                     return
                 }
             }
             processingAdOverlay = nil
             let result = await rewardedAd.showIfAvailable()
-            if result.wasPresented, isActive(jobID) {
-                completedProcessingAdBreaks += 1
+            guard result.wasPresented else { return }
+            if isActive(jobID) { completedProcessingAdBreaks += 1 }
+            if case .presented(rewarded: true) = result {
+                AdFreePass.grantReward()
+                processingAdOverlay = ProcessingAdState(
+                    countdown: nil,
+                    status: t("Teşekkürler! 24 saat banner reklam yok.", "Thanks! No banner ads for 24 hours."),
+                    isOpening: false,
+                    canSkip: false
+                )
+                try? await Task.sleep(for: .seconds(2.5))
+                if !Task.isCancelled { processingAdOverlay = nil }
             }
         }
+    }
+
+    private func canShowResultAd(jobID: UUID) -> Bool {
+        isActive(jobID) && isDone && rewardedAd.isReady && !isSaving && !AdMobService.hasPresentedContent
     }
 
     private func skipProcessingAdBreak() {

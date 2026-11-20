@@ -260,7 +260,9 @@ enum QuickSilenceEngine {
                 try? FileManager.default.removeItem(at: outURL)
             }
             try? FileManager.default.removeItem(at: passthroughURL)
-            try? FileManager.default.removeItem(at: fallbackURL)
+            for index in 0..<fallbackPresetCount {
+                try? FileManager.default.removeItem(at: Self.fallbackURL(base: fallbackURL, index: index))
+            }
         }
 
         let passthrough = try await runExport(
@@ -426,7 +428,7 @@ enum QuickSilenceEngine {
             do {
                 try await Task.sleep(for: .milliseconds(250))
             } catch {
-                session.cancelExport()
+                await cancelAndSettle(session)
                 throw error
             }
             let now = clock.now
@@ -435,14 +437,15 @@ enum QuickSilenceEngine {
                 lastProgress = current
                 lastChange = now
                 let fraction = progressBase + Double(current) * (progressCeiling - progressBase)
-                await progress(.update(stage, fraction, title, "\(detail) %\(Int(current * 100))"))
+                let percent = Int(current * 100)
+                await progress(.update(stage, fraction, title, "\(detail) \(appText(language, "%\(percent)", "\(percent)%"))"))
             }
             if now - lastChange > stallFallbackAfter {
-                session.cancelExport()
+                await cancelAndSettle(session)
                 return ExportAttempt(completed: false, failureMessage: appText(language, "dışa aktarım ilerlemedi", "export stopped progressing"))
             }
             if now - started > timeoutAfter {
-                session.cancelExport()
+                await cancelAndSettle(session)
                 return ExportAttempt(completed: false, failureMessage: appText(language, "dışa aktarım zaman aşımına uğradı", "export timed out"))
             }
         }
@@ -454,6 +457,22 @@ enum QuickSilenceEngine {
         return ExportAttempt(completed: true, failureMessage: nil, outputURL: url)
     }
 
+    /// Cancels and waits (max 3 s) until the session stops writing, so the next
+    /// preset never races a still-running export.
+    private static func cancelAndSettle(_ session: AVAssetExportSession) async {
+        session.cancelExport()
+        for _ in 0..<30 where session.status == .waiting || session.status == .exporting {
+            try? await Task.sleep(for: .milliseconds(100))
+        }
+    }
+
+    /// Output path for fallback attempt `index`; also used for cleanup.
+    static func fallbackURL(base: URL, index: Int) -> URL {
+        base.deletingPathExtension().appendingPathExtension("\(index).mp4")
+    }
+
+    static let fallbackPresetCount = 3
+
     /// Re-encodes with progressively more conservative presets until one finishes.
     private static func runFallbackExports(
         _ composition: AVComposition,
@@ -462,10 +481,11 @@ enum QuickSilenceEngine {
         progress: @escaping @MainActor (ProgressUpdate) -> Void
     ) async throws -> ExportAttempt {
         let presets = [AVAssetExportPresetHighestQuality, AVAssetExportPreset1920x1080, AVAssetExportPreset1280x720]
+        assert(presets.count == fallbackPresetCount)
         let seconds = composition.duration.seconds
         var lastFailure: String?
         for (index, preset) in presets.enumerated() {
-            let url = baseURL.deletingPathExtension().appendingPathExtension("\(index).mp4")
+            let url = fallbackURL(base: baseURL, index: index)
             let attempt = try await runExport(
                 composition,
                 to: url,
@@ -485,6 +505,18 @@ enum QuickSilenceEngine {
             lastFailure = attempt.failureMessage
         }
         return ExportAttempt(completed: false, failureMessage: lastFailure)
+    }
+
+    /// Removes leftovers from earlier runs (exports in tmp, imported copies). Call at launch only.
+    static func sweepTemporaryFiles() {
+        let fm = FileManager.default
+        let tmp = fm.temporaryDirectory
+        if let items = try? fm.contentsOfDirectory(at: tmp, includingPropertiesForKeys: nil) {
+            for url in items where url.lastPathComponent.hasPrefix("cutsense-") {
+                try? fm.removeItem(at: url)
+            }
+        }
+        try? fm.removeItem(at: URL.cachesDirectory.appending(path: "CutSense/imports", directoryHint: .isDirectory))
     }
 
     private static func replaceOutput(from source: URL, to destination: URL) throws {
