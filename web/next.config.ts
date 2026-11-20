@@ -50,7 +50,10 @@ const securityHeaders = [
   },
 ];
 
-const nextConfig: NextConfig = {
+// Static export for Cloudflare Pages: headers come from public/_headers there.
+const staticExport = process.env.STATIC_EXPORT === "1";
+
+const nextConfig: NextConfig = staticExport ? { output: "export", poweredByHeader: false } : {
   poweredByHeader: false,
   async redirects() {
     return legacyHosts.map((host) => ({
