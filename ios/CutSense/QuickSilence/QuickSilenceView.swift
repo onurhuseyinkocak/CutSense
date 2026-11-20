@@ -26,8 +26,8 @@ struct QuickSilenceView: View {
     @State private var currentInputURL: URL?
     @State private var didStartAutorun = false
     @State private var player: AVPlayer?
-    /// Last exported file; deleted when replaced or when the user starts over.
-    @State private var lastOutputURL: URL?
+    /// False while Settings is pushed on top; full-screen ads wait for it.
+    @State private var isScreenVisible = true
     @AppStorage(AppLanguage.storageKey) private var languageRaw = AppLanguage.systemDefault.rawValue
 
     enum Phase {
@@ -102,6 +102,8 @@ struct QuickSilenceView: View {
                 .accessibilityLabel(t("Ayarlar", "Settings"))
             }
         }
+        .onAppear { isScreenVisible = true }
+        .onDisappear { isScreenVisible = false }
         .onChange(of: pickerItem) { _, item in
             guard let item else { return }
             startPickedVideo(item)
@@ -396,6 +398,7 @@ struct QuickSilenceView: View {
 
     private func rerunCurrentInput() {
         guard let inputURL = currentInputURL else { return }
+        player?.pause()
         let jobID = UUID()
         processingTask?.cancel()
         activeJobID = jobID
@@ -430,8 +433,8 @@ struct QuickSilenceView: View {
         saved = false
         saveError = nil
         saveNeedsSettings = false
-        if let old = lastOutputURL, old != result.outputURL { try? FileManager.default.removeItem(at: old) }
-        lastOutputURL = result.outputURL
+        // Old outputs are not deleted here: a share may still be reading them.
+        // The launch sweep removes them.
         player = AVPlayer(url: result.outputURL)
         phase = .done(result)
         startResultAdBreakIfNeeded(jobID: jobID, totalBreaks: adBreakCount)
@@ -472,9 +475,8 @@ struct QuickSilenceView: View {
         saveTask?.cancel()
         savingURL = nil
         workEvents = []
+        player?.pause()
         player = nil
-        if let old = lastOutputURL { try? FileManager.default.removeItem(at: old) }
-        lastOutputURL = nil
         phase = .idle
         rewardedAd.preload()
     }
@@ -589,6 +591,7 @@ struct QuickSilenceView: View {
                 }
             }
             processingAdOverlay = nil
+            player?.pause()
             let result = await rewardedAd.showIfAvailable()
             guard result.wasPresented else { return }
             if isActive(jobID) { completedProcessingAdBreaks += 1 }
@@ -607,7 +610,7 @@ struct QuickSilenceView: View {
     }
 
     private func canShowResultAd(jobID: UUID) -> Bool {
-        isActive(jobID) && isDone && rewardedAd.isReady && !isSaving && !AdMobService.hasPresentedContent
+        isActive(jobID) && isDone && isScreenVisible && rewardedAd.isReady && !isSaving && !AdMobService.hasPresentedContent
     }
 
     private func skipProcessingAdBreak() {
