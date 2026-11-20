@@ -13,6 +13,8 @@
 		2D2228652CDBCD23D0A1A2AA /* AdMobIDs.swift in Sources */ = {isa = PBXBuildFile; fileRef = 90FCDC4392123011833F3ADC /* AdMobIDs.swift */; };
 		4D98206A34DA299213C53E86 /* QuickSilenceApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3E3BFDA791131FEC48D257D4 /* QuickSilenceApp.swift */; };
 		4F679B0A91607C40888C1D6B /* NativeAdCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5B25D226E27756B8668579FF /* NativeAdCard.swift */; };
+		50748F442AEF77CC4220228B /* silence_fixture.mp4 in Resources */ = {isa = PBXBuildFile; fileRef = 66419CEE6970408DD0364682 /* silence_fixture.mp4 */; };
+		55D6C5D1E8CC4A9EE8904A9A /* QuickSilenceReleaseTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8A0F74EC6E72BFA26270CD11 /* QuickSilenceReleaseTests.swift */; };
 		5C2F30243E7024441DEC15CD /* PhotosSaveService.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0362DFB1D828F4A88A12862 /* PhotosSaveService.swift */; };
 		7A1D7311FD27448ECE00BB6D /* SettingsScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = 28901B74846173D20088B4D4 /* SettingsScreen.swift */; };
 		888EE52AA670A80854D14A24 /* AppLanguage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2B4C7785DDFE37A3C7288498 /* AppLanguage.swift */; };
@@ -24,13 +26,26 @@
 		FCC3A11D6F78C346121A111C /* AdMobService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D9ADDEE72E898A7542A3E28 /* AdMobService.swift */; };
 /* End PBXBuildFile section */
 
+/* Begin PBXContainerItemProxy section */
+		FCCFA5AFCFC0B253C7A8E137 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = D95314FEB236E8C34B89ED04 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = BDB998C8B18E04F0F12E26BD;
+			remoteInfo = CutSense;
+		};
+/* End PBXContainerItemProxy section */
+
 /* Begin PBXFileReference section */
 		1D9ADDEE72E898A7542A3E28 /* AdMobService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdMobService.swift; sourceTree = "<group>"; };
 		28901B74846173D20088B4D4 /* SettingsScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsScreen.swift; sourceTree = "<group>"; };
 		2B4C7785DDFE37A3C7288498 /* AppLanguage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppLanguage.swift; sourceTree = "<group>"; };
 		3E3BFDA791131FEC48D257D4 /* QuickSilenceApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuickSilenceApp.swift; sourceTree = "<group>"; };
 		5B25D226E27756B8668579FF /* NativeAdCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativeAdCard.swift; sourceTree = "<group>"; };
+		66419CEE6970408DD0364682 /* silence_fixture.mp4 */ = {isa = PBXFileReference; path = silence_fixture.mp4; sourceTree = "<group>"; };
 		66C373ACE0E41C68BEC62183 /* AudioAnalysisService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioAnalysisService.swift; sourceTree = "<group>"; };
+		8A0F74EC6E72BFA26270CD11 /* QuickSilenceReleaseTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuickSilenceReleaseTests.swift; sourceTree = "<group>"; };
+		8CE7C67F669CC7C139D97E42 /* CutSenseTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = CutSenseTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		90FCDC4392123011833F3ADC /* AdMobIDs.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdMobIDs.swift; sourceTree = "<group>"; };
 		AB3F4CFE6EB7DA53D3C755D3 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		B9A4ECAEAEB959B791A3372C /* CutSense.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = CutSense.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -91,6 +106,15 @@
 			path = RoughCut;
 			sourceTree = "<group>";
 		};
+		5A39D3BCEFF3DA443E3968C3 /* Release */ = {
+			isa = PBXGroup;
+			children = (
+				8A0F74EC6E72BFA26270CD11 /* QuickSilenceReleaseTests.swift */,
+				66419CEE6970408DD0364682 /* silence_fixture.mp4 */,
+			);
+			path = Release;
+			sourceTree = "<group>";
+		};
 		6AF1FF056AF9A1586A4A5EDA /* UI */ = {
 			isa = PBXGroup;
 			children = (
@@ -104,6 +128,7 @@
 			isa = PBXGroup;
 			children = (
 				B9A4ECAEAEB959B791A3372C /* CutSense.app */,
+				8CE7C67F669CC7C139D97E42 /* CutSenseTests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -132,10 +157,19 @@
 				EAB2D8C08839F9CF71950CCF /* Resources */,
 				4003C4E064D905B994EE3F12 /* RoughCut */,
 				B13EE0F1465544ABDE683A92 /* Services */,
+				D505E2BC1266530AD3BF7987 /* Tests */,
 				6AF1FF056AF9A1586A4A5EDA /* UI */,
 				3191EC79147EC13BA7639368 /* Video */,
 			);
 			path = CutSense;
+			sourceTree = "<group>";
+		};
+		D505E2BC1266530AD3BF7987 /* Tests */ = {
+			isa = PBXGroup;
+			children = (
+				5A39D3BCEFF3DA443E3968C3 /* Release */,
+			);
+			path = Tests;
 			sourceTree = "<group>";
 		};
 		EAB2D8C08839F9CF71950CCF /* Resources */ = {
@@ -150,6 +184,25 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
+		4A05FF09A80F99BA55056874 /* CutSenseTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = A6CE36C9A296748C8409404D /* Build configuration list for PBXNativeTarget "CutSenseTests" */;
+			buildPhases = (
+				FA06AA8F5C7433575B4E215F /* Sources */,
+				325C7AA35845C22BD8AEED75 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				5FF62D850D2FB55F38E20FD9 /* PBXTargetDependency */,
+			);
+			name = CutSenseTests;
+			packageProductDependencies = (
+			);
+			productName = CutSenseTests;
+			productReference = 8CE7C67F669CC7C139D97E42 /* CutSenseTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
 		BDB998C8B18E04F0F12E26BD /* CutSense */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = EA2E3ABCB28222F4CFDD25A5 /* Build configuration list for PBXNativeTarget "CutSense" */;
@@ -179,6 +232,10 @@
 				BuildIndependentTargetsInParallel = YES;
 				LastUpgradeCheck = 1640;
 				TargetAttributes = {
+					4A05FF09A80F99BA55056874 = {
+						DevelopmentTeam = 6HCP552XP8;
+						ProvisioningStyle = Automatic;
+					};
 					BDB998C8B18E04F0F12E26BD = {
 						DevelopmentTeam = 6HCP552XP8;
 						ProvisioningStyle = Automatic;
@@ -203,11 +260,20 @@
 			projectRoot = "";
 			targets = (
 				BDB998C8B18E04F0F12E26BD /* CutSense */,
+				4A05FF09A80F99BA55056874 /* CutSenseTests */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
+		325C7AA35845C22BD8AEED75 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				50748F442AEF77CC4220228B /* silence_fixture.mp4 in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		7861AFD80A71818833DA5797 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -239,9 +305,45 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		FA06AA8F5C7433575B4E215F /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				55D6C5D1E8CC4A9EE8904A9A /* QuickSilenceReleaseTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
 
+/* Begin PBXTargetDependency section */
+		5FF62D850D2FB55F38E20FD9 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = BDB998C8B18E04F0F12E26BD /* CutSense */;
+			targetProxy = FCCFA5AFCFC0B253C7A8E137 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
 /* Begin XCBuildConfiguration section */
+		3563FB499C67D633C08BACC3 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = 6HCP552XP8;
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.cutsense.CutSenseTests;
+				SDKROOT = iphoneos;
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/CutSense.app/CutSense";
+			};
+			name = Release;
+		};
 		5D2B5D51A98111036FFA9A82 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -302,6 +404,26 @@
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		60459041F0EE55D9DA7E994A /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = 6HCP552XP8;
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.cutsense.CutSenseTests;
+				SDKROOT = iphoneos;
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/CutSense.app/CutSense";
 			};
 			name = Debug;
 		};
@@ -413,6 +535,15 @@
 			buildConfigurations = (
 				5D2B5D51A98111036FFA9A82 /* Debug */,
 				99BC8EAA3459D2B564347FD0 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		A6CE36C9A296748C8409404D /* Build configuration list for PBXNativeTarget "CutSenseTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				60459041F0EE55D9DA7E994A /* Debug */,
+				3563FB499C67D633C08BACC3 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Debug;

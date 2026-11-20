@@ -232,6 +232,12 @@ struct QuickSilenceView: View {
         case .done(let result):
             ScrollView(showsIndicators: false) {
                 VStack(spacing: 20) {
+                if let processingAdOverlay {
+                    ProcessingAdCountdownView(state: processingAdOverlay, language: appLanguage) {
+                        skipProcessingAdBreak()
+                    }
+                    .transition(.opacity)
+                }
                 VideoPlayer(player: AVPlayer(url: result.outputURL))
                         .frame(height: min(300, UIScreen.main.bounds.height * 0.34))
                     .clipShape(RoundedRectangle(cornerRadius: 18))
@@ -542,6 +548,9 @@ struct QuickSilenceView: View {
         return 1
     }
 
+    /// Rewarded interstitial after a finished cut. AdMob policy requires an
+    /// intro with an opt-out before a rewarded interstitial opens, so show a
+    /// 3 s countdown with Skip first.
     private func startResultAdBreakIfNeeded(jobID: UUID, totalBreaks: Int) {
         guard AdMobService.isEnabled, totalBreaks > completedProcessingAdBreaks else { return }
         processingAdTask?.cancel()
@@ -552,87 +561,25 @@ struct QuickSilenceView: View {
                 await rewardedAd.load()
             }
             guard !Task.isCancelled, isActive(jobID), isDone, rewardedAd.isReady else { return }
+
+            for number in stride(from: 3, through: 1, by: -1) {
+                processingAdOverlay = ProcessingAdState(
+                    countdown: number,
+                    status: t("Reklam birazdan açılacak. İstemiyorsan atla.", "Ad opens shortly. Skip if you don't want it."),
+                    isOpening: false,
+                    canSkip: true
+                )
+                try? await Task.sleep(for: .seconds(1))
+                guard !Task.isCancelled, isActive(jobID), isDone else {
+                    processingAdOverlay = nil
+                    return
+                }
+            }
+            processingAdOverlay = nil
             let result = await rewardedAd.showIfAvailable()
             if result.wasPresented, isActive(jobID) {
                 completedProcessingAdBreaks += 1
             }
-        }
-    }
-
-    private func presentProcessingAdBreak(jobID: UUID, breakIndex: Int, totalBreaks: Int) async -> Bool {
-        guard AdMobService.isEnabled, !Task.isCancelled, isActive(jobID), isWorking else {
-            processingAdOverlay = nil
-            return false
-        }
-
-        if !rewardedAd.isReady {
-            await rewardedAd.load()
-        }
-
-        guard !Task.isCancelled, isActive(jobID), isWorking, rewardedAd.isReady else {
-            processingAdOverlay = nil
-            return false
-        }
-
-        for number in stride(from: 3, through: 1, by: -1) {
-            processingAdOverlay = ProcessingAdState(
-                countdown: number,
-                status: adBreakCountdownText(breakIndex: breakIndex, totalBreaks: totalBreaks),
-                isOpening: false,
-                canSkip: false
-            )
-            try? await Task.sleep(for: .seconds(1))
-            guard !Task.isCancelled, isActive(jobID), isWorking else {
-                processingAdOverlay = nil
-                return false
-            }
-        }
-
-        processingAdOverlay = ProcessingAdState(
-            countdown: 0,
-            status: t("Reklam açılıyor.", "Opening ad."),
-            isOpening: true,
-            canSkip: false
-        )
-        let result = await rewardedAd.showIfAvailable()
-        let wasPresented = result.wasPresented
-        if wasPresented, isActive(jobID) {
-            completedProcessingAdBreaks += 1
-        }
-
-        guard !Task.isCancelled, isActive(jobID), isWorking else {
-            processingAdOverlay = nil
-            return wasPresented
-        }
-        processingAdOverlay = ProcessingAdState(
-            countdown: nil,
-            status: adBreakCompleteText(result: result),
-            isOpening: false,
-            canSkip: false
-        )
-        try? await Task.sleep(for: .milliseconds(700))
-        if !Task.isCancelled {
-            processingAdOverlay = nil
-        }
-        return wasPresented
-    }
-
-    private func adBreakCountdownText(breakIndex: Int, totalBreaks: Int) -> String {
-        if totalBreaks > 1 {
-            return t(
-                "Uzun video reklamı \(breakIndex)/\(totalBreaks) birazdan açılacak.",
-                "Long-video ad \(breakIndex)/\(totalBreaks) will open shortly."
-            )
-        }
-        return t("Reklam birazdan açılacak.", "Ad will open shortly.")
-    }
-
-    private func adBreakCompleteText(result: RewardedInterstitialAdResult) -> String {
-        switch result {
-        case .presented(let rewarded):
-            return rewarded ? t("Reklam tamamlandı. İşlem devam ediyor.", "Ad completed. Processing continues.") : t("Reklam kapandı. İşlem devam ediyor.", "Ad closed. Processing continues.")
-        case .unavailable:
-            return t("Reklam şu an yüklenemedi. İşlem devam ediyor.", "Ad could not load right now. Processing continues.")
         }
     }
 
