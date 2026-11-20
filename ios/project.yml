@@ -1,3 +1,5 @@
+# App Store release target: QuickSilence silence cutter + AdMob.
+# The heavy UGC editor config lives in project.ugc-full.yml (not shippable: source gaps).
 name: CutSense
 options:
   bundleIdPrefix: com.cutsense
@@ -5,79 +7,29 @@ options:
     iOS: "17.0"
   xcodeVersion: "16.4"
   createIntermediateGroups: true
-  generateEmptyDirectories: true
 
 packages:
-  Supabase:
-    url: https://github.com/supabase/supabase-swift
-    from: "2.0.0"
-  WhisperKit:
-    url: https://github.com/argmaxinc/WhisperKit
-    from: "0.10.0"
   GoogleMobileAds:
     url: https://github.com/googleads/swift-package-manager-google-mobile-ads.git
     from: "13.7.0"
-
-configFiles:
-  Debug: Secrets.xcconfig
-  Release: Secrets.xcconfig
 
 targets:
   CutSense:
     type: application
     platform: iOS
     sources:
-      - path: CutSense
+      - path: CutSense/QuickSilence
         excludes:
-          - "Tests/**"
-          # Real Ads live in Ads/. Keep the legacy no-op definitions out so
-          # QuickSilence uses the production AdMob implementation.
-          - "QuickSilence/AdStubs.swift"
-          - "**/*.bak"
-          - "**/*.DS_Store"
-          - "**/._*"
-          - "Resources/WhisperModels/**"
-          - "UGC/EDL/**"  # Exclude EDL from auto-include, we'll add explicitly
-          - "UGC/AI/**"
-          - "UGC/Transcription/**"
-          - "UGC/Captions/**"
-          - "UGC/Motion/**"
-          - "UGC/Transitions/**"
-          - "UGC/Color/**"
-          - "UGC/Effects/**"
-          - "UGC/Sound/**"
-          - "UGC/Styles/**"
-      - path: CutSense/Resources/WhisperModels/openai_whisper-large-v3_turbo_954MB
-        type: folder
-        buildPhase: resources
-      # New EDL Architecture Files
-      - path: CutSense/UGC/EDL/EDLTypes.swift
-      - path: CutSense/UGC/EDL/EditHistory.swift
-      - path: CutSense/UGC/EDL/UGCProject.swift
-      - path: CutSense/UGC/EDL/ProjectMigration.swift
-      # AI Routing (Pollinations + Apple Foundation Models)
-      - path: CutSense/AI/DeviceCapabilityDetector.swift
-      - path: CutSense/AI/PollinationsLLMService.swift
-      - path: CutSense/AI/AIProviderRouter.swift
-      - path: CutSense/AI/AIProviderRouter+UGC.swift
-      - path: CutSense/UGC/Transcription/EnhancedTranscriptionService.swift
-      - path: CutSense/UGC/Captions/EnhancedCaptionEngine.swift
-      - path: CutSense/UGC/Motion/SmartMotionEngine.swift
-      - path: CutSense/UGC/Transitions/TransitionEngine.swift
-      - path: CutSense/UGC/Color/ColorGradingEngine.swift
-      - path: CutSense/UGC/Effects/VisualEffectsEngine.swift
-      - path: CutSense/UGC/Sound/SoundDesignEngine.swift
-      - path: CutSense/UGC/Styles/EditingStyleConfigurator.swift
-    entitlements:
-      path: CutSense/CutSense.entitlements
-      properties:
-        com.apple.developer.applesignin:
-          - Default
+          - "AdStubs.swift"
+      - path: CutSense/Ads
+      - path: CutSense/Services/AppLanguage.swift
+      - path: CutSense/Resources/Assets.xcassets
+      - path: CutSense/Resources/PrivacyInfo.xcprivacy
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.cutsense.app
-        MARKETING_VERSION: "1.0.0"
-        CURRENT_PROJECT_VERSION: 19
+        MARKETING_VERSION: "1.0.3"
+        CURRENT_PROJECT_VERSION: 29
         SWIFT_VERSION: "6.0"
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         CODE_SIGN_STYLE: Automatic
@@ -91,90 +43,14 @@ targets:
         CFBundleVersion: $(CURRENT_PROJECT_VERSION)
         CFBundleDisplayName: CutSense
         ITSAppUsesNonExemptEncryption: false
-        UIAppFonts:
-          - Poppins-Black.ttf
-          - Poppins-ExtraBold.ttf
-          - BebasNeue-Regular.ttf
-          - Anton-Regular.ttf
-          - Montserrat-Black.ttf
-          - Inter-Bold.ttf
-          - Oswald-Bold.ttf
-          - Archivo-Black.ttf
-          - PlusJakartaSans-ExtraBold.ttf
-        LSSupportsOpeningDocumentsInPlace: true
-        UISupportsDocumentBrowser: false
         NSPhotoLibraryUsageDescription: "CutSense needs access to your photo library to import videos for editing."
         NSPhotoLibraryAddUsageDescription: "CutSense needs permission to save edited videos to your photo library."
-        NSSpeechRecognitionUsageDescription: "CutSense uses speech recognition to transcribe your video for intelligent editing."
-        NSMicrophoneUsageDescription: "CutSense may need microphone access for audio analysis."
         UISupportedInterfaceOrientations:
           - UIInterfaceOrientationPortrait
-        UISupportedInterfaceOrientations~ipad:
-          - UIInterfaceOrientationPortrait
-          - UIInterfaceOrientationPortraitUpsideDown
-          - UIInterfaceOrientationLandscapeLeft
-          - UIInterfaceOrientationLandscapeRight
         UIRequiresFullScreen: true
-        SUPABASE_URL: $(SUPABASE_URL)
-        SUPABASE_ANON_KEY: $(SUPABASE_ANON_KEY)
-        PEXELS_API_KEY: $(PEXELS_API_KEY)
         GADApplicationIdentifier: ca-app-pub-6644397387275334~9083790273
-        UTExportedTypeDeclarations:
-          - UTTypeIdentifier: com.cutsense.template
-            UTTypeDescription: CutSense Template
-            UTTypeConformsTo:
-              - public.json
-              - public.data
-            UTTypeTagSpecification:
-              public.filename-extension:
-                - cutsensetemplate
-        CFBundleDocumentTypes:
-          - CFBundleTypeName: CutSense Template
-            LSHandlerRank: Owner
-            LSItemContentTypes:
-              - com.cutsense.template
         UILaunchScreen:
           UIColorName: LaunchBackground
           UIImageName: SplashLogo
     dependencies:
-      - package: Supabase
-      - package: WhisperKit
       - package: GoogleMobileAds
-
-  CutSenseTests:
-    type: bundle.unit-test
-    platform: iOS
-    sources:
-      - path: CutSense/Tests
-        excludes:
-          - "**/.gitkeep"
-          - "CutSenseUITests/**"
-      - path: CutSense/Tests/CutSenseQualityTests/cutsense_test_video.mp4
-        type: file
-        buildPhase: resources
-      - path: CutSense/Tests/CutSenseQualityTests/whatsapp_test_video.mp4
-        type: file
-        buildPhase: resources
-    dependencies:
-      - target: CutSense
-    settings:
-      base:
-        SWIFT_VERSION: "6.0"
-        DEVELOPMENT_TEAM: 6HCP552XP8
-        CODE_SIGN_STYLE: Automatic
-        ENABLE_TESTING_SEARCH_PATHS: YES
-        GENERATE_INFOPLIST_FILE: YES
-
-  CutSenseUITests:
-    type: bundle.ui-testing
-    platform: iOS
-    sources:
-      - path: CutSense/Tests/CutSenseUITests
-    dependencies:
-      - target: CutSense
-    settings:
-      base:
-        SWIFT_VERSION: "6.0"
-        DEVELOPMENT_TEAM: 6HCP552XP8
-        CODE_SIGN_STYLE: Automatic
-        GENERATE_INFOPLIST_FILE: YES
