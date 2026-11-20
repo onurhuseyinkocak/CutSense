@@ -245,7 +245,7 @@ struct QuickSilenceView: View {
                         .frame(height: min(300, UIScreen.main.bounds.height * 0.34))
                     .clipShape(RoundedRectangle(cornerRadius: 18))
                 HStack(spacing: 26) {
-                    stat("%\(result.removedPercent)", t("kesildi", "removed"))
+                    stat(t("%\(result.removedPercent)", "\(result.removedPercent)%"), t("kesildi", "removed"))
                     stat(timeString(result.removedDuration), t("sessizlik", "silence"))
                     stat(timeString(result.outputDuration), t("yeni süre", "new length"))
                 }

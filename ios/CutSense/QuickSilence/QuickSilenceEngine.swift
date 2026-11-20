@@ -437,8 +437,8 @@ enum QuickSilenceEngine {
                 lastProgress = current
                 lastChange = now
                 let fraction = progressBase + Double(current) * (progressCeiling - progressBase)
-                let percent = Int(current * 100)
-                await progress(.update(stage, fraction, title, "\(detail) \(appText(language, "%\(percent)", "\(percent)%"))"))
+                // Percent is shown by the view; keep `detail` stable so the event log doesn't flood.
+                await progress(.update(stage, fraction, title, detail))
             }
             if now - lastChange > stallFallbackAfter {
                 await cancelAndSettle(session)
