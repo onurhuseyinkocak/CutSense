@@ -15,8 +15,9 @@ struct QuickSilenceView: View {
     @State private var preview = PreviewPlayer()
     @State private var analysis: QuickSilenceEngine.Analysis?
     @State private var plan: QuickSilenceEngine.CutPlan?
-    @State private var cutIntensity: QuickSilenceEngine.CutIntensity = .tight
-    @State private var cutSettings = QuickSilenceEngine.CutSettings(.tight)
+    // Balanced by default: over-cutting is the top complaint about silence removers.
+    @State private var cutIntensity: QuickSilenceEngine.CutIntensity = .balanced
+    @State private var cutSettings = QuickSilenceEngine.CutSettings(.balanced)
     @State private var exportProgress: Double?
     @State private var exportTask: Task<Void, Never>?
     @State private var saved = false

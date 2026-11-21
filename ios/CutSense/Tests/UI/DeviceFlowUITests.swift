@@ -40,8 +40,9 @@ final class DeviceFlowUITests: XCTestCase {
         XCTAssertTrue(cells.firstMatch.waitForExistence(timeout: 20), "Photos picker did not show any item")
         snapshot("picker")
         // Prefer the owner's minutes-long clip (picker labels follow the system language).
-        let longVideo = cells.matching(NSPredicate(format: "label CONTAINS 'dakika' OR label CONTAINS[c] 'minute'")).firstMatch
-        (longVideo.exists ? longVideo : cells.firstMatch).tap()
+        let ownerClip = cells.matching(NSPredicate(format: "label CONTAINS 'dört dakika otuz dört' OR label CONTAINS[c] '4 minutes, 34'")).firstMatch
+        let target = ownerClip.exists ? ownerClip : cells.firstMatch
+        target.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).tap()
         try reviewRestoreSave()
     }
 
@@ -99,8 +100,10 @@ final class DeviceFlowUITests: XCTestCase {
     }
 
     private func dismissRatingPromptIfShown() {
-        let notNow = springboard.buttons["Not Now"]
-        if notNow.waitForExistence(timeout: 4) { notNow.tap() }
+        for source in [app, springboard] {
+            let notNow = source.buttons["Not Now"]
+            if notNow.waitForExistence(timeout: 3) { notNow.tap(); return }
+        }
     }
 
     private func newLengthText() -> String {

@@ -301,8 +301,26 @@ private struct CutListSheet: View {
             }
             .navigationTitle(String(format: appText(language, "%d kesim", "%d cuts"), plan.cuts.count))
             .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                if !plan.cuts.isEmpty {
+                    ToolbarItem(placement: .topBarLeading) {
+                        Button(appText(language, "Tümünü tut", "Keep all")) { setAll(restored: true) }
+                            .disabled(plan.cuts.allSatisfy(\.isRestored))
+                            .accessibilityIdentifier("keepAllCutsButton")
+                    }
+                    ToolbarItem(placement: .topBarTrailing) {
+                        Button(appText(language, "Tümünü kes", "Cut all")) { setAll(restored: false) }
+                            .disabled(!plan.cuts.contains(where: \.isRestored))
+                            .accessibilityIdentifier("cutAllButton")
+                    }
+                }
+            }
         }
         .preferredColorScheme(.dark)
+    }
+
+    private func setAll(restored: Bool) {
+        for index in plan.cuts.indices { plan.cuts[index].isRestored = restored }
     }
 
     private func rowTitle(_ cut: QuickSilenceEngine.Cut) -> String {

@@ -34,9 +34,9 @@ enum QuickSilenceEngine {
         func detail(for language: AppLanguage) -> String {
             switch self {
             case .balanced:
-                appText(language, "Konuşma uçlarını daha çok korur.", "Keeps more space around speech.")
+                appText(language, "Önerilen. Konuşmanın etrafında doğal boşluk bırakır.", "Recommended. Keeps natural space around speech.")
             case .tight:
-                appText(language, "Önerilen sert kesim.", "Recommended strong cut.")
+                appText(language, "Daha sıkı kesim, daha hızlı tempo.", "Tighter cut, faster pace.")
             case .hardcore:
                 appText(language, "Nefes ve arka plan boşluğunu en agresif keser.", "Cuts breaths and background gaps most aggressively.")
             }

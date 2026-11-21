@@ -67,8 +67,10 @@ enum Translations {
         ("Balanced", row(es: "Equilibrado", pt: "Equilibrado", de: "Ausgewogen", fr: "Équilibré", it: "Bilanciato", ja: "バランス", ko: "균형")),
         ("Tight", row(es: "Ajustado", pt: "Intenso", de: "Straff", fr: "Serré", it: "Deciso", ja: "タイト", ko: "타이트")),
         ("Hardcore", row(es: "Extremo", pt: "Extremo", de: "Extrem", fr: "Extrême", it: "Estremo", ja: "最大", ko: "최대")),
-        ("Keeps more space around speech.", row(es: "Deja más margen alrededor de la voz.", pt: "Deixa mais espaço em volta da fala.", de: "Lässt mehr Raum um die Sprache.", fr: "Garde plus d'espace autour de la voix.", it: "Lascia più spazio intorno al parlato.", ja: "話し声の前後に余裕を残します。", ko: "말소리 앞뒤 여유를 더 남깁니다.")),
-        ("Recommended strong cut.", row(es: "Corte firme recomendado.", pt: "Corte firme recomendado.", de: "Empfohlener kräftiger Schnitt.", fr: "Coupe franche recommandée.", it: "Taglio deciso consigliato.", ja: "おすすめのしっかりカット。", ko: "추천하는 강한 자르기입니다.")),
+        ("Recommended. Keeps natural space around speech.", row(es: "Recomendado. Deja un margen natural alrededor de la voz.", pt: "Recomendado. Mantém um respiro natural na fala.", de: "Empfohlen. Lässt natürlichen Raum um die Sprache.", fr: "Recommandé. Garde un espace naturel autour de la voix.", it: "Consigliato. Lascia spazio naturale intorno al parlato.", ja: "おすすめ。話し声の前後に自然な間を残します。", ko: "추천. 말소리 앞뒤에 자연스러운 여유를 남깁니다.")),
+        ("Tighter cut, faster pace.", row(es: "Corte más ajustado, ritmo más rápido.", pt: "Corte mais justo, ritmo mais rápido.", de: "Engerer Schnitt, schnelleres Tempo.", fr: "Coupe plus serrée, rythme plus rapide.", it: "Taglio più stretto, ritmo più veloce.", ja: "より詰めたカットでテンポよく。", ko: "더 촘촘한 컷, 더 빠른 템포.")),
+        ("Keep all", row(es: "Mantener todo", pt: "Manter tudo", de: "Alle behalten", fr: "Tout garder", it: "Tieni tutto", ja: "すべて残す", ko: "모두 유지")),
+        ("Cut all", row(es: "Cortar todo", pt: "Cortar tudo", de: "Alle schneiden", fr: "Tout couper", it: "Taglia tutto", ja: "すべてカット", ko: "모두 자르기")),
         ("Cuts breaths and background gaps most aggressively.", row(
             es: "Corta respiraciones y huecos de fondo al máximo.",
             pt: "Corta respirações e pausas de fundo ao máximo.",
