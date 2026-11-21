@@ -69,6 +69,14 @@ enum Translations {
         ("Hardcore", row(es: "Extremo", pt: "Extremo", de: "Extrem", fr: "Extrême", it: "Estremo", ja: "最大", ko: "최대")),
         ("Recommended. Keeps natural space around speech.", row(es: "Recomendado. Deja un margen natural alrededor de la voz.", pt: "Recomendado. Mantém um respiro natural na fala.", de: "Empfohlen. Lässt natürlichen Raum um die Sprache.", fr: "Recommandé. Garde un espace naturel autour de la voix.", it: "Consigliato. Lascia spazio naturale intorno al parlato.", ja: "おすすめ。話し声の前後に自然な間を残します。", ko: "추천. 말소리 앞뒤에 자연스러운 여유를 남깁니다.")),
         ("Tighter cut, faster pace.", row(es: "Corte más ajustado, ritmo más rápido.", pt: "Corte mais justo, ritmo mais rápido.", de: "Engerer Schnitt, schnelleres Tempo.", fr: "Coupe plus serrée, rythme plus rapide.", it: "Taglio più stretto, ritmo più veloce.", ja: "より詰めたカットでテンポよく。", ko: "더 촘촘한 컷, 더 빠른 템포.")),
+        ("Most of this video has no speech. CutSense works best on talking videos.", row(
+            es: "Casi todo este video no tiene voz. CutSense funciona mejor con videos hablados.",
+            pt: "Quase todo este vídeo não tem fala. O CutSense funciona melhor com vídeos falados.",
+            de: "Dieses Video enthält kaum Sprache. CutSense wirkt am besten bei Sprechvideos.",
+            fr: "Cette vidéo contient peu de parole. CutSense fonctionne mieux avec des vidéos parlées.",
+            it: "In questo video si parla poco. CutSense funziona meglio con video parlati.",
+            ja: "この動画は話し声がほとんどありません。CutSenseは話す動画で最も効果を発揮します。",
+            ko: "이 영상에는 말소리가 거의 없습니다. CutSense는 말하는 영상에서 가장 잘 작동합니다.")),
         ("Keep all", row(es: "Mantener todo", pt: "Manter tudo", de: "Alle behalten", fr: "Tout garder", it: "Tieni tutto", ja: "すべて残す", ko: "모두 유지")),
         ("Cut all", row(es: "Cortar todo", pt: "Cortar tudo", de: "Alle schneiden", fr: "Tout couper", it: "Taglia tutto", ja: "すべてカット", ko: "모두 자르기")),
         ("Cuts breaths and background gaps most aggressively.", row(

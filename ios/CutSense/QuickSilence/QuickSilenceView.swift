@@ -61,8 +61,10 @@ struct QuickSilenceView: View {
                            startPoint: .top, endPoint: .bottom)
                 .ignoresSafeArea()
 
-            if case .review = phase, let planBinding = Binding($plan), let inputURL = session.inputURL {
-                review(plan: planBinding, inputURL: inputURL)
+            if case .review = phase, let current = plan, let inputURL = session.inputURL {
+                // Not Binding($plan): its force-unwrap crashes when New Video clears the plan while
+                // the review screen is still updating on the way out.
+                review(plan: Binding(get: { plan ?? current }, set: { plan = $0 }), inputURL: inputURL)
                     .padding(.horizontal, 16)
                     .padding(.bottom, 8)
             } else {

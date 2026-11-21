@@ -217,7 +217,10 @@ struct ReviewScreen: View {
     }
 
     private var hint: String? {
-        guard plan.removedPercent > 60, intensity != .balanced else { return nil }
+        guard plan.removedPercent > 60 || (intensity == .balanced && plan.removedPercent > 50) else { return nil }
+        if intensity == .balanced {
+            return appText(language, "Bu videonun çoğunda konuşma yok. CutSense en iyi konuşmalı videolarda çalışır.", "Most of this video has no speech. CutSense works best on talking videos.")
+        }
         return appText(language, "Çok mu kesildi? Dengeli'yi dene.", "Too much cut? Try Balanced.")
     }
 

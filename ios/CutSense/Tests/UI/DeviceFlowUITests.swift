@@ -88,7 +88,10 @@ final class DeviceFlowUITests: XCTestCase {
         let newVideo = app.buttons["newVideoButton"]
         XCTAssertTrue(newVideo.waitForExistence(timeout: 10))
         newVideo.tap()
-        XCTAssertTrue(app.buttons["chooseVideoButton"].waitForExistence(timeout: 10))
+        snapshot("after-new-video-0s")
+        let home = app.buttons["chooseVideoButton"].waitForExistence(timeout: 10)
+        snapshot("after-new-video-10s")
+        XCTAssertTrue(home, "New Video did not return to the home screen")
     }
 
     private func skipAdBreakIfShown() {
