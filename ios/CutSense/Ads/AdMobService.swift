@@ -303,7 +303,7 @@ struct AdBannerSlot: View {
         AdBannerView(adSize: size)
             .frame(width: size.size.width, height: size.size.height)
             .frame(maxWidth: .infinity)
-            .accessibilityLabel("Advertisement")
+            .accessibilityLabel(appText(AppLanguage.current, "Reklam", "Advertisement"))
     }
 }
 

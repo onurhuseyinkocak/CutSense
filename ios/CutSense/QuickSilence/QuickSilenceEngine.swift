@@ -27,7 +27,7 @@ enum QuickSilenceEngine {
             case .tight:
                 appText(language, "Sıkı", "Tight")
             case .hardcore:
-                "Hardcore"
+                appText(language, "Hardcore", "Hardcore")
             }
         }
 
@@ -130,9 +130,9 @@ enum QuickSilenceEngine {
             case .nothingToKeep:
                 appText(language, "Konuşma bulunamadı. Video sessiz ya da sadece arka plan gürültüsü olabilir.", "No speech was found. The video may be silent or only background noise.")
             case .timelineInsertFailed(let message):
-                appText(language, "Video zaman çizgisi kurulamadı: \(message)", "Could not build the video timeline: \(message)")
+                String(format: appText(language, "Video zaman çizgisi kurulamadı: %@", "Could not build the video timeline: %@"), message)
             case .outputEmpty(let bytes):
-                appText(language, "Video oluşturuldu ama dosya boş görünüyor (\(bytes) bayt).", "The video was created, but the output file looks empty (\(bytes) bytes).")
+                String(format: appText(language, "Video oluşturuldu ama dosya boş görünüyor (%lld bayt).", "The video was created, but the output file looks empty (%lld bytes)."), bytes)
             case .exportFailed:
                 appText(
                     language,
@@ -213,10 +213,9 @@ enum QuickSilenceEngine {
                     .analyzingAudio,
                     0.08 + audioFraction * 0.10,
                     appText(language, "Ses taranıyor", "Scanning audio"),
-                    appText(
-                        language,
-                        "\(compactTime(processedSeconds, language: language)) / \(compactTime(duration, language: language)) ses penceresi işlendi.",
-                        "\(compactTime(processedSeconds, language: language)) / \(compactTime(duration, language: language)) of audio processed."
+                    String(
+                        format: appText(language, "%@ / %@ ses penceresi işlendi.", "%@ / %@ of audio processed."),
+                        compactTime(processedSeconds, language: language), compactTime(duration, language: language)
                     )
                 ))
             }
@@ -267,10 +266,9 @@ enum QuickSilenceEngine {
             .planningCuts,
             0.18,
             appText(language, "Kesimler planlanıyor", "Planning cuts"),
-            appText(
-                language,
-                "\(intensity.title(for: language)): \(plan.cuts.count) kesilebilir aralık bulundu.",
-                "\(intensity.title(for: language)): \(plan.cuts.count) cuttable pause(s) found."
+            String(
+                format: appText(language, "%@: %d kesilebilir aralık bulundu.", "%@: %d cuttable pause(s) found."),
+                intensity.title(for: language), plan.cuts.count
             )
         ))
         return try await export(url: url, plan: plan, language: language, progress: progress)
@@ -323,7 +321,7 @@ enum QuickSilenceEngine {
             .buildingTimeline,
             0.28,
             appText(language, "Zaman çizgisi kuruluyor", "Building timeline"),
-            appText(language, "\(segmentsKept) konuşma bölümü korunacak.", "\(segmentsKept) speech segment(s) will be kept.")
+            String(format: appText(language, "%d konuşma bölümü korunacak.", "%d speech segment(s) will be kept."), segmentsKept)
         ))
         let composition = try await makeComposition(url: url, plan: plan)
         let outputSeconds = composition.duration.seconds
@@ -451,7 +449,7 @@ enum QuickSilenceEngine {
 
     static func compactTime(_ seconds: Double, language: AppLanguage) -> String {
         let total = max(0, Int(seconds.rounded()))
-        if total < 60 { return appText(language, "\(total) sn", "\(total)s") }
+        if total < 60 { return String(format: appText(language, "%d sn", "%ds"), total) }
         return String(format: "%d:%02d", total / 60, total % 60)
     }
 
@@ -593,18 +591,6 @@ enum QuickSilenceEngine {
             lastFailure = attempt.failureMessage
         }
         return ExportAttempt(completed: false, failureMessage: lastFailure)
-    }
-
-    /// Removes leftovers from earlier runs (exports in tmp, imported copies). Call at launch only.
-    static func sweepTemporaryFiles() {
-        let fm = FileManager.default
-        let tmp = fm.temporaryDirectory
-        if let items = try? fm.contentsOfDirectory(at: tmp, includingPropertiesForKeys: nil) {
-            for url in items where url.lastPathComponent.hasPrefix("cutsense-") {
-                try? fm.removeItem(at: url)
-            }
-        }
-        try? fm.removeItem(at: URL.cachesDirectory.appending(path: "CutSense/imports", directoryHint: .isDirectory))
     }
 
     private static func replaceOutput(from source: URL, to destination: URL) throws {

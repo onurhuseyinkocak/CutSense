@@ -59,7 +59,7 @@ struct PaywallView: View {
                                 if isWorking {
                                     ProgressView().tint(.black)
                                 } else {
-                                    Text(appText(language, "\(product.displayPrice) ile aç", "Unlock for \(product.displayPrice)"))
+                                    Text(String(format: appText(language, "%@ ile aç", "Unlock for %@"), product.displayPrice))
                                 }
                             }
                             .font(.system(.headline, design: .rounded).weight(.bold))
@@ -133,7 +133,7 @@ struct PaywallView: View {
         case .pending:
             message = appText(language, "Satın alma onay bekliyor. Onaylanınca Pro açılır.", "Purchase is pending approval. Pro unlocks once it is approved.")
         case .failed(let reason):
-            message = appText(language, "Satın alma tamamlanamadı: \(reason)", "Purchase could not be completed: \(reason)")
+            message = String(format: appText(language, "Satın alma tamamlanamadı: %@", "Purchase could not be completed: %@"), reason)
         }
     }
 

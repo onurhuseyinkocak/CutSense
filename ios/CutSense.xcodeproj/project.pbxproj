@@ -25,10 +25,12 @@
 		A27C5761649779A1BCE3B638 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = C568ED16C5A5569D901E936F /* Assets.xcassets */; };
 		AF36EB525821348164F48197 /* PaywallView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 540A6003B72CEFEAB224B81E /* PaywallView.swift */; };
 		B665BB21E20DBA5C24D05B7F /* ReviewScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2B01E9767A4EA100187484E /* ReviewScreen.swift */; };
+		B7C3B611142D948B8C4948AB /* Translations.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8B59AD29BAC109B3635507AD /* Translations.swift */; };
 		CD22B3E9047CE97BC252EAA0 /* QuickSilencePlanTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B489C5F2177971DC7A3350E6 /* QuickSilencePlanTests.swift */; };
 		CDF0ACC03AF3EDCFA64C3D94 /* QuickSilenceView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E58D84C896EEF6326B68D129 /* QuickSilenceView.swift */; };
 		CE75044298708EE413E5FC2D /* WorkFilesTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2AE1516E17CA740B67BCC3DC /* WorkFilesTests.swift */; };
 		D2BD8EF815D8FB6530381BE4 /* VideoImportService.swift in Sources */ = {isa = PBXBuildFile; fileRef = C62FC1631B126EE52AC1C53B /* VideoImportService.swift */; };
+		D92367A2D1E589D530489394 /* TranslationsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8E3C5A2DBFDEA2F0D65BD0D1 /* TranslationsTests.swift */; };
 		ED4D21C239CACAD8D6D15CD5 /* ProStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 76D307ED363DB96DE47A88D7 /* ProStore.swift */; };
 		EDA7F2C44BE660D743112F3C /* WorkFiles.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37CA1075A0AAFD9751456F3A /* WorkFiles.swift */; };
 		F2FAAC8BD865412DB715DC8B /* QuickSilenceEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB97188D8E41E8EDA18FFC31 /* QuickSilenceEngine.swift */; };
@@ -60,7 +62,9 @@
 		76D307ED363DB96DE47A88D7 /* ProStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProStore.swift; sourceTree = "<group>"; };
 		88CA88FBF174BF48827AEA02 /* ShareSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShareSheet.swift; sourceTree = "<group>"; };
 		8A0F74EC6E72BFA26270CD11 /* QuickSilenceReleaseTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuickSilenceReleaseTests.swift; sourceTree = "<group>"; };
+		8B59AD29BAC109B3635507AD /* Translations.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Translations.swift; sourceTree = "<group>"; };
 		8CE7C67F669CC7C139D97E42 /* CutSenseTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = CutSenseTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		8E3C5A2DBFDEA2F0D65BD0D1 /* TranslationsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TranslationsTests.swift; sourceTree = "<group>"; };
 		90FCDC4392123011833F3ADC /* AdMobIDs.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdMobIDs.swift; sourceTree = "<group>"; };
 		A29D62925185EF25613EC49B /* ProStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProStoreTests.swift; sourceTree = "<group>"; };
 		AB3F4CFE6EB7DA53D3C755D3 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
@@ -132,6 +136,7 @@
 				B489C5F2177971DC7A3350E6 /* QuickSilencePlanTests.swift */,
 				8A0F74EC6E72BFA26270CD11 /* QuickSilenceReleaseTests.swift */,
 				66419CEE6970408DD0364682 /* silence_fixture.mp4 */,
+				8E3C5A2DBFDEA2F0D65BD0D1 /* TranslationsTests.swift */,
 				2AE1516E17CA740B67BCC3DC /* WorkFilesTests.swift */,
 			);
 			path = Release;
@@ -166,6 +171,7 @@
 			isa = PBXGroup;
 			children = (
 				2B4C7785DDFE37A3C7288498 /* AppLanguage.swift */,
+				8B59AD29BAC109B3635507AD /* Translations.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -347,6 +353,7 @@
 				B665BB21E20DBA5C24D05B7F /* ReviewScreen.swift in Sources */,
 				7A1D7311FD27448ECE00BB6D /* SettingsScreen.swift in Sources */,
 				8C11A2F976D58980C7375A42 /* ShareSheet.swift in Sources */,
+				B7C3B611142D948B8C4948AB /* Translations.swift in Sources */,
 				D2BD8EF815D8FB6530381BE4 /* VideoImportService.swift in Sources */,
 				EDA7F2C44BE660D743112F3C /* WorkFiles.swift in Sources */,
 			);
@@ -359,6 +366,7 @@
 				41D3F7BC6A3962213750C9DA /* ProStoreTests.swift in Sources */,
 				CD22B3E9047CE97BC252EAA0 /* QuickSilencePlanTests.swift in Sources */,
 				55D6C5D1E8CC4A9EE8904A9A /* QuickSilenceReleaseTests.swift in Sources */,
+				D92367A2D1E589D530489394 /* TranslationsTests.swift in Sources */,
 				CE75044298708EE413E5FC2D /* WorkFilesTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

@@ -1,13 +1,23 @@
 import Foundation
 
 enum AppLanguage: String, CaseIterable, Identifiable, Sendable {
-    case tr
-    case en
+    case tr, en, es, pt, de, fr, it, ja, ko
 
     static let storageKey = "app_language"
 
     static var systemDefault: AppLanguage {
-        Locale.current.language.languageCode?.identifier == "tr" ? .tr : .en
+        from(identifier: Locale.preferredLanguages.first ?? "en")
+    }
+
+    /// Maps a BCP 47 identifier ("pt-BR", "ja-JP") to a supported language; anything else is English.
+    static func from(identifier: String) -> AppLanguage {
+        let code = Locale(identifier: identifier).language.languageCode?.identifier ?? ""
+        return AppLanguage(rawValue: code) ?? .en
+    }
+
+    /// For views that cannot take a language parameter (ad views).
+    static var current: AppLanguage {
+        value(from: UserDefaults.standard.string(forKey: storageKey) ?? "")
     }
 
     var id: String { rawValue }
@@ -16,13 +26,13 @@ enum AppLanguage: String, CaseIterable, Identifiable, Sendable {
         switch self {
         case .tr: "Türkçe"
         case .en: "English"
-        }
-    }
-
-    var shortTitle: String {
-        switch self {
-        case .tr: "TR"
-        case .en: "EN"
+        case .es: "Español"
+        case .pt: "Português (Brasil)"
+        case .de: "Deutsch"
+        case .fr: "Français"
+        case .it: "Italiano"
+        case .ja: "日本語"
+        case .ko: "한국어"
         }
     }
 
@@ -31,20 +41,13 @@ enum AppLanguage: String, CaseIterable, Identifiable, Sendable {
     }
 }
 
-struct AppCopy: Sendable {
-    let tr: String
-    let en: String
-
-    func value(for language: AppLanguage) -> String {
-        switch language {
-        case .tr: tr
-        case .en: en
-        }
-    }
-}
-
+/// tr and en live at the call site; other languages come from `Translations.table`, keyed by the English string.
 func appText(_ language: AppLanguage, _ tr: String, _ en: String) -> String {
-    AppCopy(tr: tr, en: en).value(for: language)
+    switch language {
+    case .tr: tr
+    case .en: en
+    default: Translations.table[en]?[language] ?? en
+    }
 }
 
 extension AudioAnalysisError {
@@ -55,9 +58,9 @@ extension AudioAnalysisError {
         case .cannotAddAudioOutput:
             appText(language, "Ses analizörü video sesini okuyamadı.", "The audio analyzer could not read this video's audio.")
         case .readerStartFailed(let message):
-            appText(language, "Ses analizi başlatılamadı: \(message)", "Audio analysis could not start: \(message)")
+            String(format: appText(language, "Ses analizi başlatılamadı: %@", "Audio analysis could not start: %@"), message)
         case .readerFailed(let message):
-            appText(language, "Ses analizi tamamlanamadı: \(message)", "Audio analysis could not finish: \(message)")
+            String(format: appText(language, "Ses analizi tamamlanamadı: %@", "Audio analysis could not finish: %@"), message)
         case .noSamplesRead:
             appText(language, "Ses parçası var ama analiz edilecek örnek okunamadı.", "The video has audio, but no analyzable samples could be read.")
         }

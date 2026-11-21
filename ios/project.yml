@@ -135,7 +135,30 @@ targets:
         CODE_SIGN_STYLE: Automatic
         GENERATE_INFOPLIST_FILE: YES
 
+  CutSenseUITests:
+    type: bundle.ui-testing
+    platform: iOS
+    sources:
+      - path: CutSense/Tests/UI
+    dependencies:
+      - target: CutSense
+    settings:
+      base:
+        SWIFT_VERSION: "6.0"
+        DEVELOPMENT_TEAM: 6HCP552XP8
+        CODE_SIGN_STYLE: Automatic
+        GENERATE_INFOPLIST_FILE: YES
+        TEST_TARGET_NAME: CutSense
+
 schemes:
+  CutSenseDevice:
+    build:
+      targets:
+        CutSense: all
+        CutSenseUITests: [test]
+    test:
+      targets:
+        - CutSenseUITests
   CutSense:
     build:
       targets:

@@ -75,7 +75,7 @@ private final class CutSenseNativeAdView: NativeAdView {
         super.init(frame: frame)
         backgroundColor = UIColor.white.withAlphaComponent(0.07)
 
-        badge.text = "Ad"
+        badge.text = " \(appText(AppLanguage.current, "Reklam", "Ad")) "
         badge.font = .preferredFont(forTextStyle: .caption2).withWeight(.bold)
         badge.textColor = .black
         badge.backgroundColor = UIColor(red: 0.98, green: 0.8, blue: 0.2, alpha: 1)
@@ -127,12 +127,13 @@ private final class CutSenseNativeAdView: NativeAdView {
             stack.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -12),
             icon.widthAnchor.constraint(equalToConstant: 28),
             icon.heightAnchor.constraint(equalToConstant: 28),
-            badge.widthAnchor.constraint(equalToConstant: 26),
+            badge.widthAnchor.constraint(greaterThanOrEqualToConstant: 26),
             badge.heightAnchor.constraint(equalToConstant: 16),
             cta.heightAnchor.constraint(greaterThanOrEqualToConstant: 44),
             media.heightAnchor.constraint(greaterThanOrEqualToConstant: 120)
         ])
         cta.setContentHuggingPriority(.required, for: .horizontal)
+        badge.setContentCompressionResistancePriority(.required, for: .horizontal)
         cta.setContentCompressionResistancePriority(.required, for: .horizontal)
         headline.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
 

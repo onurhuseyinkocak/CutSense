@@ -738,6 +738,8 @@ private struct ProcessingAdCountdownView: View {
                 if state.canSkip {
                     Button(appText(language, "Atla", "Skip"), action: onSkip)
                         .font(.system(size: 12, weight: .heavy, design: .rounded))
+                        .lineLimit(1)
+                        .fixedSize()
                         .foregroundStyle(.white)
                         .padding(.horizontal, 12)
                         .padding(.vertical, 8)
