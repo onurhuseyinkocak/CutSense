@@ -50,7 +50,8 @@ struct SettingsScreen: View {
             Section {
                 LabeledContent(t("Durum", "Status"),
                                value: store.isPro ? t("Açık", "Unlocked") : t("Ücretsiz sürüm", "Free version"))
-                if store.canOfferPro {
+                // Always reachable for non-Pro users so App Review can find the IAP even if the product loads late.
+                if !store.isPro {
                     Button(t("Pro'yu Aç", "Unlock Pro")) { showsPaywall = true }
                 }
                 Button {

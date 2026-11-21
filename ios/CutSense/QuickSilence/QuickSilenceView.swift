@@ -64,7 +64,7 @@ struct QuickSilenceView: View {
             if case .review = phase, let current = plan, let inputURL = session.inputURL {
                 // Not Binding($plan): its force-unwrap crashes when New Video clears the plan while
                 // the review screen is still updating on the way out.
-                review(plan: Binding(get: { plan ?? current }, set: { plan = $0 }), inputURL: inputURL)
+                review(plan: Binding(get: { plan ?? current }, set: { if plan != nil { plan = $0 } }), inputURL: inputURL)
                     .padding(.horizontal, 16)
                     .padding(.bottom, 8)
             } else {
@@ -151,6 +151,8 @@ struct QuickSilenceView: View {
             replan()
         }
         .task {
+            // Entitlements first, so a returning Pro owner never sees the consent form or ad preload.
+            await ProStore.shared.refresh()
             if AdMobService.isEnabled {
                 rewardedAd.preload()
                 await AdMobService.waitForConsentConfiguration()
@@ -267,6 +269,7 @@ struct QuickSilenceView: View {
             inputURL: inputURL,
             plan: plan,
             intensity: $cutIntensity,
+            usesPresetSettings: cutSettings == QuickSilenceEngine.CutSettings(cutIntensity),
             preview: preview,
             language: appLanguage,
             exportProgress: exportProgress,

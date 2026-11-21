@@ -21,7 +21,7 @@ def shot(raw,lines,sub,out):
     # device
     im=Image.open(raw).convert('RGB'); dw=980; dh=int(im.height*dw/im.width)
     im=im.resize((dw,dh),Image.LANCZOS)
-    top=y+150; r=110
+    top=y+150; top+=max(0,(H-top-dh-80)//2); r=110  # center short frames in the remaining space
     mask=Image.new('L',(dw,dh),0); ImageDraw.Draw(mask).rounded_rectangle([0,0,dw,dh],r,fill=255)
     bez=24; frame=Image.new('RGBA',(dw+2*bez,dh+2*bez),(0,0,0,0))
     ImageDraw.Draw(frame).rounded_rectangle([0,0,dw+2*bez-1,dh+2*bez-1],r+bez,fill=(28,30,36,255),outline=(70,74,84,255),width=4)
@@ -35,4 +35,4 @@ def shot(raw,lines,sub,out):
 shot(f'{S}/raw_review.png',[('32s video,',False),('20s result',True)],'Free. No watermark. No sign-up.',f'{S}/store/01_review.png')
 shot(f'{S}/raw_cuts.png',[('Review',False),('every cut',True)],'Keep any pause you want before saving.',f'{S}/store/02_cuts.png')
 shot(f'{S}/raw_home.png',[('Private',False),('by design',True)],'Your video never leaves your iPhone.',f'{S}/store/03_home.png')
-shot(f'{S}/raw_paywall.png',[('Pay once.',False),('No subscription',True)],'Free with ads. Pro removes them for good.',f'{S}/store/04_pro.png')
+shot(f'{S}/raw_paywall_crop.png',[('Pay once.',False),('No subscription',True)],'Free with ads. Pro removes them for good.',f'{S}/store/04_pro.png')

@@ -99,6 +99,7 @@ struct ReviewScreen: View {
     let inputURL: URL
     @Binding var plan: QuickSilenceEngine.CutPlan
     @Binding var intensity: QuickSilenceEngine.CutIntensity
+    let usesPresetSettings: Bool
     let preview: PreviewPlayer
     let language: AppLanguage
     let exportProgress: Double?
@@ -217,10 +218,11 @@ struct ReviewScreen: View {
     }
 
     private var hint: String? {
-        guard plan.removedPercent > 60 || (intensity == .balanced && plan.removedPercent > 50) else { return nil }
-        if intensity == .balanced {
+        let lowSpeech = intensity == .balanced && usesPresetSettings && plan.removedPercent > 50
+        if lowSpeech {
             return appText(language, "Bu videonun çoğunda konuşma yok. CutSense en iyi konuşmalı videolarda çalışır.", "Most of this video has no speech. CutSense works best on talking videos.")
         }
+        guard plan.removedPercent > 60, intensity != .balanced else { return nil }
         return appText(language, "Çok mu kesildi? Dengeli'yi dene.", "Too much cut? Try Balanced.")
     }
 
