@@ -10,13 +10,13 @@ final class DeviceFlowUITests: XCTestCase {
     override func setUp() async throws {
         continueAfterFailure = false
         app = XCUIApplication()
-        app.launchArguments += ["-app_language", "en", "-AppleLanguages", "(en)"]
+        app.launchArguments += ["-app_language", "en", "-AppleLanguages", "(en)", "-onboarding_done_v1", "YES"]
         let env = ProcessInfo.processInfo.environment
         for key in ["CUTSENSE_AUTORUN_VIDEO_URL", "CUTSENSE_FORCE_PRO", "CUTSENSE_FORCE_PREVIEW_FALLBACK"] {
             if let value = env[key] { app.launchEnvironment[key] = value }
         }
         addUIInterruptionMonitor(withDescription: "System alerts") { alert in
-            for label in ["Allow Full Access", "Allow Access to All Photos", "Allow", "OK", "Not Now"] where alert.buttons[label].exists {
+            for label in ["Allow Full Access", "Allow Access to All Photos", "Allow", "OK", "Tam Erişime İzin Ver", "Tüm Fotoğraflara Erişim İzni Ver", "İzin Ver", "Tamam", "Not Now"] where alert.buttons[label].exists {
                 alert.buttons[label].tap()
                 return true
             }

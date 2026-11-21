@@ -155,7 +155,7 @@ struct SettingsScreen: View {
             adFreeUntil = AdFreePass.expiry
         }
         .task { if store.product == nil { await store.loadProduct() } }
-        .sheet(isPresented: $showsPaywall) { PaywallView(language: language) }
+        .sheet(isPresented: $showsPaywall) { ProSheet(language: language) }
     }
 
     private var proCard: some View {

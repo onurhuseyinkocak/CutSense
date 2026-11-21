@@ -2,6 +2,7 @@ import SwiftUI
 import PhotosUI
 import StoreKit
 import UIKit
+import AVFoundation
 
 /// The entire app, one screen: pick a video → analyze → review the cuts → save or share.
 /// Export runs only on Save/Share; no output file exists while reviewing.
@@ -11,6 +12,7 @@ struct QuickSilenceView: View {
     @State private var importService = VideoImportService()
     @StateObject private var rewardedAd = RewardedInterstitialAdController()
     @State private var store = ProStore.shared
+    @State private var offers = OfferCenter.shared
     @State private var session = WorkSession()
     @State private var preview = PreviewPlayer()
     @State private var analysis: QuickSilenceEngine.Analysis?
@@ -36,6 +38,7 @@ struct QuickSilenceView: View {
     @AppStorage(AppLanguage.storageKey) private var languageRaw = AppLanguage.systemDefault.rawValue
     @Environment(\.requestReview) private var requestReview
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.scenePhase) private var scenePhase
 
     enum Phase {
         case idle
@@ -72,7 +75,7 @@ struct QuickSilenceView: View {
                     Spacer(minLength: 8)
                     // Outside the phase switch so its identity (and animatable progress) survives updates.
                     SignalField(mode: signalMode)
-                        .frame(height: isIdle ? 96 : 64)
+                        .frame(minHeight: isIdle ? 96 : 64, maxHeight: isIdle ? 220 : 64)
                         .animation(.easeOut(duration: 0.4), value: workingProgress)
                         .monoEntrance(0)
                         .padding(.bottom, isIdle ? 28 : 12)
@@ -96,18 +99,24 @@ struct QuickSilenceView: View {
         .animation(Mono.Motion.pick(Mono.Motion.smooth, reduce: reduceMotion), value: phaseKey)
         .sensoryFeedback(.impact(weight: .medium), trigger: pickerItem) { _, new in new != nil }
         .sensoryFeedback(.error, trigger: phaseKey) { _, new in new == 3 }
+        // QA-FIX: same cap as the review screen; at AX sizes the home hero, hint and CTA clipped.
+        .dynamicTypeSize(...DynamicTypeSize.xxLarge)
         .preferredColorScheme(.dark)
         .navigationBarTitleDisplayMode(.inline)
         .toolbarColorScheme(.dark, for: .navigationBar)
         .toolbarBackground(.hidden, for: .navigationBar)
         .toolbar {
+            ToolbarItem(placement: .principal) {
+                OfferPill(language: appLanguage) { showsPaywall = true }
+                    .disabled(exportTask != nil)
+            }
             ToolbarItem(placement: .topBarLeading) {
                 if privacyOptionsRequired && !store.isPro {
                     privacyOptionsToolbarButton
                 }
             }
             ToolbarItemGroup(placement: .topBarTrailing) {
-                if isIdle && store.canOfferPro {
+                if isIdle && store.canOfferPro && offers.active == nil {
                     Button { showsPaywall = true } label: {
                         proCapsuleLabel
                             .frame(minWidth: 44, minHeight: 44)
@@ -127,7 +136,7 @@ struct QuickSilenceView: View {
             }
         }
         .sheet(isPresented: $showsPaywall) {
-            PaywallView(language: appLanguage)
+            ProSheet(language: appLanguage)
         }
         .sheet(isPresented: $showsFineTune) {
             FineTuneSheet(settings: cutSettings, language: appLanguage) { newSettings in
@@ -144,6 +153,10 @@ struct QuickSilenceView: View {
             guard let item else { return }
             startPickedVideo(item)
         }
+        // Flash offer: one automatic presentation per install, only on home/review when nothing else is up.
+        .onChange(of: offers.active, initial: true) { _, _ in autoPresentFlashIfPossible() }
+        .onChange(of: scenePhase) { _, phase in if phase == .active { autoPresentFlashIfPossible() } }
+        .onChange(of: phaseKey) { _, key in if key == 0 { autoPresentFlashIfPossible() } }
         .onChange(of: cutIntensity) { _, intensity in
             cutSettings = QuickSilenceEngine.CutSettings(intensity)
             replan()
@@ -315,14 +328,15 @@ struct QuickSilenceView: View {
             }
             .frame(maxWidth: .infinity, alignment: .leading)
 
-            Spacer(minLength: 24)
+            Color.clear.frame(height: 24)
 
             MonoIntensityControl(selection: $cutIntensity, language: appLanguage, hint: nil)
                 .padding(.bottom, 16)
                 .monoEntrance(4)
 
             VStack(spacing: 12) {
-                PhotosPicker(selection: $pickerItem, matching: .videos, photoLibrary: .shared()) {
+                // QA-FIX: .current hands over the original file; no Photos transcode (which failed intermittently).
+                PhotosPicker(selection: $pickerItem, matching: .videos, preferredItemEncoding: .current, photoLibrary: .shared()) {
                     MonoActionLabel(t("Video Seç", "Choose Video"), systemImage: "plus")
                 }
                 .buttonStyle(MonoPrimaryButtonStyle())
@@ -513,6 +527,7 @@ struct QuickSilenceView: View {
             switch result {
             case .success:
                 saved = true
+                OfferCenter.shared.noteSave()
                 scheduleReviewPrompt()
             case .failure(let error):
                 saveError = String(format: t("Kaydedilemedi: %@", "Could not save: %@"), saveErrorMessage(for: error))
@@ -638,9 +653,10 @@ struct QuickSilenceView: View {
     /// (24 h without banner ads) and offers Skip, as AdMob requires. Shown only if the ad is
     /// ready within 3 s and nothing (share sheet, alert, export) is in the way.
     private func startResultAdBreakIfNeeded(jobID: UUID) {
-        guard AdMobService.isEnabled else { return }
+        guard AdMobService.isEnabled else { preview.autoplayOnce(); return }
         processingAdTask?.cancel()
         processingAdTask = Task { @MainActor in
+            defer { if !Task.isCancelled, isActive(jobID), isReview, !AdMobService.hasPresentedContent { preview.autoplayOnce() } }
             try? await Task.sleep(for: .milliseconds(850))
             guard !Task.isCancelled, isActive(jobID), isReview else { return }
             if !rewardedAd.isReady {
@@ -683,6 +699,13 @@ struct QuickSilenceView: View {
                 if !Task.isCancelled { processingAdOverlay = nil }
             }
         }
+    }
+
+    private func autoPresentFlashIfPossible() {
+        guard scenePhase == .active, isScreenVisible, isIdle || isReview, offers.active?.kind == .flash,
+              !showsPaywall, !showsFineTune, exportTask == nil, processingAdOverlay == nil,
+              !AdMobService.hasPresentedContent else { return }
+        if offers.takeAutoPresent() { showsPaywall = true }  // ProSheet shows OfferPanel(.flash) while active
     }
 
     private func canShowResultAd(jobID: UUID) -> Bool {
@@ -742,6 +765,12 @@ struct QuickSilenceView: View {
         }
         if let viewError = error as? ViewFailure {
             return viewError.message
+        }
+        // QA-FIX: a damaged/unreadable file used to get "try a softer cut setting", which can't help.
+        let domain = (error as NSError).domain
+        if domain == AVFoundationErrorDomain || domain == NSOSStatusErrorDomain {
+            return t("Bu dosya okunamadı. Bozuk olabilir ya da iOS bu biçimi açamıyor. Başka bir video dene.",
+                     "This file could not be read. It may be damaged or in a format iOS can't open. Try another video.")
         }
         return t("Video işlenemedi. Lütfen farklı bir video veya daha yumuşak kesim ayarı dene.", "Could not process this video. Try another video or a softer cut setting.")
     }

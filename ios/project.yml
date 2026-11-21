@@ -140,6 +140,9 @@ targets:
     platform: iOS
     sources:
       - path: CutSense/Tests/UI
+      # SKTestSession in UI tests clears local StoreKit transactions (purchase scenarios).
+      - path: CutSense/Pro/Products.storekit
+        optional: true
     dependencies:
       - target: CutSense
     settings:

@@ -1,6 +1,7 @@
 import PhotosUI
 import SwiftUI
 import AVFoundation
+import os
 
 /// Copies a picked video into the app's caches, reporting iCloud download
 /// progress, and rejects files without video or audio.
@@ -50,7 +51,16 @@ final class VideoImportService {
 
         var copiedURL: URL?
         do {
-            let movie = try await loadMovie(item)
+            let movie: VideoTransferable
+            do {
+                movie = try await loadMovie(item)
+            } catch where Self.isTransientExportFailure(error) {
+                // Photos' export helper fails intermittently (4:34 clip: failed after a 2.5 min transcode).
+                try Task.checkCancellation()
+                guard importToken == token else { throw CancellationError() }
+                Logger(subsystem: "com.cutsense.app", category: "import").notice("retrying import after Photos export failure")
+                movie = try await loadMovie(item)
+            }
             copiedURL = movie.url
             try Task.checkCancellation()
             guard importToken == token else { throw CancellationError() }
@@ -62,11 +72,26 @@ final class VideoImportService {
         } catch {
             WorkFiles.delete(copiedURL)
             guard importToken == token, !(error is CancellationError) else { return }
-            #if DEBUG
-            print("[VideoImport] failed: \(error)")
-            #endif
+            let ns = error as NSError
+            let underlying = (ns.userInfo[NSUnderlyingErrorKey] as? NSError).map { "\($0.domain) \($0.code)" } ?? "-"
+            Logger(subsystem: "com.cutsense.app", category: "import").error("import failed: \(ns.domain, privacy: .public) \(ns.code) underlying: \(underlying, privacy: .public)")
             self.error = (error as? ImportError) ?? .loadFailed
         }
+    }
+
+    /// Photos' export helper failing: NSItemProvider -1000 / Cocoa 4101 ("couldn't communicate with a
+    /// helper application"). CoreTransferable surfaces it as a bare TransferableSupportError (no
+    /// underlying error, seen on device), so that domain counts too. Worth one retry.
+    nonisolated static func isTransientExportFailure(_ error: Error) -> Bool {
+        var current: NSError? = error as NSError
+        while let ns = current {
+            if (ns.domain == NSItemProvider.errorDomain && ns.code == -1000)
+                || (ns.domain == NSCocoaErrorDomain && ns.code == 4101)
+                || ns.domain == "PHAssetExportRequestErrorDomain"
+                || ns.domain.hasSuffix("TransferableSupportError") { return true }
+            current = ns.userInfo[NSUnderlyingErrorKey] as? NSError
+        }
+        return false
     }
 
     /// Deletes the imported copy (managed files only) and forgets it.

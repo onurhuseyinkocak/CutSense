@@ -20,6 +20,9 @@ final class PreviewPlayer {
     /// Keep ranges of the composition currently installed (not of a plan still loading).
     @ObservationIgnored private var installedKeepRanges: [ClosedRange<Double>] = []
     @ObservationIgnored private var clockObserver: Any?
+    private var didAutoplay = false
+    /// Autoplay asked for before the first item finished loading (Pro / no-ads path): play on install.
+    private var autoplayPending = false
 
     init() {
         clockObserver = player.addPeriodicTimeObserver(
@@ -40,6 +43,7 @@ final class PreviewPlayer {
                 installedKeepRanges = plan.keepRanges
                 if await Self.becomesReady(item) {
                     if let seekToOriginal { seek(toOriginal: seekToOriginal) }
+                    if autoplayPending { autoplayOnce() }
                     return
                 }
             }
@@ -47,7 +51,9 @@ final class PreviewPlayer {
         }
         usesFallback = true
         if fallbackURL != url {
+            let pending = autoplayPending
             stop()
+            autoplayPending = pending
             fallbackURL = url
             player.replaceCurrentItem(with: AVPlayerItem(url: url))
             skipObserver = player.addPeriodicTimeObserver(
@@ -57,6 +63,7 @@ final class PreviewPlayer {
             }
         }
         if let seekToOriginal { seek(toOriginal: seekToOriginal) }
+        if autoplayPending { autoplayOnce() }
     }
 
     /// Row tap: one second before the cut, in whichever clock the player runs on.
@@ -96,9 +103,20 @@ final class PreviewPlayer {
 
     func pause() { player.pause() }
 
+    /// Plays once per video, with sound, after the ad flow settled; replan reloads don't repeat it.
+    func autoplayOnce() {
+        guard !didAutoplay else { return }
+        guard player.currentItem != nil else { autoplayPending = true; return }
+        autoplayPending = false
+        didAutoplay = true
+        player.play()
+    }
+
     /// Removes the observer and the item; the next video starts on the composition path again.
     func stop() {
         player.pause()
+        didAutoplay = false
+        autoplayPending = false
         if let skipObserver { player.removeTimeObserver(skipObserver) }
         skipObserver = nil
         fallbackURL = nil
@@ -136,6 +154,117 @@ final class PreviewPlayer {
 }
 
 /// Review before export: preview, waveform, stats, live intensity, cut list, Save/Share.
+/// Cut list audition: Before plays the ORIGINAL around a cut on its own player (the edited
+/// preview is never rebuilt); After plays the edited preview around the same point so the jump is heard.
+@MainActor @Observable
+final class CutAuditioner {
+    enum Mode: Hashable { case before, after }
+
+    @ObservationIgnored let original = AVPlayer()
+    private(set) var activeID: Int?
+    private(set) var mode: Mode = .before
+    /// 0...1 through the audition window.
+    private(set) var progress: Double = 0
+    /// Original-clock playhead is inside the cut (Before only).
+    private(set) var insideCut = false
+    private(set) var thumbnails: [Int: CGImage] = [:]
+
+    @ObservationIgnored private var url: URL?
+    @ObservationIgnored private var observer: (player: AVPlayer, token: Any)?
+    @ObservationIgnored private var window: ClosedRange<Double> = 0...0
+    @ObservationIgnored private var cutRange: ClosedRange<Double> = 0...0
+
+    var isShowingOriginal: Bool { activeID != nil && mode == .before }
+
+    func prepare(url: URL) {
+        guard self.url != url else { return }
+        stop()
+        self.url = url
+        thumbnails = [:]
+        original.replaceCurrentItem(with: AVPlayerItem(url: url))
+    }
+
+    func setMode(_ newMode: Mode, preview: PreviewPlayer) {
+        guard newMode != mode else { return }
+        stop(preview: preview)
+        mode = newMode
+    }
+
+    /// Tap on a row: start, or stop when the same cut is already playing.
+    func toggle(_ cut: QuickSilenceEngine.Cut, plan: QuickSilenceEngine.CutPlan, preview: PreviewPlayer) {
+        if activeID == cut.id { stop(preview: preview); return }
+        stop(preview: preview)
+        cutRange = cut.range
+        let player: AVPlayer
+        switch mode {
+        case .before:
+            player = original
+            window = max(0, cut.range.lowerBound - 1.5)...min(plan.duration, cut.range.upperBound + 1.0)
+        case .after where preview.usesFallback:
+            // Fallback preview runs on the original clock and skips active cuts itself.
+            player = preview.player
+            window = max(0, cut.range.lowerBound - 1.5)...min(plan.duration, cut.range.upperBound + 1.5)
+        case .after:
+            player = preview.player
+            let jump = plan.outputTime(forOriginal: cut.range.lowerBound)
+            // A kept pause still plays in the edit: hear all of it, then a beat.
+            let kept = cut.isRestored ? cut.range.upperBound - cut.range.lowerBound : 0
+            window = max(0, jump - 1.5)...min(plan.outputDuration, jump + kept + 1.5)
+        }
+        activeID = cut.id
+        progress = 0
+        insideCut = false
+        preview.pause()
+        original.pause()
+        let token = player.addPeriodicTimeObserver(forInterval: CMTime(value: 1, timescale: 30), queue: .main) { [weak self] time in
+            MainActor.assumeIsolated { self?.tick(time.seconds, preview: preview) }
+        }
+        observer = (player, token)
+        player.seek(to: CMTime(seconds: window.lowerBound, preferredTimescale: 600),
+                    toleranceBefore: .zero, toleranceAfter: .zero) { finished in
+            guard finished else { return }
+            Task { @MainActor in player.play() }
+        }
+    }
+
+    func stop(preview: PreviewPlayer? = nil) {
+        if let observer {
+            observer.player.removeTimeObserver(observer.token)
+            observer.player.pause()
+        }
+        observer = nil
+        original.pause()
+        preview?.pause()
+        activeID = nil
+        progress = 0
+        insideCut = false
+    }
+
+    private func tick(_ t: Double, preview: PreviewPlayer) {
+        guard activeID != nil else { return }
+        let span = max(window.upperBound - window.lowerBound, 0.01)
+        progress = min(max((t - window.lowerBound) / span, 0), 1)
+        insideCut = mode == .before && cutRange.contains(t)
+        if t >= window.upperBound - 0.02 { stop(preview: preview) }
+    }
+
+    func thumbnail(for cut: QuickSilenceEngine.Cut) async {
+        guard thumbnails[cut.id] == nil, let url else { return }
+        guard let image = await Self.frame(url: url, at: cut.range.lowerBound), !Task.isCancelled else { return }
+        thumbnails[cut.id] = image
+    }
+
+    /// Off the main actor; one small generator per row (rows load lazily, cancelled when scrolled away).
+    nonisolated private static func frame(url: URL, at seconds: Double) async -> CGImage? {
+        let generator = AVAssetImageGenerator(asset: AVURLAsset(url: url))
+        generator.appliesPreferredTrackTransform = true
+        generator.maximumSize = CGSize(width: 168, height: 168)
+        generator.requestedTimeToleranceBefore = CMTime(seconds: 0.5, preferredTimescale: 600)
+        generator.requestedTimeToleranceAfter = CMTime(seconds: 0.5, preferredTimescale: 600)
+        return try? await generator.image(at: CMTime(seconds: seconds, preferredTimescale: 600)).image
+    }
+}
+
 struct ReviewScreen: View {
     let inputURL: URL
     @Binding var plan: QuickSilenceEngine.CutPlan
@@ -166,6 +295,7 @@ struct ReviewScreen: View {
     @State private var counted = false
     @State private var compacted = false
     @State private var showsSeal = false
+    @State private var auditioner = CutAuditioner()
 
     private var isExporting: Bool { exportProgress != nil }
 
@@ -265,21 +395,25 @@ struct ReviewScreen: View {
             pendingSeek = nil
             await preview.load(url: inputURL, plan: plan, seekToOriginal: seek)
         }
-        .sheet(isPresented: $showsCuts) {
-            CutListSheet(plan: $plan, bars: bars, language: language) { cut in
-                preview.seek(toOriginal: cut.range.lowerBound)
-            } onToggle: { cut in
+        .sheet(isPresented: $showsCuts, onDismiss: {
+            auditioner.stop(preview: preview)
+        }) {
+            CutListSheet(plan: $plan, bars: bars, language: language, auditioner: auditioner, preview: preview) { cut in
                 pendingSeek = cut.range.lowerBound
+                // The edited preview is about to be rebuilt; an After audition on it would jump.
+                if auditioner.mode == .after { auditioner.stop(preview: preview) }
             }
-            .presentationDetents([.medium, .large])
+            // Leaves the video above the sheet visible on a 16e, so an audition can be watched.
+            .presentationDetents([.fraction(0.55), .large])
             .monoSheet()
+            .onAppear { auditioner.prepare(url: inputURL) }
         }
     }
 
     // MARK: Sections
 
     private var videoStage: some View {
-        VideoPlayer(player: preview.player)
+        VideoPlayer(player: auditioner.isShowingOriginal ? auditioner.original : preview.player)
             .frame(maxWidth: .infinity, minHeight: 220, maxHeight: .infinity)
             .background(Mono.C.raised)
             .clipShape(RoundedRectangle(cornerRadius: Mono.Radius.card, style: .continuous))
@@ -288,6 +422,15 @@ struct ReviewScreen: View {
                     .strokeBorder(Mono.C.hairline, lineWidth: 1)
                     .allowsHitTesting(false)
             }
+            .overlay(alignment: .bottom) {
+                if auditioner.activeID != nil {
+                    AuditionBadge(auditioner: auditioner, plan: plan, language: language)
+                        .padding(10)
+                        .transition(.opacity)
+                        .allowsHitTesting(false)
+                }
+            }
+            .animation(Mono.Motion.fade, value: auditioner.activeID)
             .overlay {
                 if preview.isLoading {
                     ProgressView().tint(.white).controlSize(.large)
@@ -433,11 +576,15 @@ private struct CutListSheet: View {
     @Binding var plan: QuickSilenceEngine.CutPlan
     let bars: [Float]
     let language: AppLanguage
-    let onSelect: (QuickSilenceEngine.Cut) -> Void
+    let auditioner: CutAuditioner
+    let preview: PreviewPlayer
     let onToggle: (QuickSilenceEngine.Cut) -> Void
 
     @State private var toggles = 0
     @State private var bulkChanges = 0
+    @State private var auditions = 0
+
+    private var longest: Double { plan.cuts.map { $0.range.upperBound - $0.range.lowerBound }.max() ?? 1 }
 
     var body: some View {
         VStack(spacing: 0) {
@@ -454,7 +601,17 @@ private struct CutListSheet: View {
             .lineLimit(1)
             .padding(.horizontal, 20)
             .padding(.top, 24)
-            .padding(.bottom, 16)
+            .padding(.bottom, 6)
+
+            if !plan.cuts.isEmpty {
+                Text(appText(language, "Duymak için bir duraklamaya dokun. Tutmak için kapat.", "Tap a pause to hear it. Turn it off to keep it."))
+                    .monoText(.caption)
+                    .foregroundStyle(Mono.C.text2)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .padding(.horizontal, 20)
+                    .padding(.bottom, 12)
+            }
 
             if !bars.isEmpty {
                 WaveformTimeline(bars: bars, plan: plan)
@@ -474,6 +631,8 @@ private struct CutListSheet: View {
                 Spacer()
             } else {
                 HStack(spacing: 8) {
+                    BeforeAfterControl(mode: Binding(get: { auditioner.mode }, set: { auditioner.setMode($0, preview: preview) }),
+                                       language: language)
                     let allKept = plan.cuts.allSatisfy(\.isRestored)
                     let allCut = !plan.cuts.contains(where: \.isRestored)
                     Button(appText(language, "Tümünü tut", "Keep all")) { setAll(restored: true) }
@@ -503,29 +662,53 @@ private struct CutListSheet: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         .sensoryFeedback(.selection, trigger: toggles)
+        .sensoryFeedback(.selection, trigger: auditions)
         .sensoryFeedback(.impact(weight: .medium), trigger: bulkChanges)
     }
 
     private func row(index: Int, cut: Binding<QuickSilenceEngine.Cut>) -> some View {
         let value = cut.wrappedValue
         let state = value.isRestored ? appText(language, "Kalsın", "Keep") : appText(language, "Kes", "Cut")
+        let length = value.range.upperBound - value.range.lowerBound
+        let isActive = auditioner.activeID == value.id
         return HStack(spacing: 12) {
-            Text(String(format: "%02d", index + 1))
-                .monoText(.overline)
-                .foregroundStyle(Mono.C.text3)
-                .frame(width: 28, alignment: .leading)
-                .accessibilityHidden(true)
-
-            Button { onSelect(value) } label: {
-                Text(rowTitle(value))
-                    .font(.system(size: 15, design: .monospaced))
-                    .foregroundStyle(value.isRestored ? Mono.C.text3 : Mono.C.text)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.8)
+            Button {
+                if !isActive { auditions += 1 }
+                auditioner.toggle(value, plan: plan, preview: preview)
+            } label: {
+                HStack(spacing: 12) {
+                    thumbnail(value, isActive: isActive)
+                    VStack(alignment: .leading, spacing: 6) {
+                        HStack(spacing: 6) {
+                            Text("\(timeString(value.range.lowerBound)) – \(timeString(value.range.upperBound))")
+                                .font(.system(size: 15, design: .monospaced))
+                                .foregroundStyle(value.isRestored ? Mono.C.text3 : Mono.C.text)
+                            Text(String(format: appText(language, "%.1f sn", "%.1fs"), length))
+                                .monoText(.caption)
+                                .foregroundStyle(Mono.C.text3)
+                        }
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.8)
+                        // Duration bar (relative to the longest cut); while auditioning, the live progress.
+                        GeometryReader { geo in
+                            ZStack(alignment: .leading) {
+                                Capsule().fill(Mono.C.hairline)
+                                Capsule()
+                                    .fill(isActive ? Mono.C.text : (value.isRestored ? Mono.C.strong : Mono.C.text2))
+                                    .frame(width: geo.size.width * (isActive ? auditioner.progress : length / max(longest, 0.01)))
+                            }
+                        }
+                        .frame(height: 3)
+                    }
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    .contentShape(Rectangle())
+                }
+                .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
+            .accessibilityLabel(rowTitle(value))
+            .accessibilityHint(isActive ? appText(language, "Durdurmak için dokun", "Tap to stop")
+                                        : appText(language, "Dinlemek için dokun", "Tap to listen"))
+            .accessibilityIdentifier("cutRow_\(value.id)")
 
             Toggle(isOn: Binding(
                 get: { !cut.wrappedValue.isRestored },
@@ -542,10 +725,33 @@ private struct CutListSheet: View {
             .accessibilityIdentifier("cutToggle_\(value.id)")
         }
         .padding(.horizontal, 20)
-        .frame(height: 60)
+        .frame(height: 76)
+        .background(isActive ? Mono.C.raised : Color.clear)
         .overlay(alignment: .bottom) {
             Rectangle().fill(Mono.C.hairline).frame(height: 1).padding(.horizontal, 20)
         }
+    }
+
+    private func thumbnail(_ cut: QuickSilenceEngine.Cut, isActive: Bool) -> some View {
+        ZStack {
+            Mono.C.raised
+            if let image = auditioner.thumbnails[cut.id] {
+                Image(decorative: image, scale: 3)
+                    .resizable()
+                    .scaledToFill()
+                    .opacity(cut.isRestored ? 0.5 : 1)
+            }
+            if isActive {
+                Color.black.opacity(0.45)
+                Image(systemName: "speaker.wave.2.fill")
+                    .font(.system(size: 16, weight: .semibold))
+                    .foregroundStyle(Mono.C.text)
+            }
+        }
+        .frame(width: 56, height: 56)
+        .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous).strokeBorder(Mono.C.hairline, lineWidth: 1))
+        .task(id: cut.id) { await auditioner.thumbnail(for: cut) }
     }
 
     private func setAll(restored: Bool) {
@@ -557,6 +763,81 @@ private struct CutListSheet: View {
         let length = cut.range.upperBound - cut.range.lowerBound
         return String(format: appText(language, "%@ – %@ · %.1f sn", "%@ – %@ · %.1fs"),
                       timeString(cut.range.lowerBound), timeString(cut.range.upperBound), length)
+    }
+}
+
+/// Before = original around the cut, After = the edit around the same point.
+private struct BeforeAfterControl: View {
+    @Binding var mode: CutAuditioner.Mode
+    let language: AppLanguage
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    var body: some View {
+        HStack(spacing: 2) {
+            segment(.before, appText(language, "Önce", "Before"))
+            segment(.after, appText(language, "Sonra", "After"))
+        }
+        .padding(2)
+        .background(Capsule().strokeBorder(Mono.C.strong, lineWidth: 1))
+        .fixedSize()
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel(appText(language, "Dinleme modu", "Listening mode"))
+    }
+
+    private func segment(_ value: CutAuditioner.Mode, _ title: String) -> some View {
+        let selected = mode == value
+        return Button {
+            withAnimation(Mono.Motion.pick(Mono.Motion.snappy, reduce: reduceMotion)) { mode = value }
+        } label: {
+            Text(title)
+                .monoText(.label)
+                .foregroundStyle(selected ? Color.black : Mono.C.text2)
+                .padding(.horizontal, 12)
+                .frame(minWidth: 44, minHeight: 36)
+                .background(Capsule().fill(selected ? Mono.C.text : Color.clear))
+                .contentShape(Capsule())
+        }
+        .buttonStyle(.plain)
+        .accessibilityAddTraits(selected ? .isSelected : [])
+        .accessibilityIdentifier(value == .before ? "auditionBefore" : "auditionAfter")
+    }
+}
+
+/// Over the video while auditioning: what happens to the pause being heard.
+private struct AuditionBadge: View {
+    let auditioner: CutAuditioner
+    let plan: QuickSilenceEngine.CutPlan
+    let language: AppLanguage
+
+    var body: some View {
+        let restored = plan.cuts.first { $0.id == auditioner.activeID }?.isRestored ?? false
+        let text: String = {
+            if auditioner.mode == .after { return appText(language, "Kesilmiş hâli", "Edited version") }
+            if auditioner.insideCut {
+                return restored ? appText(language, "Bu duraklama kalıyor", "This pause is kept")
+                                : appText(language, "Bu duraklama kesilecek", "This pause will be cut")
+            }
+            return appText(language, "Orijinal", "Original")
+        }()
+        VStack(alignment: .leading, spacing: 6) {
+            Text(text)
+                .monoText(.label)
+                .foregroundStyle(auditioner.insideCut ? Color.black : Mono.C.text)
+            GeometryReader { geo in
+                ZStack(alignment: .leading) {
+                    Capsule().fill((auditioner.insideCut ? Color.black : Mono.C.text).opacity(0.25))
+                    Capsule().fill(auditioner.insideCut ? Color.black : Mono.C.text)
+                        .frame(width: geo.size.width * auditioner.progress)
+                }
+            }
+            .frame(height: 2)
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 8)
+        .frame(maxWidth: 240, alignment: .leading)
+        .background(RoundedRectangle(cornerRadius: 10, style: .continuous)
+            .fill(auditioner.insideCut ? Mono.C.text : Color.black.opacity(0.7)))
+        .accessibilityElement(children: .combine)
     }
 }
 
