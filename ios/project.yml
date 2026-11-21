@@ -156,7 +156,10 @@ schemes:
       targets:
         CutSense: all
         CutSenseUITests: [test]
+    run:
+      storeKitConfiguration: CutSense/Pro/Products.storekit
     test:
+      storeKitConfiguration: CutSense/Pro/Products.storekit
       targets:
         - CutSenseUITests
   CutSense:

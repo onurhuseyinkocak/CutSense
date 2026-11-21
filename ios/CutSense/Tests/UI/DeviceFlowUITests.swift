@@ -58,6 +58,33 @@ final class DeviceFlowUITests: XCTestCase {
         XCTAssertTrue(row.label.contains("Zero") || row.label.contains("0 "), "Storage row: \(row.label)")
     }
 
+    /// Local StoreKit config (scheme): buy Pro, ads/Pro entry points disappear, Restore keeps Pro.
+    func testPurchaseProAndRestore() throws {
+        app.launch()
+        let capsule = app.buttons["proCapsule"]
+        XCTAssertTrue(capsule.waitForExistence(timeout: 20), "Pro entry point missing (product not loaded?)")
+        capsule.tap()
+        let unlock = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Unlock for'")).firstMatch
+        XCTAssertTrue(unlock.waitForExistence(timeout: 15), "Paywall price button missing")
+        snapshot("paywall")
+        unlock.tap()
+        // StoreKit confirmation sheet runs out of process.
+        let buy = springboard.buttons.matching(NSPredicate(format: "label IN {'Purchase', 'Buy', 'Satın Al', 'Confirm'}")).firstMatch
+        if buy.waitForExistence(timeout: 20) { buy.tap() }
+        let ok = springboard.buttons["OK"]
+        if ok.waitForExistence(timeout: 10) { ok.tap() }
+        XCTAssertTrue(capsule.waitForNonExistence(timeout: 20), "PRO capsule still visible after purchase")
+        snapshot("after-purchase")
+
+        app.buttons["settingsButton"].tap()
+        let restore = app.buttons["Restore Purchases"]
+        XCTAssertTrue(restore.waitForExistence(timeout: 10))
+        snapshot("settings-pro")
+        restore.tap()
+        sleep(3)
+        XCTAssertFalse(app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Unlock'")).firstMatch.exists, "Unlock offered after restore")
+    }
+
     private func reviewRestoreSave() throws {
         let save = app.buttons["saveButton"]
         XCTAssertTrue(save.waitForExistence(timeout: 600), "Review screen never appeared")
