@@ -272,6 +272,8 @@ struct MonoIntensityControl: View {
     let language: AppLanguage
     /// Replaces the preset description when set (e.g. an over-cutting warning).
     let hint: String?
+    /// Per-level result length shown under each title (review only).
+    var sublabels: [QuickSilenceEngine.CutIntensity: String] = [:]
 
     @Namespace private var thumb
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -284,9 +286,16 @@ struct MonoIntensityControl: View {
                     Button {
                         withAnimation(Mono.Motion.pick(Mono.Motion.smooth, reduce: reduceMotion)) { selection = intensity }
                     } label: {
-                        Text(intensity.title(for: language))
-                            .font(.system(size: 14, weight: .semibold))
-                            .foregroundStyle(selected ? Color.black : Mono.C.text2)
+                        VStack(spacing: 0) {
+                            Text(intensity.title(for: language))
+                                .font(.system(size: 14, weight: .semibold))
+                                .foregroundStyle(selected ? Color.black : Mono.C.text2)
+                            if let sublabel = sublabels[intensity] {
+                                Text(sublabel)
+                                    .font(.system(size: 10, weight: .medium, design: .monospaced))
+                                    .foregroundStyle(selected ? Color.black.opacity(0.6) : Mono.C.text3)
+                            }
+                        }
                             .lineLimit(1)
                             .minimumScaleFactor(0.75)
                             .padding(.horizontal, 6)
@@ -299,6 +308,9 @@ struct MonoIntensityControl: View {
                             .contentShape(Capsule())
                     }
                     .buttonStyle(.plain)
+                    // Label stays the bare title: UI tests tap segments by it.
+                    .accessibilityLabel(intensity.title(for: language))
+                    .accessibilityValue(sublabels[intensity] ?? "")
                     .accessibilityAddTraits(selected ? .isSelected : [])
                 }
             }

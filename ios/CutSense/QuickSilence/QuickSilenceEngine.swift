@@ -129,16 +129,8 @@ enum QuickSilenceEngine {
                 appText(language, "Bu videoda ses bulunamadı. Konuşma içeren bir video seç.", "This video has no audio. Choose a video with speech.")
             case .nothingToKeep:
                 appText(language, "Konuşma bulunamadı. Video sessiz ya da sadece arka plan gürültüsü olabilir.", "No speech was found. The video may be silent or only background noise.")
-            case .timelineInsertFailed(let message):
-                String(format: appText(language, "Video zaman çizgisi kurulamadı: %@", "Could not build the video timeline: %@"), message)
-            case .outputEmpty(let bytes):
-                String(format: appText(language, "Video oluşturuldu ama dosya boş görünüyor (%lld bayt).", "The video was created, but the output file looks empty (%lld bytes)."), bytes)
-            case .exportFailed:
-                appText(
-                    language,
-                    "Dışa aktarım tamamlanamadı. Uzun video işlenirken iOS export motoru çıktı veremedi; aynı videoyu tekrar dene veya daha kısa bir video seç.",
-                    "Export could not finish. The iOS export engine did not produce an output while processing this long video; try the same video again or choose a shorter video."
-                )
+            case .timelineInsertFailed, .outputEmpty, .exportFailed:
+                appText(language, "Video oluşturulamadı. Tekrar dene ya da Dengeli'ye geç.", "Couldn't create the video. Try again, or switch to Balanced.")
             }
         }
     }

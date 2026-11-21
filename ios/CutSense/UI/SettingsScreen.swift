@@ -18,6 +18,7 @@ struct SettingsScreen: View {
     private func t(_ tr: String, _ en: String) -> String { appText(language, tr, en) }
 
     private static let site = URL(string: "https://cutsense.onarika.net")
+    private static let reviewURL = URL(string: "https://apps.apple.com/app/id6770024868?action=write-review")
 
     init(urlsInUse: Set<URL> = []) {
         self.urlsInUse = urlsInUse
@@ -51,7 +52,8 @@ struct SettingsScreen: View {
                 HStack(spacing: Mono.Space.s) {
                     glyph("internaldrive")
                     LabeledContent {
-                        Text(ByteCountFormatter.string(fromByteCount: usage, countStyle: .file))
+                        // The formatter writes "Zero KB" for 0.
+                        Text(usage == 0 ? "0 KB" : ByteCountFormatter.string(fromByteCount: usage, countStyle: .file))
                             .contentTransition(.numericText())
                     } label: {
                         Text(t("Geçici dosyalar", "Temporary files"))
@@ -133,6 +135,7 @@ struct SettingsScreen: View {
                 link(t("Gizlilik Politikası", "Privacy Policy"), path: "privacy", glyph: "doc.text")
                 link(t("Kullanım Şartları", "Terms of Use"), path: "terms", glyph: "doc.plaintext")
                 link(t("Destek", "Support"), path: "support", glyph: "questionmark.circle")
+                link(t("CutSense'i Değerlendir", "Rate CutSense"), url: Self.reviewURL, glyph: "star")
                 HStack(spacing: Mono.Space.s) {
                     glyph("info.circle")
                     LabeledContent(t("Sürüm", "Version"), value: Self.versionText)
@@ -228,7 +231,12 @@ struct SettingsScreen: View {
 
     @ViewBuilder
     private func link(_ title: String, path: String, glyph glyphName: String) -> some View {
-        if let url = Self.site?.appending(path: path) {
+        link(title, url: Self.site?.appending(path: path), glyph: glyphName)
+    }
+
+    @ViewBuilder
+    private func link(_ title: String, url: URL?, glyph glyphName: String) -> some View {
+        if let url {
             Link(destination: url) {
                 HStack(spacing: Mono.Space.s) {
                     glyph(glyphName)

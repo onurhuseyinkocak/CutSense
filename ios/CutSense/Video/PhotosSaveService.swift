@@ -8,15 +8,20 @@ enum PhotosSaveService {
         case assetCreationFailed
     }
 
-    static func saveVideo(at url: URL) async -> Result<Void, Error> {
-        guard FileManager.default.fileExists(atPath: url.path) else {
-            return .failure(SaveError.fileMissing)
-        }
+    /// Asks for add-only access if undecided; true when saving is allowed.
+    static func ensureAddAccess() async -> Bool {
         var status = PHPhotoLibrary.authorizationStatus(for: .addOnly)
         if status == .notDetermined {
             status = await PHPhotoLibrary.requestAuthorization(for: .addOnly)
         }
-        guard status == .authorized || status == .limited else {
+        return status == .authorized || status == .limited
+    }
+
+    static func saveVideo(at url: URL) async -> Result<Void, Error> {
+        guard FileManager.default.fileExists(atPath: url.path) else {
+            return .failure(SaveError.fileMissing)
+        }
+        guard await ensureAddAccess() else {
             return .failure(SaveError.permissionDenied)
         }
         do {

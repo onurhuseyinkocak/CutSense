@@ -18,7 +18,14 @@ struct QuickSilenceView: View {
     @State private var analysis: QuickSilenceEngine.Analysis?
     @State private var plan: QuickSilenceEngine.CutPlan?
     // Balanced by default: over-cutting is the top complaint about silence removers.
-    @State private var cutIntensity: QuickSilenceEngine.CutIntensity = .balanced
+    @AppStorage("cut_intensity") private var cutIntensity: QuickSilenceEngine.CutIntensity = .balanced
+    // Pro fine-tune survives new videos until the user picks a level again.
+    @AppStorage("finetune_active") private var finetuneActive = false
+    @AppStorage("finetune_min_silence") private var finetuneMinSilence = 0.0
+    @AppStorage("finetune_pad") private var finetunePad = 0.0
+    @State private var presetLengths: [QuickSilenceEngine.CutIntensity: Double] = [:]
+    @State private var sourceInfo: ReviewSourceInfo?
+    @State private var analysisStarted: Date?
     @State private var cutSettings = QuickSilenceEngine.CutSettings(.balanced)
     @State private var exportProgress: Double?
     @State private var exportTask: Task<Void, Never>?
@@ -139,8 +146,11 @@ struct QuickSilenceView: View {
             ProSheet(language: appLanguage)
         }
         .sheet(isPresented: $showsFineTune) {
-            FineTuneSheet(settings: cutSettings, language: appLanguage) { newSettings in
+            FineTuneSheet(settings: cutSettings, preset: QuickSilenceEngine.CutSettings(cutIntensity), language: appLanguage) { newSettings in
                 cutSettings = newSettings
+                finetuneMinSilence = newSettings.minSilence
+                finetunePad = newSettings.pad
+                finetuneActive = newSettings != QuickSilenceEngine.CutSettings(cutIntensity)
                 replan()
             }
         }
@@ -156,12 +166,18 @@ struct QuickSilenceView: View {
         // Flash offer: one automatic presentation per install, only on home/review when nothing else is up.
         .onChange(of: offers.active, initial: true) { _, _ in autoPresentFlashIfPossible() }
         .onChange(of: scenePhase) { _, phase in if phase == .active { autoPresentFlashIfPossible() } }
-        .onChange(of: phaseKey) { _, key in if key == 0 { autoPresentFlashIfPossible() } }
+        .onChange(of: phaseKey) { _, key in
+            // Long analyses must not let the screen lock.
+            UIApplication.shared.isIdleTimerDisabled = key == 1 || exportTask != nil
+            if key == 0 { autoPresentFlashIfPossible() }
+        }
         .onChange(of: cutIntensity) { _, intensity in
+            finetuneActive = false
             cutSettings = QuickSilenceEngine.CutSettings(intensity)
             replan()
         }
         .task {
+            cutSettings = QuickSilenceEngine.CutSettings(cutIntensity)
             // Entitlements first, so a returning Pro owner never sees the consent form or ad preload.
             await ProStore.shared.refresh()
             if AdMobService.isEnabled {
@@ -267,7 +283,19 @@ struct QuickSilenceView: View {
                 .accessibilityLabel(state.title)
                 .accessibilityValue("\(Int(state.progress * 100))%")
                 .accessibilityAddTraits(.updatesFrequently)
-                .padding(.bottom, 12)
+                .padding(.bottom, 8)
+
+                Text(t("CutSense'i açık tut. Videon bu iPhone'dan çıkmaz.", "Keep CutSense open. Your video stays on this iPhone."))
+                    .monoText(.caption)
+                    .foregroundStyle(Mono.C.text3)
+                    .multilineTextAlignment(.center)
+                    .lineLimit(2)
+                // Height reserved so Cancel doesn't jump when the estimate appears.
+                Text(timeLeftText(progress: state.progress) ?? "")
+                    .monoText(.caption)
+                    .foregroundStyle(Mono.C.text3)
+                    .frame(minHeight: 16)
+                    .padding(.bottom, 12)
 
                 Button(t("İptal", "Cancel")) {
                     cancelActiveWork(returnToIdle: true)
@@ -356,7 +384,10 @@ struct QuickSilenceView: View {
             inputURL: inputURL,
             plan: plan,
             waveform: analysis?.windowRMS ?? [],
-            intensity: $cutIntensity,
+            // Re-tapping the selected level clears a custom fine-tune (onChange can't see that tap).
+            intensity: Binding(get: { cutIntensity }, set: { level in
+                if level != cutIntensity { cutIntensity = level } else { resetFineTune() }
+            }),
             usesPresetSettings: cutSettings == QuickSilenceEngine.CutSettings(cutIntensity),
             preview: preview,
             language: appLanguage,
@@ -365,6 +396,9 @@ struct QuickSilenceView: View {
             saveError: saveError,
             saveNeedsSettings: saveNeedsSettings,
             fineTune: store.isPro ? .unlocked : (store.canOfferPro ? .locked : .hidden),
+            sourceInfo: sourceInfo,
+            presetLengths: presetLengths,
+            onOpenPhotos: { if let url = URL(string: "photos-redirect://") { UIApplication.shared.open(url) } },
             onSave: startSave,
             onShare: startShare,
             onNewVideo: reset,
@@ -406,7 +440,7 @@ struct QuickSilenceView: View {
     }
 
     private func handlePick(_ item: PhotosPickerItem, jobID: UUID) async {
-        applyProgress(0.02, t("Video içe aktarılıyor", "Importing video"), jobID: jobID)
+        applyProgress(0.02, t("Video hazırlanıyor", "Preparing video"), jobID: jobID)
         rewardedAd.preload()
         do {
             let inputURL = try await importVideo(item, jobID: jobID)
@@ -451,12 +485,22 @@ struct QuickSilenceView: View {
     private func analyzeAndReview(inputURL: URL, jobID: UUID) async throws {
         session.begin(input: inputURL)
         let result = try await QuickSilenceEngine.analyze(url: inputURL, language: appLanguage) { update in
-            applyProgress(0.4 + max(0, update.fraction - 0.08) / 0.10 * 0.6, update.title, jobID: jobID)
+            applyProgress(0.1 + max(0, update.fraction - 0.08) / 0.10 * 0.9, update.title, jobID: jobID)
         }
         guard isActive(jobID) else { return }
+        let info = await Self.sourceInfo(of: inputURL)
+        guard isActive(jobID) else { return }
+        sourceInfo = info
         cutSettings = QuickSilenceEngine.CutSettings(cutIntensity)
+        if store.isPro, finetuneActive {
+            cutSettings.minSilence = finetuneMinSilence
+            cutSettings.pad = finetunePad
+        }
         plan = try QuickSilenceEngine.plan(result, settings: cutSettings)
         analysis = result
+        presetLengths = Dictionary(uniqueKeysWithValues: QuickSilenceEngine.CutIntensity.allCases.compactMap { level in
+            (try? QuickSilenceEngine.plan(result, settings: .init(level)).outputDuration).map { (level, $0) }
+        })
         saved = false
         saveError = nil
         saveNeedsSettings = false
@@ -474,13 +518,15 @@ struct QuickSilenceView: View {
     }
 
     private func importVideo(_ item: PhotosPickerItem, jobID: UUID) async throws -> URL {
+        let started = Date.now
         let tracker = Task { @MainActor in
             while !Task.isCancelled {
                 let download = importService.downloadProgress
-                if download >= 0 {
-                    applyProgress(0.02 + min(max(download, 0), 1) * 0.38, t("iCloud videosu indiriliyor", "Downloading iCloud video"), jobID: jobID)
+                // Photos reports progress for local copies too; only a slow one is really iCloud.
+                if download >= 0, download < 1, Date.now.timeIntervalSince(started) > 3 {
+                    applyProgress(0.02 + download * 0.07, t("iCloud videosu indiriliyor", "Downloading iCloud video"), jobID: jobID)
                 } else {
-                    applyProgress(0.04, t("Video içe aktarılıyor", "Importing video"), jobID: jobID)
+                    applyProgress(0.04, t("Video hazırlanıyor", "Preparing video"), jobID: jobID)
                 }
                 try? await Task.sleep(for: .milliseconds(350))
             }
@@ -493,6 +539,10 @@ struct QuickSilenceView: View {
         guard isActive(jobID) else { throw CancellationError() }
 
         if let error = importService.error {
+            if error == .loadFailed, (1...300_000_000).contains(WorkFiles.availableBytes()) {
+                throw ViewFailure(t("Bu videoyu içe aktarmak için yeterli boş alan yok. Biraz yer açıp tekrar dene.",
+                                    "Not enough free storage to import this video. Free up some space and try again."))
+            }
             throw ViewFailure(error.message(for: appLanguage))
         }
         guard let url = importService.importedVideoURL else {
@@ -501,11 +551,21 @@ struct QuickSilenceView: View {
         return url
     }
 
-    /// Import fills 0...0.4 of the bar, analysis (which reports 0.08...0.18) the rest.
+    /// Import fills 0...0.1 of the bar, analysis (which reports 0.08...0.18) the rest.
     private func applyProgress(_ fraction: Double, _ title: String, jobID: UUID) {
         // Analysis posts progress through detached tasks that can land after review opened.
         guard isActive(jobID), !isReview else { return }
+        if fraction >= 0.1, analysisStarted == nil { analysisStarted = .now }
         phase = .working(WorkingState(progress: min(max(fraction, 0), 1), title: title))
+    }
+
+    /// Linear estimate over the analysis share of the bar; nil until it is worth showing.
+    private func timeLeftText(progress: Double) -> String? {
+        guard let analysisStarted, progress > 0.11 else { return nil }
+        let elapsed = Date.now.timeIntervalSince(analysisStarted)
+        let left = elapsed * (1 - progress) / (progress - 0.1)
+        guard elapsed > 3, left > 5, left.isFinite else { return nil }
+        return String(format: t("Yaklaşık %@ kaldı", "About %@ left"), timeString(left))
     }
 
     // MARK: - Review
@@ -520,32 +580,62 @@ struct QuickSilenceView: View {
         }
     }
 
+    private func resetFineTune() {
+        let preset = QuickSilenceEngine.CutSettings(cutIntensity)
+        finetuneActive = false
+        guard cutSettings != preset else { return }
+        cutSettings = preset
+        replan()
+    }
+
     private func startSave() {
-        runExport { url in
-            let result = await PhotosSaveService.saveVideo(at: url)
-            session.discardOutput()
-            switch result {
-            case .success:
-                saved = true
-                OfferCenter.shared.noteSave()
-                scheduleReviewPrompt()
-            case .failure(let error):
-                saveError = String(format: t("Kaydedilemedi: %@", "Could not save: %@"), saveErrorMessage(for: error))
-                saveNeedsSettings = (error as? PhotosSaveService.SaveError) == .permissionDenied
+        guard exportTask == nil else { return }
+        Task {
+            // Ask before exporting: a denial used to throw the finished export away.
+            guard await PhotosSaveService.ensureAddAccess() else {
+                saveError = t("Fotoğraflar izni kapalı. Kaydetmek için Ayarlar'dan izin ver.", "Photos access is off. Allow it in Settings to save.")
+                saveNeedsSettings = true
+                return
             }
+            runExport(then: saveToPhotos)
+        }
+    }
+
+    /// The output stays in the session so Share after Save reuses it.
+    private func saveToPhotos(_ url: URL) async {
+        let result = await PhotosSaveService.saveVideo(at: url)
+        switch result {
+        case .success:
+            saved = true
+            OfferCenter.shared.noteSave()
+            scheduleReviewPrompt()
+        case .failure(let error):
+            session.discardOutput()
+            saveError = String(format: t("Kaydedilemedi: %@", "Could not save: %@"), saveErrorMessage(for: error))
+            saveNeedsSettings = (error as? PhotosSaveService.SaveError) == .permissionDenied
         }
     }
 
     private func startShare() {
         runExport { url in
-            ShareSheet.present(url) { session.discardOutput() }
+            ShareSheet.present(url) {}
         }
     }
 
     /// Exports the current plan into the session's single output slot, then hands it to `finish`.
-    /// No ads may appear meanwhile: leaving the app kills the export.
+    /// No ads may appear meanwhile: leaving the app can kill the export.
     private func runExport(then finish: @escaping @MainActor (URL) async -> Void) {
         guard exportTask == nil, let plan, let inputURL = session.inputURL else { return }
+        // Already exported for this plan (any plan change discards it): hand it over directly.
+        if let url = session.outputURL, FileManager.default.fileExists(atPath: url.path) {
+            saveError = nil
+            saveNeedsSettings = false
+            exportTask = Task {
+                await finish(url)
+                exportTask = nil
+            }
+            return
+        }
         let size = (try? inputURL.resourceValues(forKeys: [.fileSizeKey]).fileSize) ?? 0
         let available = WorkFiles.availableBytes()  // 0 means the volume could not be read; don't block on that
         guard available == 0 || Double(available) >= Double(size) * 1.1 else {
@@ -562,7 +652,10 @@ struct QuickSilenceView: View {
         UIApplication.shared.isIdleTimerDisabled = true
         let language = appLanguage
         exportTask = Task {
+            // Leaving the app no longer kills the export outright; iOS grants a short grace period.
+            let bg = UIApplication.shared.beginBackgroundTask { exportTask?.cancel() }
             defer {
+                UIApplication.shared.endBackgroundTask(bg)
                 UIApplication.shared.isIdleTimerDisabled = false
                 exportProgress = nil
                 exportTask = nil
@@ -577,14 +670,39 @@ struct QuickSilenceView: View {
                     session.discardOutput()
                     return
                 }
+                // Dated name for AirDrop/Files; the "cutsense-" prefix keeps it a managed file.
+                var outputURL = result.outputURL
+                let named = FileManager.default.temporaryDirectory.appending(path: "cutsense-\(Self.exportStamp()).mp4")
+                try? FileManager.default.removeItem(at: named)
+                if (try? FileManager.default.moveItem(at: outputURL, to: named)) != nil {
+                    outputURL = named
+                    session.setOutput(named)
+                }
                 // Overlay stays up until `finish` returns so nothing can delete the file mid-save.
-                await finish(result.outputURL)
+                await finish(outputURL)
             } catch {
                 session.discardOutput()
                 // Export failures stay on review so the user can retry or pick a softer setting.
                 if !(error is CancellationError) { saveError = userFacingMessage(for: error) }
             }
         }
+    }
+
+    /// Pixel size and bytes for the review's size estimate. (VideoMetadataService isn't in this target.)
+    private static func sourceInfo(of url: URL) async -> ReviewSourceInfo? {
+        guard let track = try? await AVURLAsset(url: url).loadTracks(withMediaType: .video).first,
+              let (size, transform) = try? await track.load(.naturalSize, .preferredTransform) else { return nil }
+        let rect = CGRect(origin: .zero, size: size).applying(transform)
+        let bytes = (try? url.resourceValues(forKeys: [.fileSizeKey]).fileSize) ?? 0
+        return ReviewSourceInfo(pixelSize: CGSize(width: abs(rect.width), height: abs(rect.height)), fileBytes: Int64(bytes))
+    }
+
+        private static func exportStamp() -> String {
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.calendar = Calendar(identifier: .gregorian)
+        formatter.dateFormat = "yyyyMMdd-HHmmss"
+        return formatter.string(from: .now)
     }
 
     private func cancelExport() {
@@ -613,6 +731,9 @@ struct QuickSilenceView: View {
         preview.reset()
         analysis = nil
         plan = nil
+        presetLengths = [:]
+        sourceInfo = nil
+        analysisStarted = nil
         saved = false
         saveError = nil
         saveNeedsSettings = false

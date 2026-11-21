@@ -126,6 +126,7 @@ final class PreviewPlayer {
     func reset() {
         stop()
         plan = nil
+        originalTime = 0  // the next video's first load must not seek to this one's playhead
         usesFallback = false
     }
 
@@ -168,13 +169,34 @@ final class CutAuditioner {
     /// Original-clock playhead is inside the cut (Before only).
     private(set) var insideCut = false
     private(set) var thumbnails: [Int: CGImage] = [:]
+    /// Press-and-hold on the video: the original plays from the edited playhead.
+    private(set) var isComparing = false
 
     @ObservationIgnored private var url: URL?
     @ObservationIgnored private var observer: (player: AVPlayer, token: Any)?
     @ObservationIgnored private var window: ClosedRange<Double> = 0...0
     @ObservationIgnored private var cutRange: ClosedRange<Double> = 0...0
 
-    var isShowingOriginal: Bool { activeID != nil && mode == .before }
+    var isShowingOriginal: Bool { isComparing || (activeID != nil && mode == .before) }
+
+    func beginCompare(at t: Double, preview: PreviewPlayer) {
+        stop(preview: preview)
+        isComparing = true
+        original.seek(to: CMTime(seconds: max(0, t), preferredTimescale: 600),
+                      toleranceBefore: .zero, toleranceAfter: .zero) { [weak self] finished in
+            guard finished else { return }
+            Task { @MainActor in if self?.isComparing == true { self?.original.play() } }
+        }
+    }
+
+    /// Back to the edit at the point the original reached (cut parts map to the next kept frame).
+    func endCompare(preview: PreviewPlayer) {
+        guard isComparing else { return }
+        original.pause()
+        isComparing = false
+        preview.scrub(toOriginal: original.currentTime().seconds)
+        preview.player.play()
+    }
 
     func prepare(url: URL) {
         guard self.url != url else { return }
@@ -278,6 +300,9 @@ struct ReviewScreen: View {
     let saveError: String?
     let saveNeedsSettings: Bool
     let fineTune: FineTuneAccess
+    var sourceInfo: ReviewSourceInfo? = nil
+    var presetLengths: [QuickSilenceEngine.CutIntensity: Double] = [:]
+    var onOpenPhotos: () -> Void = {}
     let onSave: () -> Void
     let onShare: () -> Void
     let onNewVideo: () -> Void
@@ -296,6 +321,9 @@ struct ReviewScreen: View {
     @State private var compacted = false
     @State private var showsSeal = false
     @State private var auditioner = CutAuditioner()
+    @State private var holdingOriginal = false
+    @State private var compares = 0
+    @State private var confirmsNewVideo = false
 
     private var isExporting: Bool { exportProgress != nil }
 
@@ -310,7 +338,8 @@ struct ReviewScreen: View {
             stats
                 .padding(.bottom, 12)
 
-            MonoIntensityControl(selection: $intensity, language: language, hint: hint)
+            MonoIntensityControl(selection: $intensity, language: language, hint: hint,
+                                 sublabels: presetLengths.mapValues(timeString))
                 .disabled(isExporting)
                 .padding(.bottom, 10)
 
@@ -366,11 +395,34 @@ struct ReviewScreen: View {
             .animation(Mono.Motion.pick(Mono.Motion.smooth, reduce: reduceMotion), value: saved)
             .padding(.bottom, 6)
 
-            Button(appText(language, "Yeni Video", "New Video"), action: onNewVideo)
+            HStack(spacing: 8) {
+                if saved {
+                    Button(appText(language, "Fotoğraflar'ı Aç", "Open Photos"), action: onOpenPhotos)
+                        .accessibilityIdentifier("openPhotosButton")
+                        .buttonStyle(MonoTertiaryButtonStyle(color: Mono.C.text))
+                        .transition(.opacity)
+                } else if let sourceSummary {
+                    Text(sourceSummary)
+                        .monoText(.overline)
+                        .foregroundStyle(Mono.C.text3)
+                        .lineLimit(1)
+                }
+                Spacer(minLength: 8)
+                Button(appText(language, "Yeni Video", "New Video")) {
+                    if hasManualChanges { confirmsNewVideo = true } else { onNewVideo() }
+                }
                 .accessibilityIdentifier("newVideoButton")
                 .buttonStyle(MonoTertiaryButtonStyle(color: saved ? Mono.C.text : Mono.C.text2))
-                .frame(height: 40)
                 .disabled(isExporting)
+                .confirmationDialog(appText(language, "Değişiklikler silinsin mi?", "Discard your changes?"),
+                                    isPresented: $confirmsNewVideo, titleVisibility: .visible) {
+                    Button(appText(language, "Sil ve yeni video seç", "Discard and start new"), role: .destructive, action: onNewVideo)
+                    Button(appText(language, "İptal", "Cancel"), role: .cancel) {}
+                } message: {
+                    Text(appText(language, "Tut ve kes seçimlerin kaybolur.", "Your keep and cut choices will be lost."))
+                }
+            }
+            .frame(height: 40)
         }
         .animation(Mono.Motion.pick(Mono.Motion.smooth, reduce: reduceMotion), value: saveError)
         .dynamicTypeSize(...DynamicTypeSize.xxLarge)
@@ -383,6 +435,7 @@ struct ReviewScreen: View {
         .animation(Mono.Motion.fade, value: isExporting)
         .onAppear {
             if bars.isEmpty { bars = MonoWave.bars(from: waveform) }
+            auditioner.prepare(url: inputURL)
             withAnimation(Mono.Motion.pick(Mono.Motion.smooth, reduce: reduceMotion).delay(0.15)) { counted = true }
         }
         .onChange(of: waveform) { bars = MonoWave.bars(from: waveform) }
@@ -391,7 +444,8 @@ struct ReviewScreen: View {
         .sensoryFeedback(.error, trigger: saveError) { old, new in old == nil && new != nil }
         .task(id: saved) { await savedMoment() }
         .task(id: plan) {
-            let seek = pendingSeek
+            // Replans keep the playhead; a row toggle seeks to its own cut.
+            let seek = pendingSeek ?? (preview.originalTime > 0.5 ? preview.originalTime : nil)
             pendingSeek = nil
             await preview.load(url: inputURL, plan: plan, seekToOriginal: seek)
         }
@@ -443,7 +497,69 @@ struct ReviewScreen: View {
                         .allowsHitTesting(false)
                 }
             }
+            .overlay(alignment: .trailing) {
+                if !isExporting && !preview.isLoading && auditioner.activeID == nil {
+                    compareCapsule
+                        .padding(10)
+                        .transition(.opacity)
+                }
+            }
             .layoutPriority(-1)
+    }
+
+    /// Hold to hear the original from the current point; release returns to the edit there.
+    private var compareCapsule: some View {
+        Text(holdingOriginal ? appText(language, "Orijinal", "Original")
+                             : appText(language, "Orijinal için basılı tut", "Hold for original"))
+            .font(.system(size: 13, weight: .medium))
+            .foregroundStyle(holdingOriginal ? Color.black : Color.white)
+            .lineLimit(1)
+            .padding(.horizontal, 14)
+            .frame(height: 36)
+            .background(Capsule().fill(holdingOriginal ? Color.white : Color.black.opacity(0.7)))
+            .frame(minWidth: 44, minHeight: 44)
+            .contentShape(Rectangle())
+            .gesture(
+                DragGesture(minimumDistance: 0)
+                    .onChanged { _ in if !holdingOriginal { beginCompare() } }
+                    .onEnded { _ in endCompare() }
+            )
+            .sensoryFeedback(.impact(flexibility: .soft), trigger: compares)
+            // A capsule hidden mid-press never sees its gesture end.
+            .onDisappear { endCompare() }
+            .accessibilityElement()
+            .accessibilityLabel(appText(language, "Orijinal için basılı tut", "Hold for original"))
+            .accessibilityValue(holdingOriginal ? appText(language, "Orijinal", "Original") : "")
+            .accessibilityAddTraits(.isButton)
+            .accessibilityAction { holdingOriginal ? endCompare() : beginCompare() }
+            .accessibilityIdentifier("holdOriginalButton")
+    }
+
+    private func beginCompare() {
+        holdingOriginal = true
+        compares += 1
+        auditioner.beginCompare(at: preview.originalTime, preview: preview)
+    }
+
+    private func endCompare() {
+        guard holdingOriginal else { return }
+        holdingOriginal = false
+        auditioner.endCompare(preview: preview)
+    }
+
+    /// Toggled cuts or a custom fine-tune would be lost by starting over.
+    private var hasManualChanges: Bool {
+        !saved && (plan.cuts.contains(where: \.isRestored) || !usesPresetSettings)
+    }
+
+    /// "1080p · ≈48 MB"; size scales the source by the kept share (passthrough estimate).
+    private var sourceSummary: String? {
+        guard let sourceInfo, plan.duration > 0 else { return nil }
+        let short = min(sourceInfo.pixelSize.width, sourceInfo.pixelSize.height)
+        guard short > 0 else { return nil }
+        let label = short >= 2160 ? "4K" : "\(Int(short))p"
+        let bytes = Int64(Double(sourceInfo.fileBytes) * plan.outputDuration / plan.duration)
+        return "\(label) · ≈\(ByteCountFormatter.string(fromByteCount: bytes, countStyle: .file))"
     }
 
     private var timeline: some View {
@@ -460,7 +576,13 @@ struct ReviewScreen: View {
 
             HStack {
                 Text(timeString(0))
-                Spacer()
+                Spacer(minLength: 8)
+                if !compacted {
+                    Text(appText(language, "Soluk çubuklar kesilir", "Dim bars are cut"))
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.8)
+                    Spacer(minLength: 8)
+                }
                 Text(timeString(compacted ? plan.outputDuration : plan.duration))
                     .contentTransition(.numericText())
             }
@@ -488,7 +610,7 @@ struct ReviewScreen: View {
             .frame(maxWidth: .infinity, alignment: .leading)
 
             divider
-            timeStat(silence, appText(language, "sessizlik", "silence"))
+            timeStat(silence, appText(language, "daha kısa", "shorter"))
             divider
             timeStat(newLength, appText(language, "yeni süre", "new length"))
         }
@@ -531,6 +653,14 @@ struct ReviewScreen: View {
     }
 
     private var hint: String? {
+        if !usesPresetSettings {
+            return appText(language, "Özel ince ayar. Sıfırlamak için bir seviye seç.", "Custom fine-tune. Pick a level to reset.")
+        }
+        if plan.cuts.isEmpty {
+            return intensity == .hardcore
+                ? appText(language, "Bu videoda kesilecek duraklama yok.", "No pauses to cut in this video.")
+                : appText(language, "Kesilecek kadar uzun duraklama yok. Sıkı'yı dene.", "No pauses long enough to cut. Try Tight.")
+        }
         let lowSpeech = intensity == .balanced && usesPresetSettings && plan.removedPercent > 50
         if lowSpeech {
             return appText(language, "Bu videonun çoğunda konuşma yok. CutSense en iyi konuşmalı videolarda çalışır.", "Most of this video has no speech. CutSense works best on talking videos.")
@@ -583,6 +713,7 @@ private struct CutListSheet: View {
     @State private var toggles = 0
     @State private var bulkChanges = 0
     @State private var auditions = 0
+    @State private var longestFirst = false
 
     private var longest: Double { plan.cuts.map { $0.range.upperBound - $0.range.lowerBound }.max() ?? 1 }
 
@@ -648,12 +779,19 @@ private struct CutListSheet: View {
                 }
                 .padding(.horizontal, 20)
                 .padding(.top, 16)
-                .padding(.bottom, 8)
+
+                Button(appText(language, "Önce en uzun", "Longest first")) { longestFirst.toggle() }
+                    .buttonStyle(MonoTertiaryButtonStyle(color: longestFirst ? Mono.C.text : Mono.C.text3))
+                    .frame(height: 36)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.horizontal, 20)
+                    .accessibilityAddTraits(longestFirst ? .isSelected : [])
+                    .accessibilityIdentifier("longestFirstButton")
 
                 ScrollView {
                     LazyVStack(spacing: 0) {
-                        ForEach(Array($plan.cuts.enumerated()), id: \.element.id) { index, $cut in
-                            row(index: index, cut: $cut)
+                        ForEach(rowOrder, id: \.self) { index in
+                            row(index: index, cut: $plan.cuts[index])
                         }
                     }
                     .padding(.bottom, 16)
@@ -754,6 +892,13 @@ private struct CutListSheet: View {
         .task(id: cut.id) { await auditioner.thumbnail(for: cut) }
     }
 
+    /// Indices into `plan.cuts`; toggles never reorder the array, so an index is a stable row id.
+    private var rowOrder: [Int] {
+        guard longestFirst else { return Array(plan.cuts.indices) }
+        func length(_ i: Int) -> Double { plan.cuts[i].range.upperBound - plan.cuts[i].range.lowerBound }
+        return plan.cuts.indices.sorted { length($0) != length($1) ? length($0) > length($1) : $0 < $1 }
+    }
+
     private func setAll(restored: Bool) {
         for index in plan.cuts.indices { plan.cuts[index].isRestored = restored }
         bulkChanges += 1
@@ -844,14 +989,18 @@ private struct AuditionBadge: View {
 /// Pro-only sliders; values apply when a drag ends so the preview rebuilds once.
 struct FineTuneSheet: View {
     let settings: QuickSilenceEngine.CutSettings
+    /// The selected level's own values; Reset returns to them.
+    let preset: QuickSilenceEngine.CutSettings
     let language: AppLanguage
     let onCommit: (QuickSilenceEngine.CutSettings) -> Void
 
     @State private var draft: QuickSilenceEngine.CutSettings
     @State private var commits = 0
 
-    init(settings: QuickSilenceEngine.CutSettings, language: AppLanguage, onCommit: @escaping (QuickSilenceEngine.CutSettings) -> Void) {
+    init(settings: QuickSilenceEngine.CutSettings, preset: QuickSilenceEngine.CutSettings, language: AppLanguage,
+         onCommit: @escaping (QuickSilenceEngine.CutSettings) -> Void) {
         self.settings = settings
+        self.preset = preset
         self.language = language
         self.onCommit = onCommit
         _draft = State(initialValue: settings)
@@ -859,8 +1008,20 @@ struct FineTuneSheet: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 24) {
-            Text(appText(language, "İnce ayar", "Fine-tune"))
-                .monoText(.title, size: 22)
+            HStack(alignment: .firstTextBaseline) {
+                Text(appText(language, "İnce ayar", "Fine-tune"))
+                    .monoText(.title, size: 22)
+                Spacer()
+                Button(appText(language, "Sıfırla", "Reset")) {
+                    draft = preset
+                    onCommit(preset)
+                    commits += 1
+                }
+                .buttonStyle(MonoTertiaryButtonStyle())
+                .disabled(draft == preset)
+                .opacity(draft == preset ? 0.35 : 1)
+                .accessibilityIdentifier("fineTuneResetButton")
+            }
             slider(appText(language, "En kısa duraklama", "Minimum pause"),
                    caption: appText(language, "Bundan kısa duraklamalar kalır.", "Pauses shorter than this are kept."),
                    value: $draft.minSilence, range: 0.15...1.5)
@@ -907,6 +1068,15 @@ private struct ExportOverlay: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var shown = false
     @State private var cancels = 0
+    @State private var started = Date.now
+
+    /// Re-evaluated on every progress tick, so no timer is needed.
+    private var remaining: String? {
+        let elapsed = Date.now.timeIntervalSince(started)
+        guard elapsed > 2, progress > 0.08 else { return nil }
+        return String(format: appText(language, "Yaklaşık %@ kaldı", "About %@ left"),
+                      timeString(elapsed * (1 - progress) / progress))
+    }
 
     var body: some View {
         let percent = Int(progress * 100)
@@ -934,7 +1104,14 @@ private struct ExportOverlay: View {
                 Text(appText(language, "Uygulamayı açık tut.", "Keep the app open."))
                     .monoText(.caption)
                     .foregroundStyle(Mono.C.text2)
-                    .padding(.bottom, 16)
+                    .padding(.bottom, remaining == nil ? 16 : 2)
+                if let remaining {
+                    Text(remaining)
+                        .monoText(.caption)
+                        .foregroundStyle(Mono.C.text3)
+                        .contentTransition(.numericText())
+                        .padding(.bottom, 16)
+                }
                 Button(appText(language, "İptal", "Cancel")) {
                     cancels += 1
                     onCancel()
@@ -949,3 +1126,5 @@ private struct ExportOverlay: View {
         }
     }
 }
+
+struct ReviewSourceInfo: Equatable { let pixelSize: CGSize; let fileBytes: Int64 }

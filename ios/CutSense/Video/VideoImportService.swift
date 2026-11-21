@@ -20,12 +20,14 @@ final class VideoImportService {
         case loadFailed
         case noVideo
         case missingAudio
+        case photosExportFailed
 
         func message(for language: AppLanguage) -> String {
             switch self {
             case .loadFailed: appText(language, "Video yüklenemedi. Lütfen farklı bir dosya deneyin.", "The video could not be loaded. Try a different file.")
             case .noVideo: appText(language, "Bu dosyada video bulunamadı.", "No video was found in this file.")
             case .missingAudio: appText(language, "Bu videoda ses bulunamadı. Konuşma içeren bir video seç.", "This video has no audio. Choose a video with speech.")
+            case .photosExportFailed: appText(language, "Fotoğraflar bu videoyu veremedi. Tekrar dene.", "Photos couldn't hand over this video. Try again.")
             }
         }
     }
@@ -75,7 +77,7 @@ final class VideoImportService {
             let ns = error as NSError
             let underlying = (ns.userInfo[NSUnderlyingErrorKey] as? NSError).map { "\($0.domain) \($0.code)" } ?? "-"
             Logger(subsystem: "com.cutsense.app", category: "import").error("import failed: \(ns.domain, privacy: .public) \(ns.code) underlying: \(underlying, privacy: .public)")
-            self.error = (error as? ImportError) ?? .loadFailed
+            self.error = (error as? ImportError) ?? (Self.isTransientExportFailure(error) ? .photosExportFailed : .loadFailed)
         }
     }
 
