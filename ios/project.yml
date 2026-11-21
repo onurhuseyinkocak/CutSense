@@ -22,7 +22,14 @@ targets:
         excludes:
           - "AdStubs.swift"
       - path: CutSense/Ads
-      - path: CutSense/Services/AppLanguage.swift
+      - path: CutSense/Services
+        includes:
+          - "AppLanguage.swift"
+          - "Translations.swift"
+      - path: CutSense/Pro
+        optional: true
+      - path: CutSense/Storage
+        optional: true
       - path: CutSense/RoughCut/AudioAnalysisService.swift
       - path: CutSense/UI/LanguageSwitcher.swift
       - path: CutSense/UI/SettingsScreen.swift
@@ -33,8 +40,8 @@ targets:
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.cutsense.app
-        MARKETING_VERSION: "1.0.4"
-        CURRENT_PROJECT_VERSION: 30
+        MARKETING_VERSION: "1.1.0"
+        CURRENT_PROJECT_VERSION: 31
         SWIFT_VERSION: "6.0"
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         CODE_SIGN_STYLE: Automatic
@@ -47,6 +54,7 @@ targets:
         CFBundleShortVersionString: $(MARKETING_VERSION)
         CFBundleVersion: $(CURRENT_PROJECT_VERSION)
         CFBundleDisplayName: CutSense
+        CFBundleLocalizations: [en, tr, es, pt-BR, de, fr, it, ja, ko]
         ITSAppUsesNonExemptEncryption: false
         NSPhotoLibraryUsageDescription: "CutSense needs access to your photo library to import videos for editing."
         NSPhotoLibraryAddUsageDescription: "CutSense needs permission to save edited videos to your photo library."
@@ -117,6 +125,8 @@ targets:
     platform: iOS
     sources:
       - path: CutSense/Tests/Release
+      - path: CutSense/Pro/Products.storekit
+        optional: true
     dependencies:
       - target: CutSense
     settings:
@@ -131,6 +141,8 @@ schemes:
     build:
       targets:
         CutSense: all
+    run:
+      storeKitConfiguration: CutSense/Pro/Products.storekit
     test:
       targets:
         - CutSenseTests

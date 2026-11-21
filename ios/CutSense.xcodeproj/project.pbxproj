@@ -9,6 +9,7 @@
 /* Begin PBXBuildFile section */
 		0238F25AF2FC0F9DE078FCA7 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = AB3F4CFE6EB7DA53D3C755D3 /* PrivacyInfo.xcprivacy */; };
 		026D1DA0672C345D35A0426D /* LanguageSwitcher.swift in Sources */ = {isa = PBXBuildFile; fileRef = C04A9212E7DD2001C8957A41 /* LanguageSwitcher.swift */; };
+		195F33A7FFACCD0C40D88646 /* Products.storekit in Resources */ = {isa = PBXBuildFile; fileRef = 615984865BA5FA389EB8226B /* Products.storekit */; };
 		26E48D862C02A3CACFCC666D /* AudioAnalysisService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 66C373ACE0E41C68BEC62183 /* AudioAnalysisService.swift */; };
 		2D2228652CDBCD23D0A1A2AA /* AdMobIDs.swift in Sources */ = {isa = PBXBuildFile; fileRef = 90FCDC4392123011833F3ADC /* AdMobIDs.swift */; };
 		4D98206A34DA299213C53E86 /* QuickSilenceApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3E3BFDA791131FEC48D257D4 /* QuickSilenceApp.swift */; };
@@ -42,6 +43,7 @@
 		2B4C7785DDFE37A3C7288498 /* AppLanguage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppLanguage.swift; sourceTree = "<group>"; };
 		3E3BFDA791131FEC48D257D4 /* QuickSilenceApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuickSilenceApp.swift; sourceTree = "<group>"; };
 		5B25D226E27756B8668579FF /* NativeAdCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativeAdCard.swift; sourceTree = "<group>"; };
+		615984865BA5FA389EB8226B /* Products.storekit */ = {isa = PBXFileReference; path = Products.storekit; sourceTree = "<group>"; };
 		66419CEE6970408DD0364682 /* silence_fixture.mp4 */ = {isa = PBXFileReference; path = silence_fixture.mp4; sourceTree = "<group>"; };
 		66C373ACE0E41C68BEC62183 /* AudioAnalysisService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioAnalysisService.swift; sourceTree = "<group>"; };
 		8A0F74EC6E72BFA26270CD11 /* QuickSilenceReleaseTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuickSilenceReleaseTests.swift; sourceTree = "<group>"; };
@@ -153,6 +155,7 @@
 			isa = PBXGroup;
 			children = (
 				123B349D7F7B3D47317B991F /* Ads */,
+				DA164BADCE5E54557F0D0408 /* Pro */,
 				37DA1D1D53558F9670FA2B0E /* QuickSilence */,
 				EAB2D8C08839F9CF71950CCF /* Resources */,
 				4003C4E064D905B994EE3F12 /* RoughCut */,
@@ -170,6 +173,14 @@
 				5A39D3BCEFF3DA443E3968C3 /* Release */,
 			);
 			path = Tests;
+			sourceTree = "<group>";
+		};
+		DA164BADCE5E54557F0D0408 /* Pro */ = {
+			isa = PBXGroup;
+			children = (
+				615984865BA5FA389EB8226B /* Products.storekit */,
+			);
+			path = Pro;
 			sourceTree = "<group>";
 		};
 		EAB2D8C08839F9CF71950CCF /* Resources */ = {
@@ -270,6 +281,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				195F33A7FFACCD0C40D88646 /* Products.storekit in Resources */,
 				50748F442AEF77CC4220228B /* silence_fixture.mp4 in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -489,14 +501,14 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 30;
+				CURRENT_PROJECT_VERSION = 31;
 				DEVELOPMENT_TEAM = 6HCP552XP8;
 				INFOPLIST_FILE = CutSense/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.0.4;
+				MARKETING_VERSION = 1.1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.cutsense.app;
 				SDKROOT = iphoneos;
 				SWIFT_STRICT_CONCURRENCY = complete;
@@ -511,14 +523,14 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 30;
+				CURRENT_PROJECT_VERSION = 31;
 				DEVELOPMENT_TEAM = 6HCP552XP8;
 				INFOPLIST_FILE = CutSense/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.0.4;
+				MARKETING_VERSION = 1.1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.cutsense.app;
 				SDKROOT = iphoneos;
 				SWIFT_STRICT_CONCURRENCY = complete;
