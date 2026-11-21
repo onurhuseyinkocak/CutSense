@@ -65,6 +65,46 @@ final class ProStoreTests: XCTestCase {
         XCTAssertTrue(store.canOfferPro)
     }
 
+    func testOfferPriceRule() {
+        func rule(_ offer: Decimal, _ regular: Decimal) -> ProStore.OfferPrices? {
+            ProStore.offerPrices(offer: offer, offerDisplay: "o", regular: regular, regularDisplay: "r")
+        }
+        XCTAssertEqual(rule(Decimal(string: "3.99")!, Decimal(string: "7.99")!)?.percent, 50)
+        XCTAssertEqual(rule(Decimal(string: "3.99")!, Decimal(string: "7.99")!),
+                       ProStore.OfferPrices(offer: "o", regular: "r", percent: 50))
+        XCTAssertEqual(rule(9, 10)?.percent, 10)
+        XCTAssertNil(rule(Decimal(string: "9.01")!, 10))   // 9.9% floors to 9
+        XCTAssertNil(rule(10, 10))
+        XCTAssertNil(rule(11, 10))
+        XCTAssertNil(rule(0, 0))
+    }
+
+    /// On this host products come from the App Store sandbox (SKTestSession cannot load the local config, Code=3),
+    /// so the offer SKU only resolves once it exists in App Store Connect; until then this skips.
+    func testBothProductsLoadInOneCallWithOfferPrices() async throws {
+        let store = ProStore()
+        await store.loadProduct()
+        XCTAssertEqual(store.product?.id, ProStore.lifetimeID)
+        guard store.offerProduct != nil else {
+            throw XCTSkip("\(ProStore.offerID) not served by the StoreKit backend on this host")
+        }
+        XCTAssertEqual(store.offerProduct?.id, ProStore.offerID)
+        XCTAssertEqual(store.offerProduct?.type, .nonConsumable)
+        XCTAssertEqual(store.offerPrices?.percent, 50)
+        XCTAssertEqual(store.offerPrices?.regular, store.product?.displayPrice)
+        XCTAssertEqual(store.offerPrices?.offer, store.offerProduct?.displayPrice)
+    }
+
+    func testMissingOfferProductHasNoOfferPrices() async {
+        let store = ProStore(offerID: "com.cutsense.app.does.not.exist")
+        await store.loadProduct()
+        XCTAssertNotNil(store.product)
+        XCTAssertNil(store.offerProduct)
+        XCTAssertNil(store.offerPrices)
+        let outcome = await store.purchaseOffer()
+        XCTAssertEqual(outcome, .unavailable)
+    }
+
     func testMissingProductCannotBeOffered() async {
         let store = ProStore(productID: "com.cutsense.app.does.not.exist")
         await store.loadProduct()

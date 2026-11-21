@@ -9,6 +9,7 @@
 /* Begin PBXBuildFile section */
 		0238F25AF2FC0F9DE078FCA7 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = AB3F4CFE6EB7DA53D3C755D3 /* PrivacyInfo.xcprivacy */; };
 		0A0E183623B591F89AAA3C93 /* Products.storekit in Resources */ = {isa = PBXBuildFile; fileRef = 615984865BA5FA389EB8226B /* Products.storekit */; };
+		0DB24A76439036C98B4AE4FD /* OfferView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF35400CFBB5EDA0209C790C /* OfferView.swift */; };
 		195F33A7FFACCD0C40D88646 /* Products.storekit in Resources */ = {isa = PBXBuildFile; fileRef = 615984865BA5FA389EB8226B /* Products.storekit */; };
 		197186FDBC2287B64F4F9DB5 /* MonoWave.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A44387A54DD488C3F8BC008 /* MonoWave.swift */; };
 		26E48D862C02A3CACFCC666D /* AudioAnalysisService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 66C373ACE0E41C68BEC62183 /* AudioAnalysisService.swift */; };
@@ -20,11 +21,13 @@
 		55D6C5D1E8CC4A9EE8904A9A /* QuickSilenceReleaseTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8A0F74EC6E72BFA26270CD11 /* QuickSilenceReleaseTests.swift */; };
 		561874C3A9AB619740F6F090 /* MonoKit.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6FC8DDB8051423239B3C0AC0 /* MonoKit.swift */; };
 		5C2F30243E7024441DEC15CD /* PhotosSaveService.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0362DFB1D828F4A88A12862 /* PhotosSaveService.swift */; };
+		64B4BC0BF261374B2E604359 /* OfferCenter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8EB756F45213FFD77A322327 /* OfferCenter.swift */; };
 		6F2AFFB3F9B95785EBC560FC /* MonoWaveTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 127D3CEB71E9B92C26E5F83E /* MonoWaveTests.swift */; };
 		7A1D7311FD27448ECE00BB6D /* SettingsScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = 28901B74846173D20088B4D4 /* SettingsScreen.swift */; };
 		888EE52AA670A80854D14A24 /* AppLanguage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2B4C7785DDFE37A3C7288498 /* AppLanguage.swift */; };
 		8C11A2F976D58980C7375A42 /* ShareSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 88CA88FBF174BF48827AEA02 /* ShareSheet.swift */; };
 		99128F340EED2CAADD304369 /* GoogleMobileAds in Frameworks */ = {isa = PBXBuildFile; productRef = 4761CA77849DAE470AA8FC20 /* GoogleMobileAds */; };
+		9F77762EB16A8A1F8930110A /* OfferCenterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C443ADF130ABE96B8345D7BE /* OfferCenterTests.swift */; };
 		A27C5761649779A1BCE3B638 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = C568ED16C5A5569D901E936F /* Assets.xcassets */; };
 		AF36EB525821348164F48197 /* PaywallView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 540A6003B72CEFEAB224B81E /* PaywallView.swift */; };
 		B665BB21E20DBA5C24D05B7F /* ReviewScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2B01E9767A4EA100187484E /* ReviewScreen.swift */; };
@@ -81,11 +84,14 @@
 		8B59AD29BAC109B3635507AD /* Translations.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Translations.swift; sourceTree = "<group>"; };
 		8CE7C67F669CC7C139D97E42 /* CutSenseTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = CutSenseTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		8E3C5A2DBFDEA2F0D65BD0D1 /* TranslationsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TranslationsTests.swift; sourceTree = "<group>"; };
+		8EB756F45213FFD77A322327 /* OfferCenter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OfferCenter.swift; sourceTree = "<group>"; };
 		90FCDC4392123011833F3ADC /* AdMobIDs.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdMobIDs.swift; sourceTree = "<group>"; };
 		A29D62925185EF25613EC49B /* ProStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProStoreTests.swift; sourceTree = "<group>"; };
 		AB3F4CFE6EB7DA53D3C755D3 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		B489C5F2177971DC7A3350E6 /* QuickSilencePlanTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuickSilencePlanTests.swift; sourceTree = "<group>"; };
 		B9A4ECAEAEB959B791A3372C /* CutSense.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = CutSense.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		BF35400CFBB5EDA0209C790C /* OfferView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OfferView.swift; sourceTree = "<group>"; };
+		C443ADF130ABE96B8345D7BE /* OfferCenterTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OfferCenterTests.swift; sourceTree = "<group>"; };
 		C568ED16C5A5569D901E936F /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		C62FC1631B126EE52AC1C53B /* VideoImportService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VideoImportService.swift; sourceTree = "<group>"; };
 		E58D84C896EEF6326B68D129 /* QuickSilenceView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuickSilenceView.swift; sourceTree = "<group>"; };
@@ -151,6 +157,7 @@
 			isa = PBXGroup;
 			children = (
 				127D3CEB71E9B92C26E5F83E /* MonoWaveTests.swift */,
+				C443ADF130ABE96B8345D7BE /* OfferCenterTests.swift */,
 				A29D62925185EF25613EC49B /* ProStoreTests.swift */,
 				B489C5F2177971DC7A3350E6 /* QuickSilencePlanTests.swift */,
 				8A0F74EC6E72BFA26270CD11 /* QuickSilenceReleaseTests.swift */,
@@ -241,6 +248,8 @@
 		DA164BADCE5E54557F0D0408 /* Pro */ = {
 			isa = PBXGroup;
 			children = (
+				8EB756F45213FFD77A322327 /* OfferCenter.swift */,
+				BF35400CFBB5EDA0209C790C /* OfferView.swift */,
 				540A6003B72CEFEAB224B81E /* PaywallView.swift */,
 				615984865BA5FA389EB8226B /* Products.storekit */,
 				76D307ED363DB96DE47A88D7 /* ProStore.swift */,
@@ -399,6 +408,8 @@
 				561874C3A9AB619740F6F090 /* MonoKit.swift in Sources */,
 				197186FDBC2287B64F4F9DB5 /* MonoWave.swift in Sources */,
 				4F679B0A91607C40888C1D6B /* NativeAdCard.swift in Sources */,
+				64B4BC0BF261374B2E604359 /* OfferCenter.swift in Sources */,
+				0DB24A76439036C98B4AE4FD /* OfferView.swift in Sources */,
 				AF36EB525821348164F48197 /* PaywallView.swift in Sources */,
 				5C2F30243E7024441DEC15CD /* PhotosSaveService.swift in Sources */,
 				ED4D21C239CACAD8D6D15CD5 /* ProStore.swift in Sources */,
@@ -427,6 +438,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				6F2AFFB3F9B95785EBC560FC /* MonoWaveTests.swift in Sources */,
+				9F77762EB16A8A1F8930110A /* OfferCenterTests.swift in Sources */,
 				41D3F7BC6A3962213750C9DA /* ProStoreTests.swift in Sources */,
 				CD22B3E9047CE97BC252EAA0 /* QuickSilencePlanTests.swift in Sources */,
 				55D6C5D1E8CC4A9EE8904A9A /* QuickSilenceReleaseTests.swift in Sources */,

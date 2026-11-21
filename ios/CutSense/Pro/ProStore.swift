@@ -23,17 +23,49 @@ final class ProStore {
 
     static let shared = ProStore()
     static let lifetimeID = "com.cutsense.app.pro.lifetime"
+    static let offerID = "com.cutsense.app.pro.lifetime.offer"
+
+    struct OfferPrices: Equatable, Sendable { let offer: String; let regular: String; let percent: Int }
 
     private(set) var product: Product?
+    private(set) var offerProduct: Product?
     private(set) var isPro: Bool = ProEntitlement.isPro
     var canOfferPro: Bool { product != nil && !isPro }
 
+    /// nil unless both products loaded and the offer is a real discount of at least 10% (floored).
+    var offerPrices: OfferPrices? {
+        guard let product, let offerProduct else {
+            #if DEBUG
+            if ProcessInfo.processInfo.environment["CUTSENSE_FAKE_PRICES"] == "1" {
+                return OfferPrices(offer: "$3.99", regular: "$7.99", percent: 50)
+            }
+            #endif
+            return nil
+        }
+        return Self.offerPrices(offer: offerProduct.price, offerDisplay: offerProduct.displayPrice,
+                                regular: product.price, regularDisplay: product.displayPrice)
+    }
+
+    /// The discount rule, separate from `Product` so it is testable without StoreKit.
+    nonisolated static func offerPrices(offer: Decimal, offerDisplay: String,
+                                        regular: Decimal, regularDisplay: String) -> OfferPrices? {
+        guard regular > 0, offer < regular else { return nil }
+        var raw = (1 - offer / regular) * 100
+        var floored = Decimal()
+        NSDecimalRound(&floored, &raw, 0, .down)
+        let percent = NSDecimalNumber(decimal: floored).intValue
+        guard percent >= 10 else { return nil }
+        return OfferPrices(offer: offerDisplay, regular: regularDisplay, percent: percent)
+    }
+
     private let productID: String
+    private let offerID: String
     @ObservationIgnored private var updatesTask: Task<Void, Never>?
 
     /// `productID` is injectable only so tests can simulate a product that fails to load.
-    init(productID: String = ProStore.lifetimeID) {
+    init(productID: String = ProStore.lifetimeID, offerID: String = ProStore.offerID) {
         self.productID = productID
+        self.offerID = offerID
     }
 
     func start() {
@@ -52,7 +84,9 @@ final class ProStore {
     }
 
     func loadProduct() async {
-        product = try? await Product.products(for: [productID]).first
+        let products = (try? await Product.products(for: [productID, offerID])) ?? []
+        product = products.first { $0.id == productID }
+        offerProduct = products.first { $0.id == offerID }
     }
 
     /// Rebuilds the flag from StoreKit; a refunded or revoked purchase drops out of currentEntitlements.
@@ -60,7 +94,7 @@ final class ProStore {
         var owned = false
         for await result in Transaction.currentEntitlements {
             if case .verified(let transaction) = result,
-               transaction.productID == productID,
+               transaction.productID == productID || transaction.productID == offerID,
                transaction.revocationDate == nil {
                 owned = true
             }
@@ -70,7 +104,21 @@ final class ProStore {
     }
 
     func purchase() async -> Outcome {
+        await refresh()
+        guard !isPro else { return .purchased }
         if product == nil { await loadProduct() }
+        return await buy(product)
+    }
+
+    func purchaseOffer() async -> Outcome {
+        // Either SKU unlocks the same entitlement; StoreKit would happily sell the other one to an owner.
+        await refresh()
+        guard !isPro else { return .purchased }
+        if offerProduct == nil { await loadProduct() }
+        return await buy(offerProduct)
+    }
+
+    private func buy(_ product: Product?) async -> Outcome {
         guard let product else { return .unavailable }
         do {
             switch try await product.purchase() {
