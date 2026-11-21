@@ -17,6 +17,7 @@ A0 tamam: build ve testler yeşil, yeni uyarı yok. Tasarım spec'indeki tüm to
 ```swift
 // Token'lar
 Mono.C.bg / raised / elevated / hairline / strong / text / text2 / text3 / disabled / waveCut / onWhite2 / pressedWhite(#E6E6E6) / scrim(siyah %90)
+Mono.C.offer(#FF453A, yalnız flash, yalnız bg üstünde) / offerDim(offer %35, dekoratif)
 Mono.Style: .display .title .numeralXL .numeralL .numeralM .headline .body .label .overline .caption
 view.monoText(_ style: Mono.Style, size: CGFloat? = nil)   // ör. .monoText(.title, size: 22)
 Mono.Space.xxs 4, xs 8, s 12, m 16, l 24, xl 32, xxl 48
@@ -33,7 +34,8 @@ MonoTertiaryButtonStyle(color: Color = Mono.C.text2)  // beyaz için color: Mono
 // Kontroller ve göstergeler
 MonoIntensityControl(selection: Binding<QuickSilenceEngine.CutIntensity>, language: AppLanguage, hint: String?)
 MonoToggleStyle()
-MonoBadge(_ text: String, filled: Bool = false)
+MonoBadge(_ text: String, filled: Bool = false, tint: Color = Mono.C.text)
+OfferSweep()                                          // kapsül kenarında 1 px kırmızı tur; Reduce Motion'da yok
 MonoNotice(text: String, systemImage: String, actionTitle: String? = nil, action: (() -> Void)? = nil)
 MonoProgressRing(progress: Double, size: CGFloat = 132)
 MonoCheckSeal(size: CGFloat = 72)

@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// CutSense 1.1.0 mono design system: black, white and grays only. Spec: docs/design-1.1.0.md §2–§3.
+/// CutSense 1.1.0 mono design system: black, white and grays only; one red accent (`offer`) reserved for the timed flash offer. Spec: docs/design-1.1.0.md §2–§3.
 enum Mono {
     enum C {
         static let bg = Color.black
@@ -16,6 +16,10 @@ enum Mono {
         static let onWhite2 = Color(white: 107 / 255)
         static let pressedWhite = Color(white: 230 / 255)
         static let scrim = Color.black.opacity(0.9)
+        /// Flash offer only, on bg only. Never on raised/white, never as a fill under white text.
+        static let offer = Color(red: 1, green: 69 / 255, blue: 58 / 255)
+        /// Decorative hairline only; never for text.
+        static let offerDim = offer.opacity(0.35)
     }
 
     enum Style {
@@ -372,6 +376,7 @@ struct MonoToggleStyle: ToggleStyle {
                     }
                     .frame(width: 51, height: 31)
                 }
+                .frame(minHeight: 44)
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
@@ -387,10 +392,12 @@ struct MonoToggleStyle: ToggleStyle {
 struct MonoBadge: View {
     let text: String
     var filled: Bool = false
+    var tint: Color = Mono.C.text
 
-    init(_ text: String, filled: Bool = false) {
+    init(_ text: String, filled: Bool = false, tint: Color = Mono.C.text) {
         self.text = text
         self.filled = filled
+        self.tint = tint
     }
 
     var body: some View {
@@ -402,11 +409,44 @@ struct MonoBadge: View {
             .frame(height: 22)
             .background {
                 if filled {
-                    Capsule().fill(Mono.C.text)
+                    Capsule().fill(tint)
                 } else {
                     Capsule().strokeBorder(Mono.C.hairline, lineWidth: 1)
                 }
             }
+    }
+}
+
+/// One red hairline lap around a capsule border: 2.4 s every 6 s. Nothing under Reduce Motion.
+struct OfferSweep: View {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var head: CGFloat = 0
+
+    var body: some View {
+        if !reduceMotion {
+            Segment(head: head)
+                .stroke(Mono.C.offer, style: StrokeStyle(lineWidth: 1, lineCap: .round))
+                .allowsHitTesting(false)
+                .accessibilityHidden(true)
+                .task {
+                    while !Task.isCancelled {
+                        var reset = Transaction(); reset.disablesAnimations = true
+                        withTransaction(reset) { head = 0 }
+                        try? await Task.sleep(for: .milliseconds(50))
+                        withAnimation(.easeInOut(duration: 2.4)) { head = 1 }
+                        try? await Task.sleep(for: .seconds(6))
+                    }
+                }
+        }
+    }
+
+    private struct Segment: Shape {
+        var head: CGFloat
+        var animatableData: CGFloat { get { head } set { head = newValue } }
+        func path(in rect: CGRect) -> Path {
+            Capsule().path(in: rect.insetBy(dx: 0.5, dy: 0.5))
+                .trimmedPath(from: max(0, head * 1.15 - 0.15), to: min(1, head * 1.15))
+        }
     }
 }
 
@@ -428,12 +468,16 @@ struct MonoNotice: View {
             if let actionTitle, let action {
                 Button(action: action) {
                     Text(actionTitle).font(.system(size: 12, weight: .bold)).underline()
+                        .frame(minWidth: 44, minHeight: 44)
+                        .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
             }
         }
         .foregroundStyle(Mono.C.text)
-        .padding(10)
+        .padding(.horizontal, 10)
+        // The 44 pt action button already supplies the vertical room.
+        .padding(.vertical, actionTitle != nil && action != nil ? 0 : 10)
         .background(RoundedRectangle(cornerRadius: Mono.Radius.chip, style: .continuous).fill(Mono.C.raised))
     }
 }
@@ -689,7 +733,7 @@ private struct MonoKitPreview: View {
             }
             Button("New Video") {}.buttonStyle(MonoTertiaryButtonStyle())
             Toggle(isOn: $cut) { Text(cut ? "Cut" : "Keep").monoText(.label) }.toggleStyle(MonoToggleStyle())
-            HStack { MonoBadge("PRO", filled: true); MonoBadge("Ad") }
+            HStack { MonoBadge("PRO", filled: true); MonoBadge("Ad"); MonoBadge("\u{2212}50%", filled: true, tint: Mono.C.offer) }
             MonoNotice(text: "Photos access is off.", systemImage: "exclamationmark.triangle", actionTitle: "Open Settings", action: {})
             HStack(spacing: Mono.Space.l) {
                 MonoProgressRing(progress: 0.6, size: 96).overlay(Text("60%").monoText(.numeralM))

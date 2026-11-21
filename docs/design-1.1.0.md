@@ -23,6 +23,8 @@
 | `disabled` | #4D4D4D | disabled only | 2.5 |
 | `waveCut` | #3A3A3A | cut bars (also height-coded) | decorative |
 | `onWhite2` | #6B6B6B | secondary text on white | 5.3 on white |
+| `offer` | #FF453A | flash offer only, on `bg` only; never on raised/white, never under white text | 6.16 on #000 |
+| `offerDim` | `offer` 35% | flash offer hairlines | decorative |
 
 Scrim is black 90%. There are no gradients, shadows or blur materials; the old blue-black `LinearGradient` is removed everywhere.
 
@@ -49,6 +51,7 @@ Scrim is black 90%. There are no gradients, shadows or blur materials; the old b
 - `bouncy` = `.spring(response: 0.5, dampingFraction: 0.68)`
 - `fade` = `.easeOut(duration: 0.2)`
 - Entrance: offset y 14→0 plus opacity, `smooth`, delay `0.05 * index`.
+- Offer sweep 2.4 s / 6 s, countdown linear 1 s, final-minute tick 0.5 Hz.
 - `Mono.Motion.pick(_:reduce:)` returns `fade` when Reduce Motion is on. Under Reduce Motion there are no offsets, scales or loops.
 
 **Haptics** (`.sensoryFeedback`, iOS 17):

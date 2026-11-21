@@ -66,6 +66,7 @@ struct OfferPanel: View {
     private func t(_ tr: String, _ en: String) -> String { appText(language, tr, en) }
     private var isExpired: Bool { endsAt.map { Date() >= $0 } ?? false }
     private var prices: ProStore.OfferPrices? { kind == .welcome ? store.welcomePrices : store.offerPrices }
+    private var isFlash: Bool { kind == .flash }
 
     var body: some View {
         VStack(spacing: 0) {
@@ -99,10 +100,10 @@ struct OfferPanel: View {
                         .monoEntrance(1)
                     if let prices {
                         priceBlock(prices)
-                            .padding(.top, Mono.Space.l)
+                            .padding(.top, Mono.Space.xl)
                     }
                     timeRow
-                        .padding(.top, Mono.Space.m)
+                        .padding(.top, Mono.Space.l)
                         .monoEntrance(2)
                     VStack(spacing: 0) {
                         benefit(0, t("Hiç reklam yok", "No ads, ever"))
@@ -187,7 +188,7 @@ struct OfferPanel: View {
                         .lineLimit(1)
                         .minimumScaleFactor(0.6)
                         .transition(reduceMotion ? .opacity : AnyTransition(.blurReplace))
-                    MonoBadge("\u{2212}\(prices.percent)%", filled: true)
+                    MonoBadge(offPercent(prices.percent, language), filled: true, tint: isFlash ? Mono.C.offer : Mono.C.text)
                         .transition(reduceMotion ? .opacity : .scale(scale: 0.6).combined(with: .opacity))
                         .animation(Mono.Motion.pick(Mono.Motion.bouncy, reduce: reduceMotion), value: phase)
                 }
@@ -201,7 +202,7 @@ struct OfferPanel: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel("\(prices.offer), \u{2212}\(prices.percent)%. \(t("Normal fiyat", "Regular price")) \(prices.regular)")
+        .accessibilityLabel("\(prices.offer), \(offPercent(prices.percent, language)). \(t("Normal fiyat", "Regular price")) \(prices.regular)")
     }
 
     private func regularPrice(_ text: String, style: Mono.Style) -> some View {
@@ -213,7 +214,7 @@ struct OfferPanel: View {
                 // Drawn line, not .strikethrough, so the trim survives the matched-geometry shrink.
                 StrikeLine()
                     .trim(from: 0, to: strike)
-                    .stroke(phase < 2 ? Mono.C.text : Mono.C.text2, lineWidth: style == .numeralXL ? 3 : 1.5)
+                    .stroke(isFlash ? Mono.C.offer : (phase < 2 ? Mono.C.text : Mono.C.text2), lineWidth: style == .numeralXL ? 3 : 1.5)
             }
             .matchedGeometryEffect(id: "regular", in: priceSpace)
     }
@@ -225,41 +226,54 @@ struct OfferPanel: View {
         if kind == .flash, let endsAt {
             VStack(alignment: .leading, spacing: Mono.Space.xs) {
                 TimelineView(.periodic(from: .now, by: 1)) { context in
+                    let total = OfferCenter.duration(OfferCenter.flashSeconds)
                     let remaining = max(0, endsAt.timeIntervalSince(context.date))
+                    let secs = Int(remaining.rounded(.up))
+                    let final = remaining <= 60
                     VStack(alignment: .leading, spacing: Mono.Space.xs) {
-                        Text(clock(remaining))
-                            .monoText(.numeralL)
-                            .foregroundStyle(Mono.C.text)
-                            .contentTransition(.numericText(countsDown: true))
-                        Rectangle()
-                            .fill(Mono.C.hairline)
-                            .frame(height: 2)
-                            .overlay(alignment: .leading) {
-                                GeometryReader { geo in
+                        HStack(alignment: .firstTextBaseline) {
+                            Text(String(format: t("%@ itibarıyla biter", "Ends at %@"), endsAt.formatted(date: .omitted, time: .shortened)))
+                                .monoText(.caption)
+                                .foregroundStyle(Mono.C.text2)
+                            Spacer(minLength: Mono.Space.s)
+                            Text(clock(remaining))
+                                .monoText(.numeralM)
+                                .foregroundStyle(final ? Mono.C.offer : Mono.C.text)
+                                .contentTransition(.numericText(countsDown: true))
+                                .animation(reduceMotion ? nil : Mono.Motion.snappy, value: secs)
+                        }
+                        GeometryReader { geo in
+                            let x = geo.size.width * min(1, remaining / total)
+                            Rectangle()
+                                .fill(Mono.C.offerDim)
+                                .overlay(alignment: .leading) {
                                     Rectangle()
-                                        .fill(Mono.C.text)
-                                        .frame(width: geo.size.width * min(1, remaining / 900))
+                                        .fill(Mono.C.offer)
+                                        .frame(width: x)
+                                        .animation(reduceMotion ? nil : .linear(duration: 1), value: secs)
                                 }
-                            }
+                                .overlay(alignment: .leading) {
+                                    // Playhead tick, the SignalField motif; overlay so it never grows the 2 pt rail.
+                                    Rectangle()
+                                        .fill(Mono.C.offer)
+                                        .frame(width: 1.5, height: 10)
+                                        .opacity(final && !reduceMotion && secs % 2 == 1 ? 0.4 : 1)
+                                        .animation(.easeInOut(duration: 1), value: secs)
+                                        .offset(x: x - 0.75)
+                                        .animation(reduceMotion ? nil : .linear(duration: 1), value: secs)
+                                }
+                        }
+                        .frame(height: 2)
                     }
                     .accessibilityElement(children: .ignore)
-                    .accessibilityLabel(clock(remaining))
+                    .accessibilityLabel(String(format: t("Teklifin bitmesine %@", "Offer ends in %@"), clock(remaining)))
                 }
-                Text(String(format: t("%@ itibarıyla biter", "Ends at %@"), formatted(endsAt, time: false)))
-                    .monoText(.caption)
-                    .foregroundStyle(Mono.C.text2)
                 Text(t("Sonrasında normal fiyat geçerli.", "After that, the regular price applies."))
                     .monoText(.caption)
                     .foregroundStyle(Mono.C.text3)
+                    .padding(.top, Mono.Space.xxs)
             }
         }
-    }
-
-    private func formatted(_ date: Date, time withDate: Bool) -> String {
-        let style = withDate
-            ? Date.FormatStyle(date: .abbreviated, time: .shortened)
-            : Date.FormatStyle(date: .omitted, time: .shortened)
-        return date.formatted(style.locale(Locale(identifier: language.rawValue)))
     }
 
     // MARK: Benefits
@@ -407,6 +421,11 @@ private struct StrikeLine: Shape {
     }
 }
 
+/// "−50%"; Turkish puts the sign first ("−%50"). Reuses the existing "%d%%" translation key.
+private func offPercent(_ percent: Int, _ language: AppLanguage) -> String {
+    "\u{2212}" + String(format: appText(language, "%%%d", "%d%%"), percent)
+}
+
 private func clock(_ remaining: TimeInterval) -> String {
     let total = max(0, Int(remaining))
     return String(format: "%02d:%02d", total / 60, total % 60)
@@ -419,6 +438,7 @@ struct OfferPill: View {
     let action: () -> Void
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.isEnabled) private var isEnabled
     @State private var offers = OfferCenter.shared
     @State private var store = ProStore.shared
 
@@ -455,12 +475,42 @@ struct OfferPill: View {
 
     @ViewBuilder
     private func label(_ active: OfferCenter.Active, percent: Int) -> some View {
-        let base = "Pro \u{2212}\(percent)%"
+        let off = offPercent(percent, language)
+        let base = "Pro \(off)"
         Group {
             if active.kind == .flash {
                 TimelineView(.periodic(from: .now, by: 1)) { context in
-                    capsule("\(base) · \(clock(active.endsAt.timeIntervalSince(context.date)))")
+                    let remaining = max(0, active.endsAt.timeIntervalSince(context.date))
+                    let secs = Int(remaining.rounded(.up))
+                    HStack(spacing: 6) {
+                        Text("Pro")
+                            .font(.system(size: 12, weight: .bold))
+                            .foregroundStyle(Mono.C.text)
+                        Text(off)
+                            .font(.system(size: 12, weight: .bold))
+                            .foregroundStyle(Mono.C.offer)
+                        Rectangle()
+                            .fill(Mono.C.strong)
+                            .frame(width: 1, height: 12)
+                        Text(clock(remaining))
+                            .font(.system(size: 12, weight: .semibold).monospacedDigit())
+                            .foregroundStyle(remaining <= 60 ? Mono.C.offer : Mono.C.text)
+                            .contentTransition(.numericText(countsDown: true))
+                            .animation(reduceMotion ? nil : Mono.Motion.snappy, value: secs)
+                    }
+                    .lineLimit(1)
+                    .fixedSize()
+                    .accessibilityValue("\(base) · \(clock(remaining))")
                 }
+                .padding(.horizontal, 12)
+                .frame(height: 32)
+                .background {
+                    Capsule().fill(Mono.C.bg)
+                    Capsule().strokeBorder(Mono.C.offerDim, lineWidth: 1)
+                }
+                // Outside the TimelineView so the sweep is not rebuilt every second.
+                .overlay { if isEnabled { OfferSweep() } }
+                .opacity(isEnabled ? 1 : 0.4)
             } else {
                 capsule(base)
             }
