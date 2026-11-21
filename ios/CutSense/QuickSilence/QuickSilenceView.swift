@@ -323,7 +323,8 @@ struct QuickSilenceView: View {
         if env["CUTSENSE_SHOW_PAYWALL"] == "1" { showsPaywall = true }
         guard !didStartAutorun else { return }
         guard let path = env["CUTSENSE_AUTORUN_VIDEO_URL"], !path.isEmpty else { return }
-        let inputURL = URL(fileURLWithPath: path)
+        // Relative paths resolve against Documents so a device run can use a file copied in with devicectl.
+        let inputURL = path.hasPrefix("/") ? URL(fileURLWithPath: path) : URL.documentsDirectory.appending(path: path)
         guard FileManager.default.fileExists(atPath: inputURL.path) else {
             phase = .failed(t("Test videosu bulunamadı.", "Test video was not found."))
             return

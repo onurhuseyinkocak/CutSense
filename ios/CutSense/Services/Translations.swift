@@ -234,6 +234,11 @@ enum Translations {
         ("Photos did not accept this video file.", row(es: "Fotos no aceptó este archivo de video.", pt: "O Fotos não aceitou este arquivo de vídeo.", de: "Fotos hat diese Videodatei nicht akzeptiert.", fr: "Photos n'a pas accepté ce fichier vidéo.", it: "Foto non ha accettato questo file video.", ja: "写真アプリがこの動画ファイルを受け付けませんでした。", ko: "사진 앱이 이 동영상 파일을 받지 않았습니다.")),
 
         // MARK: Paywall
+        ("Free", row(es: "Gratis", pt: "Grátis", de: "Gratis", fr: "Gratuit", it: "Gratis", ja: "無料", ko: "무료")),
+        ("Unlimited cuts", row(es: "Cortes ilimitados", pt: "Cortes ilimitados", de: "Unbegrenzt schneiden", fr: "Coupes illimitées", it: "Tagli illimitati", ja: "無制限にカット", ko: "무제한 컷")),
+        ("Review every cut", row(es: "Revisa cada corte", pt: "Revise cada corte", de: "Jeden Schnitt prüfen", fr: "Vérifier chaque coupe", it: "Rivedi ogni taglio", ja: "カットを1つずつ確認", ko: "모든 컷 검토")),
+        ("No watermark", row(es: "Sin marca de agua", pt: "Sem marca d'água", de: "Kein Wasserzeichen", fr: "Sans filigrane", it: "Senza filigrana", ja: "透かしなし", ko: "워터마크 없음")),
+        ("Ad-free", row(es: "Sin anuncios", pt: "Sem anúncios", de: "Werbefrei", fr: "Sans pub", it: "Senza annunci", ja: "広告なし", ko: "광고 없음")),
         ("Close", row(es: "Cerrar", pt: "Fechar", de: "Schließen", fr: "Fermer", it: "Chiudi", ja: "閉じる", ko: "닫기")),
         ("No ads, ever", row(es: "Sin anuncios, para siempre", pt: "Sem anúncios, para sempre", de: "Für immer werbefrei", fr: "Sans pub, pour toujours", it: "Niente annunci, per sempre", ja: "広告はずっと表示されません", ko: "광고 없이 영원히")),
         ("Fine-tune: minimum pause and breathing room", row(

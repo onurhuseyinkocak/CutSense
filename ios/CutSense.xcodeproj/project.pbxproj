@@ -34,10 +34,18 @@
 		ED4D21C239CACAD8D6D15CD5 /* ProStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 76D307ED363DB96DE47A88D7 /* ProStore.swift */; };
 		EDA7F2C44BE660D743112F3C /* WorkFiles.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37CA1075A0AAFD9751456F3A /* WorkFiles.swift */; };
 		F2FAAC8BD865412DB715DC8B /* QuickSilenceEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB97188D8E41E8EDA18FFC31 /* QuickSilenceEngine.swift */; };
+		FB222E44B97B13DD4E891301 /* DeviceFlowUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7363938B0F76D35960F216DC /* DeviceFlowUITests.swift */; };
 		FCC3A11D6F78C346121A111C /* AdMobService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D9ADDEE72E898A7542A3E28 /* AdMobService.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
+		B9FDA5217A4A01319DE412DA /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = D95314FEB236E8C34B89ED04 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = BDB998C8B18E04F0F12E26BD;
+			remoteInfo = CutSense;
+		};
 		FCCFA5AFCFC0B253C7A8E137 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = D95314FEB236E8C34B89ED04 /* Project object */;
@@ -48,6 +56,7 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		08EF21FB2749D3913F7B45B5 /* CutSenseUITests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = CutSenseUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		1D9ADDEE72E898A7542A3E28 /* AdMobService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdMobService.swift; sourceTree = "<group>"; };
 		28901B74846173D20088B4D4 /* SettingsScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsScreen.swift; sourceTree = "<group>"; };
 		2AE1516E17CA740B67BCC3DC /* WorkFilesTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkFilesTests.swift; sourceTree = "<group>"; };
@@ -59,6 +68,7 @@
 		615984865BA5FA389EB8226B /* Products.storekit */ = {isa = PBXFileReference; path = Products.storekit; sourceTree = "<group>"; };
 		66419CEE6970408DD0364682 /* silence_fixture.mp4 */ = {isa = PBXFileReference; path = silence_fixture.mp4; sourceTree = "<group>"; };
 		66C373ACE0E41C68BEC62183 /* AudioAnalysisService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioAnalysisService.swift; sourceTree = "<group>"; };
+		7363938B0F76D35960F216DC /* DeviceFlowUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeviceFlowUITests.swift; sourceTree = "<group>"; };
 		76D307ED363DB96DE47A88D7 /* ProStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProStore.swift; sourceTree = "<group>"; };
 		88CA88FBF174BF48827AEA02 /* ShareSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShareSheet.swift; sourceTree = "<group>"; };
 		8A0F74EC6E72BFA26270CD11 /* QuickSilenceReleaseTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuickSilenceReleaseTests.swift; sourceTree = "<group>"; };
@@ -155,6 +165,7 @@
 			children = (
 				B9A4ECAEAEB959B791A3372C /* CutSense.app */,
 				8CE7C67F669CC7C139D97E42 /* CutSenseTests.xctest */,
+				08EF21FB2749D3913F7B45B5 /* CutSenseUITests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -184,6 +195,14 @@
 			);
 			sourceTree = "<group>";
 		};
+		C274296680E16A9024BDD8C5 /* UI */ = {
+			isa = PBXGroup;
+			children = (
+				7363938B0F76D35960F216DC /* DeviceFlowUITests.swift */,
+			);
+			path = UI;
+			sourceTree = "<group>";
+		};
 		CBD1C901E5D778687410A12B /* CutSense */ = {
 			isa = PBXGroup;
 			children = (
@@ -205,6 +224,7 @@
 			isa = PBXGroup;
 			children = (
 				5A39D3BCEFF3DA443E3968C3 /* Release */,
+				C274296680E16A9024BDD8C5 /* UI */,
 			);
 			path = Tests;
 			sourceTree = "<group>";
@@ -270,6 +290,24 @@
 			productReference = B9A4ECAEAEB959B791A3372C /* CutSense.app */;
 			productType = "com.apple.product-type.application";
 		};
+		F4DBCA530DAC08BCA6E1E3BB /* CutSenseUITests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 558C0A8EBF256E1F4A1A8BF8 /* Build configuration list for PBXNativeTarget "CutSenseUITests" */;
+			buildPhases = (
+				8AB107443A8DAB92F3B6A0BE /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				0249BCAAE082A7D51D6DC840 /* PBXTargetDependency */,
+			);
+			name = CutSenseUITests;
+			packageProductDependencies = (
+			);
+			productName = CutSenseUITests;
+			productReference = 08EF21FB2749D3913F7B45B5 /* CutSenseUITests.xctest */;
+			productType = "com.apple.product-type.bundle.ui-testing";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -286,6 +324,11 @@
 					BDB998C8B18E04F0F12E26BD = {
 						DevelopmentTeam = 6HCP552XP8;
 						ProvisioningStyle = Automatic;
+					};
+					F4DBCA530DAC08BCA6E1E3BB = {
+						DevelopmentTeam = 6HCP552XP8;
+						ProvisioningStyle = Automatic;
+						TestTargetID = BDB998C8B18E04F0F12E26BD;
 					};
 				};
 			};
@@ -308,6 +351,7 @@
 			targets = (
 				BDB998C8B18E04F0F12E26BD /* CutSense */,
 				4A05FF09A80F99BA55056874 /* CutSenseTests */,
+				F4DBCA530DAC08BCA6E1E3BB /* CutSenseUITests */,
 			);
 		};
 /* End PBXProject section */
@@ -359,6 +403,14 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		8AB107443A8DAB92F3B6A0BE /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				FB222E44B97B13DD4E891301 /* DeviceFlowUITests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		FA06AA8F5C7433575B4E215F /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -374,6 +426,11 @@
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
+		0249BCAAE082A7D51D6DC840 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = BDB998C8B18E04F0F12E26BD /* CutSense */;
+			targetProxy = B9FDA5217A4A01319DE412DA /* PBXContainerItemProxy */;
+		};
 		5FF62D850D2FB55F38E20FD9 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			target = BDB998C8B18E04F0F12E26BD /* CutSense */;
@@ -382,6 +439,26 @@
 /* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
+		06914E0013B2B21393BBED03 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = 6HCP552XP8;
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.cutsense.CutSenseUITests;
+				SDKROOT = iphoneos;
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = CutSense;
+			};
+			name = Debug;
+		};
 		3563FB499C67D633C08BACC3 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -541,6 +618,26 @@
 			};
 			name = Release;
 		};
+		CD9EB192948809305BAE1E6D /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = 6HCP552XP8;
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.cutsense.CutSenseUITests;
+				SDKROOT = iphoneos;
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = CutSense;
+			};
+			name = Release;
+		};
 		CFF7C52638FE6625D609A2E4 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -588,6 +685,15 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
+		558C0A8EBF256E1F4A1A8BF8 /* Build configuration list for PBXNativeTarget "CutSenseUITests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				06914E0013B2B21393BBED03 /* Debug */,
+				CD9EB192948809305BAE1E6D /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
 		662AF4E2A3885F0C21773CBC /* Build configuration list for PBXProject "CutSense" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (

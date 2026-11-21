@@ -42,6 +42,8 @@ struct PaywallView: View {
                     bullet("checkmark.seal", appText(language, "Tek seferlik satın alma. Abonelik yok.", "One-time purchase. No subscription."))
                 }
 
+                comparison
+
                 Spacer(minLength: 0)
 
                 if let message {
@@ -97,6 +99,48 @@ struct PaywallView: View {
                 }
             }
         }
+    }
+
+    private var comparison: some View {
+        VStack(spacing: 0) {
+            HStack {
+                Spacer()
+                Text(appText(language, "Ücretsiz", "Free")).frame(width: 64)
+                Text("Pro").foregroundStyle(Self.accent).frame(width: 64)
+            }
+            .font(.footnote.weight(.bold))
+            .foregroundStyle(.white.opacity(0.7))
+            .padding(.bottom, 8)
+            compareRow(appText(language, "Sınırsız kesim", "Unlimited cuts"), free: true)
+            compareRow(appText(language, "Her kesimi incele", "Review every cut"), free: true)
+            compareRow(appText(language, "Filigran yok", "No watermark"), free: true)
+            compareRow(appText(language, "Reklamsız", "Ad-free"), free: false)
+            compareRow(appText(language, "İnce ayar", "Fine-tune"), free: false)
+        }
+        .padding(16)
+        .background(.white.opacity(0.06), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+    }
+
+    private func compareRow(_ title: String, free: Bool) -> some View {
+        HStack {
+            Text(title)
+                .font(.subheadline.weight(.medium))
+                .foregroundStyle(.white)
+                .lineLimit(2)
+                .minimumScaleFactor(0.85)
+            Spacer(minLength: 8)
+            mark(free).frame(width: 64)
+            mark(true).frame(width: 64)
+        }
+        .padding(.vertical, 7)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("\(title): \(free ? appText(language, "Ücretsiz", "Free") : "Pro")")
+    }
+
+    private func mark(_ included: Bool) -> some View {
+        Image(systemName: included ? "checkmark" : "minus")
+            .font(.subheadline.weight(.bold))
+            .foregroundStyle(included ? Self.accent : .white.opacity(0.3))
     }
 
     private func bullet(_ icon: String, _ text: String) -> some View {
