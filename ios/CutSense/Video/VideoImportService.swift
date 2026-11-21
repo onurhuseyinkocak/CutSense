@@ -10,10 +10,6 @@ final class VideoImportService {
     private(set) var importedVideoURL: URL?
     private(set) var isImporting = false
     private(set) var error: ImportError?
-    // shortcut: compat shim until QuickSilenceView moves to error.message(for:)
-    var errorMessage: String? {
-        error?.message(for: AppLanguage.value(from: UserDefaults.standard.string(forKey: AppLanguage.storageKey) ?? ""))
-    }
     /// 0...1 while Photos is downloading the file, -1 when unknown.
     private(set) var downloadProgress: Double = -1
 

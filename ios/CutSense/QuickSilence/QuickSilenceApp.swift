@@ -4,7 +4,7 @@ import AVFoundation
 @main
 struct QuickSilenceApp: App {
     init() {
-        QuickSilenceEngine.sweepTemporaryFiles()
+        WorkFiles.sweepAtLaunch()
     }
 
     var body: some Scene {
@@ -12,10 +12,33 @@ struct QuickSilenceApp: App {
             NavigationStack {
                 QuickSilenceView()
             }
-                .task {
-                    try? AVAudioSession.sharedInstance().setCategory(.playback, mode: .moviePlayback)
-                    AdMobService.start()
-                }
+            .modifier(DebugScreenClamp())
+            .task {
+                try? AVAudioSession.sharedInstance().setCategory(.playback, mode: .moviePlayback)
+                // Pro first: AdMobService.isEnabled reads the cached entitlement.
+                ProStore.shared.start()
+                AdMobService.start()
+            }
         }
+    }
+}
+
+/// DEBUG only: CUTSENSE_CLAMP_16E=1 squeezes the UI into an iPhone 16e safe area (390 x 763 pt)
+/// so layout fit can be checked on the only allowed simulator.
+private struct DebugScreenClamp: ViewModifier {
+    func body(content: Content) -> some View {
+        #if DEBUG
+        if ProcessInfo.processInfo.environment["CUTSENSE_CLAMP_16E"] == "1" {
+            content
+                .frame(width: 390, height: 763)
+                .border(.red)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .background(Color.black.ignoresSafeArea())
+        } else {
+            content
+        }
+        #else
+        content
+        #endif
     }
 }

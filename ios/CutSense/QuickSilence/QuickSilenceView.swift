@@ -1,48 +1,50 @@
 import SwiftUI
 import PhotosUI
-import AVKit
+import StoreKit
 import UIKit
 
-/// The entire app, one screen: pick a video → cut the silences → save.
+/// The entire app, one screen: pick a video → analyze → review the cuts → save or share.
+/// Export runs only on Save/Share; no output file exists while reviewing.
 struct QuickSilenceView: View {
     @State private var phase: Phase = .idle
     @State private var pickerItem: PhotosPickerItem?
     @State private var importService = VideoImportService()
     @StateObject private var rewardedAd = RewardedInterstitialAdController()
+    @State private var store = ProStore.shared
+    @State private var session = WorkSession()
+    @State private var preview = PreviewPlayer()
+    @State private var analysis: QuickSilenceEngine.Analysis?
+    @State private var plan: QuickSilenceEngine.CutPlan?
+    @State private var cutIntensity: QuickSilenceEngine.CutIntensity = .tight
+    @State private var cutSettings = QuickSilenceEngine.CutSettings(.tight)
+    @State private var exportProgress: Double?
+    @State private var exportTask: Task<Void, Never>?
     @State private var saved = false
-    @State private var isSaving = false
     @State private var saveError: String?
     @State private var saveNeedsSettings = false
-    @State private var saveTask: Task<Void, Never>?
-    @State private var savingURL: URL?
-    @State private var cutIntensity: QuickSilenceEngine.CutIntensity = .tight
-    @State private var workEvents: [String] = []
     @State private var activeJobID: UUID?
     @State private var processingTask: Task<Void, Never>?
     @State private var processingAdTask: Task<Void, Never>?
     @State private var processingAdOverlay: ProcessingAdState?
-    @State private var completedProcessingAdBreaks = 0
     @State private var privacyOptionsRequired = false
-    @State private var currentInputURL: URL?
     @State private var didStartAutorun = false
-    @State private var player: AVPlayer?
+    @State private var showsPaywall = false
+    @State private var showsFineTune = false
     /// False while Settings is pushed on top; full-screen ads wait for it.
     @State private var isScreenVisible = true
     @AppStorage(AppLanguage.storageKey) private var languageRaw = AppLanguage.systemDefault.rawValue
+    @Environment(\.requestReview) private var requestReview
 
     enum Phase {
         case idle
         case working(WorkingState)
-        case done(QuickSilenceEngine.Result)
+        case review
         case failed(String)
     }
 
     struct WorkingState {
-        let stage: QuickSilenceEngine.ProgressUpdate.Stage
         let progress: Double
         let title: String
-        let detail: String
-        let events: [String]
     }
 
     struct ProcessingAdState: Equatable {
@@ -58,24 +60,27 @@ struct QuickSilenceView: View {
                            startPoint: .top, endPoint: .bottom)
                 .ignoresSafeArea()
 
-            VStack(spacing: 28) {
-                header
-                Spacer(minLength: 0)
-                content
-                Spacer(minLength: 0)
-                if isIdle {
-                    LanguageSwitcher()
+            if case .review = phase, let planBinding = Binding($plan), let inputURL = session.inputURL {
+                review(plan: planBinding, inputURL: inputURL)
+                    .padding(.horizontal, 16)
+                    .padding(.bottom, 8)
+            } else {
+                VStack(spacing: 28) {
+                    // Hidden while working so a loaded native ad still fits a 6.1" screen.
+                    if !isWorking { header }
+                    Spacer(minLength: 0)
+                    content
+                    Spacer(minLength: 0)
                 }
+                .padding(.horizontal, 24)
+                .padding(.vertical, 44)
+                .padding(.bottom, showsPersistentBanner ? AdBannerSlot.height + 8 : 0)
             }
-            .padding(.horizontal, 24)
-            .padding(.vertical, 44)
-            .padding(.bottom, showsPersistentBanner ? AdBannerSlot.height + 8 : 0)
 
             if showsPersistentBanner {
                 AdBannerSlot()
                     .background(.black.opacity(0.72))
             }
-
         }
         .preferredColorScheme(.dark)
         .navigationBarTitleDisplayMode(.inline)
@@ -87,9 +92,21 @@ struct QuickSilenceView: View {
                     privacyOptionsToolbarButton
                 }
             }
-            ToolbarItem(placement: .topBarTrailing) {
+            ToolbarItemGroup(placement: .topBarTrailing) {
+                if isIdle && store.canOfferPro {
+                    Button { showsPaywall = true } label: {
+                        Text("PRO")
+                            .font(.system(size: 13, weight: .heavy, design: .rounded))
+                            .foregroundStyle(.black)
+                            .padding(.horizontal, 12)
+                            .frame(height: 30)
+                            .background(qsAccent, in: Capsule())
+                    }
+                    .accessibilityLabel("CutSense Pro")
+                    .accessibilityIdentifier("proCapsule")
+                }
                 NavigationLink {
-                    SettingsScreen()
+                    SettingsScreen(urlsInUse: session.urlsInUse)
                 } label: {
                     Image(systemName: "gearshape.fill")
                         .font(.system(size: 15, weight: .bold))
@@ -99,14 +116,32 @@ struct QuickSilenceView: View {
                         .clipShape(Circle())
                         .overlay(Circle().stroke(.white.opacity(0.14)))
                 }
+                .disabled(isWorking || exportTask != nil)
                 .accessibilityLabel(t("Ayarlar", "Settings"))
+                .accessibilityIdentifier("settingsButton")
+            }
+        }
+        .sheet(isPresented: $showsPaywall) {
+            PaywallView(language: appLanguage)
+        }
+        .sheet(isPresented: $showsFineTune) {
+            FineTuneSheet(settings: cutSettings, language: appLanguage) { newSettings in
+                cutSettings = newSettings
+                replan()
             }
         }
         .onAppear { isScreenVisible = true }
-        .onDisappear { isScreenVisible = false }
+        .onDisappear {
+            isScreenVisible = false
+            preview.pause()
+        }
         .onChange(of: pickerItem) { _, item in
             guard let item else { return }
             startPickedVideo(item)
+        }
+        .onChange(of: cutIntensity) { _, intensity in
+            cutSettings = QuickSilenceEngine.CutSettings(intensity)
+            replan()
         }
         .task {
             if AdMobService.isEnabled {
@@ -119,22 +154,10 @@ struct QuickSilenceView: View {
     }
 
     private var showsPersistentBanner: Bool {
-        guard AdMobService.isEnabled, !AdFreePass.isActive else { return false }
+        guard AdMobService.isEnabled, !store.isPro, !AdFreePass.isActive else { return false }
         switch phase {
-        case .idle, .working:
-            return true
-        case .done, .failed:
-            return false
-        }
-    }
-
-    private var showsProcessingAdSurface: Bool {
-        guard AdMobService.isEnabled, !AdFreePass.isActive else { return false }
-        switch phase {
-        case .working:
-            return processingAdOverlay == nil
-        case .idle, .done, .failed:
-            return false
+        case .idle, .working: return true
+        case .review, .failed: return false
         }
     }
 
@@ -174,7 +197,7 @@ struct QuickSilenceView: View {
     @ViewBuilder
     private var content: some View {
         switch phase {
-        case .idle:
+        case .idle, .review:
             VStack(spacing: 16) {
                 let chooseVideoTitle = t("Video Seç", "Choose Video")
                 PhotosPicker(selection: $pickerItem, matching: .videos, photoLibrary: .shared()) {
@@ -184,115 +207,40 @@ struct QuickSilenceView: View {
                 .accessibilityIdentifier("chooseVideoButton")
                 .buttonStyle(QSPrimary())
 
-                CutIntensityPicker(selection: $cutIntensity, language: appLanguage)
+                Text(t("Ücretsiz · Filigransız · Cihazda", "Free · No watermark · On-device"))
+                    .font(.footnote.weight(.semibold))
+                    .foregroundStyle(qsAccent.opacity(0.9))
+
+                CutIntensityPicker(selection: $cutIntensity, language: appLanguage, hint: nil)
+                    .padding(.top, 8)
             }
 
         case .working(let state):
-            ScrollView(showsIndicators: false) {
-                VStack(spacing: 18) {
-                    VStack(spacing: 10) {
-                        ProgressView(value: state.progress)
-                            .tint(.white)
-                            .frame(maxWidth: 280)
-                        ProcessingStageDeck(stage: state.stage, progress: state.progress, language: appLanguage)
-                        Text(state.title)
-                            .font(.system(.headline, design: .rounded).weight(.bold))
-                            .foregroundStyle(.white)
-                        Text(state.detail)
-                            .font(.footnote)
-                            .multilineTextAlignment(.center)
-                            .foregroundStyle(.white.opacity(0.65))
-                        Text("\(Int(state.progress * 100))%")
-                            .font(.system(.title3, design: .rounded).weight(.semibold))
-                            .foregroundStyle(.white)
-                    }
-
-                    if let processingAdOverlay {
-                        ProcessingAdCountdownView(state: processingAdOverlay, language: appLanguage) {
-                            skipProcessingAdBreak()
-                        }
-                            .transition(.opacity.combined(with: .scale(scale: 0.96)))
-                    }
-
-                    WorkTimeline(events: state.events)
-
-                    Button {
-                        cancelActiveWork(returnToIdle: true)
-                    } label: {
-                        Label(t("İptal", "Cancel"), systemImage: "xmark.circle.fill")
-                            .frame(maxWidth: .infinity)
-                    }
-                    .buttonStyle(QSSecondary())
-
-                    // Below Cancel so a late-loading ad never shifts the button.
-                    if showsProcessingAdSurface {
-                        WaitingAdSurface(language: appLanguage)
-                    }
+            VStack(spacing: 18) {
+                VStack(spacing: 10) {
+                    ProgressView(value: state.progress)
+                        .tint(qsAccent)
+                        .frame(maxWidth: 280)
+                    Text(state.title)
+                        .font(.system(.headline, design: .rounded).weight(.bold))
+                        .foregroundStyle(.white)
+                    Text("\(Int(state.progress * 100))%")
+                        .font(.system(.title3, design: .rounded).weight(.semibold))
+                        .monospacedDigit()
+                        .foregroundStyle(.white)
                 }
-                .animation(.easeInOut(duration: 0.22), value: processingAdOverlay)
-            }
 
-        case .done(let result):
-            ScrollView(showsIndicators: false) {
-                VStack(spacing: 20) {
-                if let processingAdOverlay {
-                    ProcessingAdCountdownView(state: processingAdOverlay, language: appLanguage) {
-                        skipProcessingAdBreak()
-                    }
-                    .transition(.opacity)
+                Button {
+                    cancelActiveWork(returnToIdle: true)
+                } label: {
+                    Label(t("İptal", "Cancel"), systemImage: "xmark.circle.fill")
+                        .frame(maxWidth: .infinity)
                 }
-                VideoPlayer(player: player)
-                        .frame(height: min(300, UIScreen.main.bounds.height * 0.34))
-                    .clipShape(RoundedRectangle(cornerRadius: 18))
-                HStack(spacing: 26) {
-                    stat(t("%\(result.removedPercent)", "\(result.removedPercent)%"), t("kesildi", "removed"))
-                    stat(timeString(result.removedDuration), t("sessizlik", "silence"))
-                    stat(timeString(result.outputDuration), t("yeni süre", "new length"))
-                }
-                    CutIntensityPicker(selection: $cutIntensity, language: appLanguage)
-                VStack(spacing: 12) {
-                    Button { startSave(result.outputURL) } label: {
-                        Label(saveButtonTitle,
-                              systemImage: saved ? "checkmark.circle.fill" : "square.and.arrow.down")
-                            .frame(maxWidth: .infinity)
-                    }
-                    .buttonStyle(QSPrimary()).disabled(saved || isSaving)
+                .buttonStyle(QSSecondary())
 
-                    if let saveError {
-                        VStack(spacing: 8) {
-                            Text(saveError)
-                                .font(.caption)
-                                .multilineTextAlignment(.center)
-                                .foregroundStyle(.orange)
-                            if saveNeedsSettings {
-                                Button(t("Ayarları Aç", "Open Settings")) { openAppSettings() }
-                                    .font(.caption.weight(.bold))
-                                    .foregroundStyle(.white)
-                            }
-                        }
-                    }
-
-                    ShareLink(item: result.outputURL) {
-                        Label(t("Paylaş", "Share"), systemImage: "square.and.arrow.up").frame(maxWidth: .infinity)
-                    }
-                    .buttonStyle(QSSecondary())
-
-                        if currentInputURL != nil {
-                            Button {
-                                rerunCurrentInput()
-                            } label: {
-                                Label(t("Aynı Videoyu Tekrar Kes", "Cut Same Video Again"), systemImage: "arrow.clockwise")
-                                    .frame(maxWidth: .infinity)
-                            }
-                            .buttonStyle(QSSecondary())
-                            .disabled(isSaving)
-                        }
-
-                    Button(t("Yeni Video", "New Video")) { reset() }
-                        .accessibilityIdentifier("newVideoButton")
-                        .buttonStyle(QSSecondary())
-                        .disabled(isSaving)
-                }
+                // Below Cancel so a late-loading ad never shifts the button.
+                if AdMobService.isEnabled && !store.isPro && !AdFreePass.isActive {
+                    NativeAdCard()
                 }
             }
 
@@ -305,60 +253,76 @@ struct QuickSilenceView: View {
         }
     }
 
-    private func stat(_ value: String, _ label: String) -> some View {
-        VStack(spacing: 4) {
-            Text(value).font(.system(.title3, design: .rounded).weight(.bold)).foregroundStyle(.white)
-            Text(label).font(.caption2).foregroundStyle(.white.opacity(0.55))
+    private func review(plan: Binding<QuickSilenceEngine.CutPlan>, inputURL: URL) -> some View {
+        ReviewScreen(
+            inputURL: inputURL,
+            plan: plan,
+            intensity: $cutIntensity,
+            preview: preview,
+            language: appLanguage,
+            exportProgress: exportProgress,
+            saved: saved,
+            saveError: saveError,
+            saveNeedsSettings: saveNeedsSettings,
+            fineTune: store.isPro ? .unlocked : (store.canOfferPro ? .locked : .hidden),
+            onSave: startSave,
+            onShare: startShare,
+            onNewVideo: reset,
+            onCancelExport: cancelExport,
+            onFineTune: { if store.isPro { showsFineTune = true } else { showsPaywall = true } },
+            onOpenSettings: openAppSettings
+        )
+        .onChange(of: plan.wrappedValue) {
+            saved = false
+            saveError = nil
+            session.discardOutput()
         }
+        .overlay(alignment: .top) {
+            if let processingAdOverlay {
+                ProcessingAdCountdownView(
+                    state: processingAdOverlay,
+                    language: appLanguage,
+                    onSkip: skipProcessingAdBreak,
+                    onRemoveAds: store.canOfferPro ? {
+                        skipProcessingAdBreak()
+                        showsPaywall = true
+                    } : nil
+                )
+                .padding(8)
+                .transition(.opacity)
+            }
+        }
+        .animation(.easeInOut(duration: 0.22), value: processingAdOverlay)
     }
 
-    // MARK: - Actions
+    // MARK: - Pick, import, analyze
 
     private func startPickedVideo(_ item: PhotosPickerItem) {
+        cancelActiveWork(returnToIdle: false)
+        endVideo()
         let jobID = UUID()
-        processingTask?.cancel()
-        importService.cancelImport()
         activeJobID = jobID
         processingTask = Task { await handlePick(item, jobID: jobID) }
     }
 
     private func handlePick(_ item: PhotosPickerItem, jobID: UUID) async {
-        processingAdTask?.cancel()
-        processingAdOverlay = nil
-        completedProcessingAdBreaks = 0
-        saved = false
-        isSaving = false
-        saveError = nil
-        saveNeedsSettings = false
-        saveTask?.cancel()
-        savingURL = nil
-        workEvents = []
-        currentInputURL = nil
-        applyProgress(.update(.importing, 0.02, t("Video içe aktarılıyor", "Importing video"), t("Dosya kaynağı hazırlanıyor.", "Preparing the selected file.")), jobID: jobID)
+        applyProgress(0.02, t("Video içe aktarılıyor", "Importing video"), jobID: jobID)
         rewardedAd.preload()
-
         do {
             let inputURL = try await importVideo(item, jobID: jobID)
             guard isActive(jobID) else { return }
-            currentInputURL = inputURL
-            try await runCut(inputURL: inputURL, jobID: jobID)
-        } catch is CancellationError {
-            if isActive(jobID) {
-                cancelActiveWork(returnToIdle: true)
-            }
+            try await analyzeAndReview(inputURL: inputURL, jobID: jobID)
         } catch {
-            guard isActive(jobID) else { return }
-            processingAdTask?.cancel()
-            processingAdOverlay = nil
-            isSaving = false
-            phase = .failed(userFacingMessage(for: error))
+            handleWorkError(error, jobID: jobID)
         }
     }
 
     private func startAutorunIfRequested() {
         #if DEBUG
+        let env = ProcessInfo.processInfo.environment
+        if env["CUTSENSE_SHOW_PAYWALL"] == "1" { showsPaywall = true }
         guard !didStartAutorun else { return }
-        guard let path = ProcessInfo.processInfo.environment["CUTSENSE_AUTORUN_VIDEO_URL"], !path.isEmpty else { return }
+        guard let path = env["CUTSENSE_AUTORUN_VIDEO_URL"], !path.isEmpty else { return }
         let inputURL = URL(fileURLWithPath: path)
         guard FileManager.default.fileExists(atPath: inputURL.path) else {
             phase = .failed(t("Test videosu bulunamadı.", "Test video was not found."))
@@ -367,133 +331,45 @@ struct QuickSilenceView: View {
 
         didStartAutorun = true
         let jobID = UUID()
-        processingTask?.cancel()
         activeJobID = jobID
-        currentInputURL = inputURL
         processingTask = Task {
             do {
-                applyProgress(
-                    .update(
-                        .importing,
-                        0.04,
-                        t("Video hazır", "Video ready"),
-                        t("Test videosu doğrudan işleniyor.", "Test video is being processed directly.")
-                    ),
-                    jobID: jobID
-                )
-                try await runCut(inputURL: inputURL, jobID: jobID)
-            } catch is CancellationError {
-                if isActive(jobID) {
-                    cancelActiveWork(returnToIdle: true)
+                applyProgress(0.04, t("Video hazır", "Video ready"), jobID: jobID)
+                // Lets a screenshot catch the processing screen; the fixture analyzes in under a second.
+                if let hold = Double(env["CUTSENSE_AUTORUN_HOLD_SECONDS"] ?? "") {
+                    try await Task.sleep(for: .seconds(hold))
                 }
+                try await analyzeAndReview(inputURL: inputURL, jobID: jobID)
             } catch {
-                guard isActive(jobID) else { return }
-                processingAdTask?.cancel()
-                processingAdOverlay = nil
-                phase = .failed(userFacingMessage(for: error))
+                handleWorkError(error, jobID: jobID)
             }
         }
         #endif
     }
 
-    private func rerunCurrentInput() {
-        guard let inputURL = currentInputURL else { return }
-        player?.pause()
-        let jobID = UUID()
-        processingTask?.cancel()
-        activeJobID = jobID
-        processingTask = Task {
-            do {
-                applyProgress(.update(.importing, 0.04, t("Video hazır", "Video ready"), t("Aynı dosya yeni ayarla tekrar kesiliyor.", "Cutting the same file again with the new setting.")), jobID: jobID)
-                try await runCut(inputURL: inputURL, jobID: jobID)
-            } catch is CancellationError {
-                if isActive(jobID) {
-                    cancelActiveWork(returnToIdle: true)
-                }
-            } catch {
-                guard isActive(jobID) else { return }
-                processingAdTask?.cancel()
-                processingAdOverlay = nil
-                phase = .failed(userFacingMessage(for: error))
-            }
-        }
-    }
-
-    private func runCut(inputURL: URL, jobID: UUID) async throws {
-        let adBreakCount = processingAdBreakCount()
-        completedProcessingAdBreaks = 0
-        let selectedIntensity = cutIntensity
-        let result = try await QuickSilenceEngine.cut(url: inputURL, intensity: selectedIntensity, language: appLanguage) { update in
-            applyProgress(update, jobID: jobID)
+    private func analyzeAndReview(inputURL: URL, jobID: UUID) async throws {
+        session.begin(input: inputURL)
+        let result = try await QuickSilenceEngine.analyze(url: inputURL, language: appLanguage) { update in
+            applyProgress(0.4 + max(0, update.fraction - 0.08) / 0.10 * 0.6, update.title, jobID: jobID)
         }
         guard isActive(jobID) else { return }
-        processingAdTask?.cancel()
-        processingAdTask = nil
-        processingAdOverlay = nil
+        cutSettings = QuickSilenceEngine.CutSettings(cutIntensity)
+        plan = try QuickSilenceEngine.plan(result, settings: cutSettings)
+        analysis = result
         saved = false
         saveError = nil
         saveNeedsSettings = false
-        // Old outputs are not deleted here: a share may still be reading them.
-        // The launch sweep removes them.
-        player = AVPlayer(url: result.outputURL)
-        phase = .done(result)
-        startResultAdBreakIfNeeded(jobID: jobID, totalBreaks: adBreakCount)
+        phase = .review
+        startResultAdBreakIfNeeded(jobID: jobID)
     }
 
-    private func startSave(_ url: URL) {
-        guard !isSaving else { return }
-        saveTask?.cancel()
-        savingURL = url
-        isSaving = true
-        saveError = nil
-        saveNeedsSettings = false
-
-        saveTask = Task {
-            let result = await PhotosSaveService.saveVideo(at: url)
-            guard !Task.isCancelled else { return }
-            guard savingURL == url, case .done(let current) = phase, current.outputURL == url else { return }
-
-            isSaving = false
-            switch result {
-            case .success:
-                saved = true
-            case .failure(let error):
-                saveError = "\(t("Kaydedilemedi", "Could not save")): \(saveErrorMessage(for: error))"
-                saveNeedsSettings = (error as? PhotosSaveService.SaveError) == .permissionDenied
-            }
+    private func handleWorkError(_ error: Error, jobID: UUID) {
+        guard isActive(jobID) else { return }
+        if error is CancellationError {
+            cancelActiveWork(returnToIdle: true)
+            return
         }
-    }
-
-    private func reset() {
-        cancelActiveWork(returnToIdle: false)
-        activeJobID = nil
-        pickerItem = nil
-        saved = false
-        isSaving = false
-        saveError = nil
-        saveNeedsSettings = false
-        saveTask?.cancel()
-        savingURL = nil
-        workEvents = []
-        player?.pause()
-        player = nil
-        phase = .idle
-        rewardedAd.preload()
-    }
-
-    private func cancelActiveWork(returnToIdle: Bool) {
-        processingTask?.cancel()
-        processingTask = nil
-        processingAdTask?.cancel()
-        processingAdTask = nil
-        processingAdOverlay = nil
-        completedProcessingAdBreaks = 0
-        importService.cancelImport()
-        if returnToIdle {
-            activeJobID = nil
-            workEvents = []
-            phase = .idle
-        }
+        fail(userFacingMessage(for: error))
     }
 
     private func importVideo(_ item: PhotosPickerItem, jobID: UUID) async throws -> URL {
@@ -501,19 +377,9 @@ struct QuickSilenceView: View {
             while !Task.isCancelled {
                 let download = importService.downloadProgress
                 if download >= 0 {
-                    applyProgress(.update(
-                        .importing,
-                        0.02 + min(max(download, 0), 1) * 0.12,
-                        t("iCloud videosu indiriliyor", "Downloading iCloud video"),
-                        t("\(Int(download * 100))% indirildi.", "\(Int(download * 100))% downloaded.")
-                    ), jobID: jobID)
+                    applyProgress(0.02 + min(max(download, 0), 1) * 0.38, t("iCloud videosu indiriliyor", "Downloading iCloud video"), jobID: jobID)
                 } else {
-                    applyProgress(.update(
-                        .importing,
-                        0.04,
-                        t("Video içe aktarılıyor", "Importing video"),
-                        t("Dosya doğrulanıyor ve yerel depoya alınıyor.", "The file is being validated and stored locally.")
-                    ), jobID: jobID)
+                    applyProgress(0.04, t("Video içe aktarılıyor", "Importing video"), jobID: jobID)
                 }
                 try? await Task.sleep(for: .milliseconds(350))
             }
@@ -525,47 +391,169 @@ struct QuickSilenceView: View {
         try Task.checkCancellation()
         guard isActive(jobID) else { throw CancellationError() }
 
-        if let message = importService.errorMessage {
-            throw ViewFailure(message)
+        if let error = importService.error {
+            throw ViewFailure(error.message(for: appLanguage))
         }
         guard let url = importService.importedVideoURL else {
             throw ViewFailure(t("Video yüklenemedi. Lütfen farklı bir dosya deneyin.", "Could not load the video. Try a different file."))
         }
-
-        applyProgress(.update(.importing, 0.15, t("Video hazır", "Video ready"), t("Ses analizi başlıyor.", "Audio analysis is starting.")), jobID: jobID)
         return url
     }
 
-    private func applyProgress(_ update: QuickSilenceEngine.ProgressUpdate, jobID: UUID) {
-        guard isActive(jobID) else { return }
-        let event = "\(update.title): \(update.detail)"
-        if workEvents.first != event {
-            workEvents.insert(event, at: 0)
-            workEvents = Array(workEvents.prefix(5))
+    /// Import fills 0...0.4 of the bar, analysis (which reports 0.08...0.18) the rest.
+    private func applyProgress(_ fraction: Double, _ title: String, jobID: UUID) {
+        // Analysis posts progress through detached tasks that can land after review opened.
+        guard isActive(jobID), !isReview else { return }
+        phase = .working(WorkingState(progress: min(max(fraction, 0), 1), title: title))
+    }
+
+    // MARK: - Review
+
+    /// Intensity or fine-tune change: re-plan from the cached scan (no new analysis, no export).
+    private func replan() {
+        guard let analysis, case .review = phase else { return }
+        do {
+            plan = try QuickSilenceEngine.plan(analysis, settings: cutSettings)
+        } catch {
+            fail(userFacingMessage(for: error))
         }
-        phase = .working(WorkingState(
-            stage: update.stage,
-            progress: update.fraction,
-            title: update.title,
-            detail: update.detail,
-            events: workEvents
-        ))
     }
 
-    private func processingAdBreakCount() -> Int {
-        guard AdMobService.isEnabled else { return 0 }
-        return 1
+    private func startSave() {
+        runExport { url in
+            let result = await PhotosSaveService.saveVideo(at: url)
+            session.discardOutput()
+            switch result {
+            case .success:
+                saved = true
+                scheduleReviewPrompt()
+            case .failure(let error):
+                saveError = String(format: t("Kaydedilemedi: %@", "Could not save: %@"), saveErrorMessage(for: error))
+                saveNeedsSettings = (error as? PhotosSaveService.SaveError) == .permissionDenied
+            }
+        }
     }
 
-    /// Rewarded interstitial after a finished cut. The intro states the reward
-    /// (24 h without banner ads) and offers Skip, as AdMob requires. Shown only
-    /// if the ad is ready within 3 s and nothing (share sheet, alert) covers the app.
-    private func startResultAdBreakIfNeeded(jobID: UUID, totalBreaks: Int) {
-        guard AdMobService.isEnabled, totalBreaks > completedProcessingAdBreaks else { return }
+    private func startShare() {
+        runExport { url in
+            ShareSheet.present(url) { session.discardOutput() }
+        }
+    }
+
+    /// Exports the current plan into the session's single output slot, then hands it to `finish`.
+    /// No ads may appear meanwhile: leaving the app kills the export.
+    private func runExport(then finish: @escaping @MainActor (URL) async -> Void) {
+        guard exportTask == nil, let plan, let inputURL = session.inputURL else { return }
+        let size = (try? inputURL.resourceValues(forKeys: [.fileSizeKey]).fileSize) ?? 0
+        let available = WorkFiles.availableBytes()  // 0 means the volume could not be read; don't block on that
+        guard available == 0 || Double(available) >= Double(size) * 1.1 else {
+            fail(t("Yeterli boş alan yok. Biraz yer açıp tekrar dene.", "Not enough free storage. Free up some space and try again."))
+            return
+        }
+        skipProcessingAdBreak()
+        preview.pause()
+        saveError = nil
+        saveNeedsSettings = false
+        exportProgress = 0
+        UIApplication.shared.isIdleTimerDisabled = true
+        let language = appLanguage
+        exportTask = Task {
+            defer {
+                UIApplication.shared.isIdleTimerDisabled = false
+                exportProgress = nil
+                exportTask = nil
+            }
+            do {
+                let result = try await QuickSilenceEngine.export(url: inputURL, plan: plan, language: language) { update in
+                    if exportProgress != nil { exportProgress = max(0, (update.fraction - 0.28) / 0.72) }
+                }
+                // Register before any early return so the file can never be orphaned.
+                session.setOutput(result.outputURL)
+                guard !Task.isCancelled else {
+                    session.discardOutput()
+                    return
+                }
+                // Overlay stays up until `finish` returns so nothing can delete the file mid-save.
+                await finish(result.outputURL)
+            } catch {
+                session.discardOutput()
+                // Export failures stay on review so the user can retry or pick a softer setting.
+                if !(error is CancellationError) { saveError = userFacingMessage(for: error) }
+            }
+        }
+    }
+
+    private func cancelExport() {
+        exportTask?.cancel()
+    }
+
+    private func scheduleReviewPrompt() {
+        let key = "review_prompt_version"
+        let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? ""
+        guard UserDefaults.standard.string(forKey: key) != version else { return }
+        Task {
+            try? await Task.sleep(for: .seconds(1.2))
+            guard !AdMobService.hasPresentedContent else { return }
+            UserDefaults.standard.set(version, forKey: key)
+            requestReview()
+        }
+    }
+
+    // MARK: - Teardown
+
+    /// Deletes this video's working files (never the user's original) and forgets its plan.
+    private func endVideo() {
+        exportTask?.cancel()
+        session.end()
+        importService.discardImport()
+        preview.reset()
+        analysis = nil
+        plan = nil
+        saved = false
+        saveError = nil
+        saveNeedsSettings = false
+    }
+
+    private func fail(_ message: String) {
+        cancelActiveWork(returnToIdle: false)
+        endVideo()
+        activeJobID = nil
+        phase = .failed(message)
+    }
+
+    private func reset() {
+        cancelActiveWork(returnToIdle: false)
+        endVideo()
+        activeJobID = nil
+        pickerItem = nil
+        phase = .idle
+        rewardedAd.preload()
+    }
+
+    private func cancelActiveWork(returnToIdle: Bool) {
+        processingTask?.cancel()
+        processingTask = nil
+        skipProcessingAdBreak()
+        importService.cancelImport()
+        if returnToIdle {
+            endVideo()
+            activeJobID = nil
+            pickerItem = nil
+            phase = .idle
+        }
+    }
+
+    // MARK: - Rewarded ad break
+
+    /// Rewarded interstitial once per video, on first entry to review. The intro states the reward
+    /// (24 h without banner ads) and offers Skip, as AdMob requires. Shown only if the ad is
+    /// ready within 3 s and nothing (share sheet, alert, export) is in the way.
+    private func startResultAdBreakIfNeeded(jobID: UUID) {
+        guard AdMobService.isEnabled else { return }
         processingAdTask?.cancel()
         processingAdTask = Task { @MainActor in
             try? await Task.sleep(for: .milliseconds(850))
-            guard !Task.isCancelled, isActive(jobID), isDone else { return }
+            guard !Task.isCancelled, isActive(jobID), isReview else { return }
             if !rewardedAd.isReady {
                 Task { await rewardedAd.load() }
                 for _ in 0..<15 where !rewardedAd.isReady {
@@ -591,10 +579,9 @@ struct QuickSilenceView: View {
                 }
             }
             processingAdOverlay = nil
-            player?.pause()
+            preview.pause()
             let result = await rewardedAd.showIfAvailable()
             guard result.wasPresented else { return }
-            if isActive(jobID) { completedProcessingAdBreaks += 1 }
             if case .presented(rewarded: true) = result {
                 AdFreePass.grantReward()
                 processingAdOverlay = ProcessingAdState(
@@ -610,7 +597,8 @@ struct QuickSilenceView: View {
     }
 
     private func canShowResultAd(jobID: UUID) -> Bool {
-        isActive(jobID) && isDone && isScreenVisible && rewardedAd.isReady && !isSaving && !AdMobService.hasPresentedContent
+        isActive(jobID) && isReview && isScreenVisible && rewardedAd.isReady && exportTask == nil
+            && !showsPaywall && !AdMobService.hasPresentedContent
     }
 
     private func skipProcessingAdBreak() {
@@ -618,6 +606,8 @@ struct QuickSilenceView: View {
         processingAdTask = nil
         processingAdOverlay = nil
     }
+
+    // MARK: - Helpers
 
     private func isActive(_ jobID: UUID) -> Bool {
         activeJobID == jobID && !Task.isCancelled
@@ -628,8 +618,8 @@ struct QuickSilenceView: View {
         return false
     }
 
-    private var isDone: Bool {
-        if case .done = phase { return true }
+    private var isReview: Bool {
+        if case .review = phase { return true }
         return false
     }
 
@@ -644,16 +634,6 @@ struct QuickSilenceView: View {
 
     private func t(_ tr: String, _ en: String) -> String {
         appText(appLanguage, tr, en)
-    }
-
-    private func timeString(_ seconds: Double) -> String {
-        let s = Int(seconds.rounded()); return String(format: "%d:%02d", s / 60, s % 60)
-    }
-
-    private var saveButtonTitle: String {
-        if saved { return t("Galeriye Kaydedildi", "Saved to Photos") }
-        if isSaving { return t("Kaydediliyor", "Saving") }
-        return t("Galeriye Kaydet", "Save to Photos")
     }
 
     private func openAppSettings() {
@@ -672,7 +652,7 @@ struct QuickSilenceView: View {
             return audioError.message(for: appLanguage)
         }
         if let viewError = error as? ViewFailure {
-            return viewError.errorDescription ?? "Video yüklenemedi."
+            return viewError.message
         }
         return t("Video işlenemedi. Lütfen farklı bir video veya daha yumuşak kesim ayarı dene.", "Could not process this video. Try another video or a softer cut setting.")
     }
@@ -685,15 +665,16 @@ struct QuickSilenceView: View {
     }
 }
 
-private struct ViewFailure: LocalizedError {
+private struct ViewFailure: Error {
     let message: String
     init(_ message: String) { self.message = message }
-    var errorDescription: String? { message }
 }
 
-private struct CutIntensityPicker: View {
+struct CutIntensityPicker: View {
     @Binding var selection: QuickSilenceEngine.CutIntensity
     let language: AppLanguage
+    /// Replaces the preset description when set (e.g. an over-cutting warning).
+    let hint: String?
 
     var body: some View {
         VStack(spacing: 8) {
@@ -704,128 +685,14 @@ private struct CutIntensityPicker: View {
             }
             .pickerStyle(.segmented)
 
-            Text(selection.detail(for: language))
+            Text(hint ?? selection.detail(for: language))
                 .font(.caption)
                 .multilineTextAlignment(.center)
-                .foregroundStyle(.white.opacity(0.58))
+                .lineLimit(2)
+                .foregroundStyle(hint == nil ? .white.opacity(0.58) : .orange)
                 .frame(minHeight: 18)
         }
         .frame(maxWidth: .infinity)
-    }
-}
-
-private struct ProcessingStageDeck: View {
-    let stage: QuickSilenceEngine.ProgressUpdate.Stage
-    let progress: Double
-    let language: AppLanguage
-
-    private var steps: [(stage: QuickSilenceEngine.ProgressUpdate.Stage, title: String, icon: String)] {
-        [
-            (.importing, appText(language, "İçe aktar", "Import"), "tray.and.arrow.down.fill"),
-            (.analyzingAudio, appText(language, "Ses tara", "Scan audio"), "waveform"),
-            (.planningCuts, appText(language, "Kesimleri seç", "Plan cuts"), "scissors"),
-            (.buildingTimeline, appText(language, "Timeline", "Timeline"), "film.stack.fill"),
-            (.exporting, appText(language, "Oluştur", "Create"), "square.and.arrow.up.fill"),
-            (.fallbackExport, appText(language, "Uyumluluk", "Compatibility"), "wrench.and.screwdriver.fill"),
-            (.verifying, appText(language, "Kontrol", "Check"), "checkmark.seal.fill"),
-            (.done, appText(language, "Hazır", "Ready"), "checkmark.circle.fill")
-        ]
-    }
-
-    private var currentIndex: Int {
-        steps.firstIndex { $0.stage == stage } ?? 0
-    }
-
-    var body: some View {
-        VStack(spacing: 9) {
-            HStack {
-                Text(stageTitle)
-                    .font(.system(size: 13, weight: .bold, design: .rounded))
-                    .foregroundStyle(.white)
-                Spacer()
-                Text("\(Int(progress * 100))%")
-                    .font(.system(size: 13, weight: .heavy, design: .rounded))
-                    .foregroundStyle(.white.opacity(0.78))
-            }
-
-            VStack(spacing: 7) {
-                ForEach(Array(steps.enumerated()), id: \.offset) { index, step in
-                    ProcessingStageRow(
-                        icon: step.icon,
-                        title: step.title,
-                        isCurrent: index == currentIndex,
-                        isComplete: index < currentIndex
-                    )
-                }
-            }
-        }
-        .padding(12)
-        .frame(maxWidth: .infinity)
-        .background(.white.opacity(0.07))
-        .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: 8, style: .continuous).stroke(.white.opacity(0.10)))
-    }
-
-    private var stageTitle: String {
-        switch stage {
-        case .importing: appText(language, "Video hazırlanıyor", "Preparing video")
-        case .analyzingAudio: appText(language, "Ses analizi", "Audio analysis")
-        case .planningCuts: appText(language, "Kesim planı", "Cut plan")
-        case .buildingTimeline: appText(language, "Video zaman çizgisi", "Video timeline")
-        case .exporting: appText(language, "Dışa aktarım", "Export")
-        case .fallbackExport: appText(language, "Uyumluluk modu", "Compatibility mode")
-        case .verifying: appText(language, "Çıktı kontrolü", "Output check")
-        case .done: appText(language, "Tamamlandı", "Complete")
-        }
-    }
-}
-
-private struct ProcessingStageRow: View {
-    let icon: String
-    let title: String
-    let isCurrent: Bool
-    let isComplete: Bool
-
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
-
-    var body: some View {
-        TimelineView(.animation) { timeline in
-            let pulse = reduceMotion || !isCurrent
-                ? CGFloat(1)
-                : 1 + CGFloat((sin(timeline.date.timeIntervalSinceReferenceDate * 5) + 1) * 0.06)
-
-            HStack(spacing: 9) {
-                ZStack {
-                    Circle()
-                        .fill(fillColor)
-                    Image(systemName: isComplete ? "checkmark" : icon)
-                        .font(.system(size: 10, weight: .black))
-                        .foregroundStyle(isCurrent || isComplete ? .black : .white.opacity(0.55))
-                }
-                .frame(width: 22, height: 22)
-                .scaleEffect(pulse)
-
-                Text(title)
-                    .font(.system(size: 12, weight: isCurrent ? .bold : .semibold, design: .rounded))
-                    .foregroundStyle(isCurrent ? .white : .white.opacity(isComplete ? 0.72 : 0.42))
-                    .lineLimit(1)
-
-                Spacer(minLength: 0)
-
-                if isCurrent {
-                    ProgressView()
-                        .tint(.white)
-                        .scaleEffect(0.7)
-                }
-            }
-            .frame(height: 24)
-        }
-    }
-
-    private var fillColor: Color {
-        if isComplete { return .white }
-        if isCurrent { return Color(red: 0.78, green: 1.0, blue: 0.45) }
-        return .white.opacity(0.08)
     }
 }
 
@@ -833,142 +700,68 @@ private struct ProcessingAdCountdownView: View {
     let state: QuickSilenceView.ProcessingAdState
     let language: AppLanguage
     let onSkip: () -> Void
+    /// Set only while Pro can be offered.
+    let onRemoveAds: (() -> Void)?
 
     var body: some View {
-        HStack(spacing: 14) {
-            ZStack {
-                Circle()
-                    .fill(.white.opacity(0.12))
-                    .frame(width: 58, height: 58)
+        VStack(spacing: 10) {
+            HStack(spacing: 14) {
+                ZStack {
+                    Circle()
+                        .fill(.white.opacity(0.12))
+                        .frame(width: 58, height: 58)
 
-                if let countdown = state.countdown, countdown > 0 {
-                    Text("\(countdown)")
-                        .font(.system(size: 28, weight: .black, design: .rounded))
+                    if let countdown = state.countdown, countdown > 0 {
+                        Text("\(countdown)")
+                            .font(.system(size: 28, weight: .black, design: .rounded))
+                            .foregroundStyle(.white)
+                    } else if state.isOpening {
+                        ProgressView()
+                            .tint(.white)
+                    } else {
+                        Image(systemName: "play.rectangle.fill")
+                            .font(.system(size: 22, weight: .bold))
+                            .foregroundStyle(.white)
+                    }
+                }
+
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(appText(language, "Reklam arası", "Ad break"))
+                        .font(.system(size: 14, weight: .heavy, design: .rounded))
                         .foregroundStyle(.white)
-                } else if state.isOpening {
-                    ProgressView()
-                        .tint(.white)
-                } else {
-                    Image(systemName: "play.rectangle.fill")
-                        .font(.system(size: 22, weight: .bold))
+                    Text(state.status)
+                        .font(.caption)
+                        .foregroundStyle(.white.opacity(0.65))
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                Spacer(minLength: 0)
+                if state.canSkip {
+                    Button(appText(language, "Atla", "Skip"), action: onSkip)
+                        .font(.system(size: 12, weight: .heavy, design: .rounded))
                         .foregroundStyle(.white)
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 8)
+                        .background(.white.opacity(0.12))
+                        .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
                 }
             }
-
-            VStack(alignment: .leading, spacing: 4) {
-                Text(appText(language, "Reklam arası", "Ad break"))
-                    .font(.system(size: 14, weight: .heavy, design: .rounded))
-                    .foregroundStyle(.white)
-                Text(state.status)
-                    .font(.caption)
-                    .foregroundStyle(.white.opacity(0.65))
-                    .lineLimit(2)
-            }
-            Spacer(minLength: 0)
-            if state.canSkip {
-                Button(appText(language, "Atla", "Skip"), action: onSkip)
-                    .font(.system(size: 12, weight: .heavy, design: .rounded))
-                    .foregroundStyle(.white)
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 8)
-                    .background(.white.opacity(0.12))
-                    .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+            if state.canSkip, let onRemoveAds {
+                Button(appText(language, "Reklamları kalıcı kaldır", "Remove ads forever"), action: onRemoveAds)
+                    .font(.system(size: 13, weight: .heavy, design: .rounded))
+                    .foregroundStyle(.black)
+                    .frame(maxWidth: .infinity, minHeight: 36)
+                    .background(qsAccent, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
             }
         }
         .padding(14)
         .frame(maxWidth: .infinity)
-        .background(.white.opacity(0.08))
+        .background(Color(red: 0.08, green: 0.09, blue: 0.11).opacity(0.96))
         .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
         .overlay(RoundedRectangle(cornerRadius: 8, style: .continuous).stroke(.white.opacity(0.12)))
     }
 }
 
-private struct WorkTimeline: View {
-    let events: [String]
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            ForEach(Array(events.enumerated()), id: \.offset) { index, event in
-                HStack(alignment: .top, spacing: 9) {
-                    Circle()
-                        .fill(index == 0 ? .white : .white.opacity(0.35))
-                        .frame(width: 7, height: 7)
-                        .padding(.top, 5)
-                    Text(event)
-                        .font(.caption)
-                        .foregroundStyle(index == 0 ? .white.opacity(0.9) : .white.opacity(0.55))
-                        .lineLimit(2)
-                    Spacer(minLength: 0)
-                }
-            }
-        }
-        .padding(14)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(.white.opacity(0.07))
-        .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: 8, style: .continuous).stroke(.white.opacity(0.1)))
-    }
-}
-
-private struct WaitingAdSurface: View {
-    let language: AppLanguage
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
-
-    var body: some View {
-        VStack(spacing: 12) {
-            NativeAdCard()
-            HStack(spacing: 12) {
-                TimelineView(.animation) { timeline in
-                    let phase = reduceMotion ? 0 : timeline.date.timeIntervalSinceReferenceDate
-                    ZStack {
-                        Circle()
-                            .stroke(.white.opacity(0.16), lineWidth: 4)
-                            .frame(width: 42, height: 42)
-                        Circle()
-                            .trim(from: 0, to: 0.34)
-                            .stroke(.white, style: StrokeStyle(lineWidth: 4, lineCap: .round))
-                            .frame(width: 42, height: 42)
-                            .rotationEffect(.degrees(phase * 160))
-                    }
-                }
-                .frame(width: 44, height: 44)
-
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(appText(language, "Cihazda işleniyor", "Processing on device"))
-                        .font(.system(size: 14, weight: .heavy, design: .rounded))
-                        .foregroundStyle(.white)
-                    Text(appText(language, "Uygulamayı açık tut; çıktı hazır olunca sonuç ekranı açılacak.", "Keep the app open; the result screen appears when the export is ready."))
-                        .font(.caption)
-                        .foregroundStyle(.white.opacity(0.62))
-                        .lineLimit(2)
-                }
-                Spacer(minLength: 0)
-            }
-            .padding(14)
-            .frame(maxWidth: .infinity)
-            .background(.white.opacity(0.07))
-            .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
-            .overlay(RoundedRectangle(cornerRadius: 8, style: .continuous).stroke(.white.opacity(0.10)))
-        }
-    }
-}
-
-struct QuickMovie: Transferable {
-    let url: URL
-    static var transferRepresentation: some TransferRepresentation {
-        FileRepresentation(contentType: .movie) { movie in
-            SentTransferredFile(movie.url)
-        } importing: { received in
-            let dest = FileManager.default.temporaryDirectory
-                .appendingPathComponent("input-\(UUID().uuidString).mov")
-            try? FileManager.default.removeItem(at: dest)
-            try FileManager.default.copyItem(at: received.file, to: dest)
-            return QuickMovie(url: dest)
-        }
-    }
-}
-
-private struct QSPrimary: ButtonStyle {
+struct QSPrimary: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .font(.headline).padding(.vertical, 15)
@@ -979,7 +772,7 @@ private struct QSPrimary: ButtonStyle {
     }
 }
 
-private struct QSSecondary: ButtonStyle {
+struct QSSecondary: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .font(.headline).padding(.vertical, 14).frame(maxWidth: .infinity)

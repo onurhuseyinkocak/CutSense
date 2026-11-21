@@ -8,7 +8,6 @@
 
 /* Begin PBXBuildFile section */
 		0238F25AF2FC0F9DE078FCA7 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = AB3F4CFE6EB7DA53D3C755D3 /* PrivacyInfo.xcprivacy */; };
-		026D1DA0672C345D35A0426D /* LanguageSwitcher.swift in Sources */ = {isa = PBXBuildFile; fileRef = C04A9212E7DD2001C8957A41 /* LanguageSwitcher.swift */; };
 		0A0E183623B591F89AAA3C93 /* Products.storekit in Resources */ = {isa = PBXBuildFile; fileRef = 615984865BA5FA389EB8226B /* Products.storekit */; };
 		195F33A7FFACCD0C40D88646 /* Products.storekit in Resources */ = {isa = PBXBuildFile; fileRef = 615984865BA5FA389EB8226B /* Products.storekit */; };
 		26E48D862C02A3CACFCC666D /* AudioAnalysisService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 66C373ACE0E41C68BEC62183 /* AudioAnalysisService.swift */; };
@@ -21,9 +20,11 @@
 		5C2F30243E7024441DEC15CD /* PhotosSaveService.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0362DFB1D828F4A88A12862 /* PhotosSaveService.swift */; };
 		7A1D7311FD27448ECE00BB6D /* SettingsScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = 28901B74846173D20088B4D4 /* SettingsScreen.swift */; };
 		888EE52AA670A80854D14A24 /* AppLanguage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2B4C7785DDFE37A3C7288498 /* AppLanguage.swift */; };
+		8C11A2F976D58980C7375A42 /* ShareSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 88CA88FBF174BF48827AEA02 /* ShareSheet.swift */; };
 		99128F340EED2CAADD304369 /* GoogleMobileAds in Frameworks */ = {isa = PBXBuildFile; productRef = 4761CA77849DAE470AA8FC20 /* GoogleMobileAds */; };
 		A27C5761649779A1BCE3B638 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = C568ED16C5A5569D901E936F /* Assets.xcassets */; };
 		AF36EB525821348164F48197 /* PaywallView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 540A6003B72CEFEAB224B81E /* PaywallView.swift */; };
+		B665BB21E20DBA5C24D05B7F /* ReviewScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2B01E9767A4EA100187484E /* ReviewScreen.swift */; };
 		CD22B3E9047CE97BC252EAA0 /* QuickSilencePlanTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B489C5F2177971DC7A3350E6 /* QuickSilencePlanTests.swift */; };
 		CDF0ACC03AF3EDCFA64C3D94 /* QuickSilenceView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E58D84C896EEF6326B68D129 /* QuickSilenceView.swift */; };
 		CE75044298708EE413E5FC2D /* WorkFilesTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2AE1516E17CA740B67BCC3DC /* WorkFilesTests.swift */; };
@@ -57,6 +58,7 @@
 		66419CEE6970408DD0364682 /* silence_fixture.mp4 */ = {isa = PBXFileReference; path = silence_fixture.mp4; sourceTree = "<group>"; };
 		66C373ACE0E41C68BEC62183 /* AudioAnalysisService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioAnalysisService.swift; sourceTree = "<group>"; };
 		76D307ED363DB96DE47A88D7 /* ProStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProStore.swift; sourceTree = "<group>"; };
+		88CA88FBF174BF48827AEA02 /* ShareSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShareSheet.swift; sourceTree = "<group>"; };
 		8A0F74EC6E72BFA26270CD11 /* QuickSilenceReleaseTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuickSilenceReleaseTests.swift; sourceTree = "<group>"; };
 		8CE7C67F669CC7C139D97E42 /* CutSenseTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = CutSenseTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		90FCDC4392123011833F3ADC /* AdMobIDs.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdMobIDs.swift; sourceTree = "<group>"; };
@@ -64,11 +66,11 @@
 		AB3F4CFE6EB7DA53D3C755D3 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		B489C5F2177971DC7A3350E6 /* QuickSilencePlanTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuickSilencePlanTests.swift; sourceTree = "<group>"; };
 		B9A4ECAEAEB959B791A3372C /* CutSense.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = CutSense.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		C04A9212E7DD2001C8957A41 /* LanguageSwitcher.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LanguageSwitcher.swift; sourceTree = "<group>"; };
 		C568ED16C5A5569D901E936F /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		C62FC1631B126EE52AC1C53B /* VideoImportService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VideoImportService.swift; sourceTree = "<group>"; };
 		E58D84C896EEF6326B68D129 /* QuickSilenceView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuickSilenceView.swift; sourceTree = "<group>"; };
 		F0362DFB1D828F4A88A12862 /* PhotosSaveService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhotosSaveService.swift; sourceTree = "<group>"; };
+		F2B01E9767A4EA100187484E /* ReviewScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReviewScreen.swift; sourceTree = "<group>"; };
 		FB97188D8E41E8EDA18FFC31 /* QuickSilenceEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuickSilenceEngine.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -109,6 +111,8 @@
 				3E3BFDA791131FEC48D257D4 /* QuickSilenceApp.swift */,
 				FB97188D8E41E8EDA18FFC31 /* QuickSilenceEngine.swift */,
 				E58D84C896EEF6326B68D129 /* QuickSilenceView.swift */,
+				F2B01E9767A4EA100187484E /* ReviewScreen.swift */,
+				88CA88FBF174BF48827AEA02 /* ShareSheet.swift */,
 			);
 			path = QuickSilence;
 			sourceTree = "<group>";
@@ -136,7 +140,6 @@
 		6AF1FF056AF9A1586A4A5EDA /* UI */ = {
 			isa = PBXGroup;
 			children = (
-				C04A9212E7DD2001C8957A41 /* LanguageSwitcher.swift */,
 				28901B74846173D20088B4D4 /* SettingsScreen.swift */,
 			);
 			path = UI;
@@ -334,7 +337,6 @@
 				FCC3A11D6F78C346121A111C /* AdMobService.swift in Sources */,
 				888EE52AA670A80854D14A24 /* AppLanguage.swift in Sources */,
 				26E48D862C02A3CACFCC666D /* AudioAnalysisService.swift in Sources */,
-				026D1DA0672C345D35A0426D /* LanguageSwitcher.swift in Sources */,
 				4F679B0A91607C40888C1D6B /* NativeAdCard.swift in Sources */,
 				AF36EB525821348164F48197 /* PaywallView.swift in Sources */,
 				5C2F30243E7024441DEC15CD /* PhotosSaveService.swift in Sources */,
@@ -342,7 +344,9 @@
 				4D98206A34DA299213C53E86 /* QuickSilenceApp.swift in Sources */,
 				F2FAAC8BD865412DB715DC8B /* QuickSilenceEngine.swift in Sources */,
 				CDF0ACC03AF3EDCFA64C3D94 /* QuickSilenceView.swift in Sources */,
+				B665BB21E20DBA5C24D05B7F /* ReviewScreen.swift in Sources */,
 				7A1D7311FD27448ECE00BB6D /* SettingsScreen.swift in Sources */,
+				8C11A2F976D58980C7375A42 /* ShareSheet.swift in Sources */,
 				D2BD8EF815D8FB6530381BE4 /* VideoImportService.swift in Sources */,
 				EDA7F2C44BE660D743112F3C /* WorkFiles.swift in Sources */,
 			);

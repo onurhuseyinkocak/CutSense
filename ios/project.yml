@@ -31,7 +31,6 @@ targets:
       - path: CutSense/Storage
         optional: true
       - path: CutSense/RoughCut/AudioAnalysisService.swift
-      - path: CutSense/UI/LanguageSwitcher.swift
       - path: CutSense/UI/SettingsScreen.swift
       - path: CutSense/Video/VideoImportService.swift
       - path: CutSense/Video/PhotosSaveService.swift
