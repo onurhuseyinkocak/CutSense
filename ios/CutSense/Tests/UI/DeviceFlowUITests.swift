@@ -100,7 +100,7 @@ final class DeviceFlowUITests: XCTestCase {
     }
 
     private func dismissRatingPromptIfShown() {
-        for source in [app, springboard] {
+        for source in [app!, springboard] {
             let notNow = source.buttons["Not Now"]
             if notNow.waitForExistence(timeout: 3) { notNow.tap(); return }
         }
