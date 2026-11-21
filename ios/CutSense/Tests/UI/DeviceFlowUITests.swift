@@ -87,7 +87,7 @@ final class DeviceFlowUITests: XCTestCase {
     }
 
     private func skipAdBreakIfShown() {
-        let skip = app.buttons["Skip"]
+        let skip = app.buttons["skipAdButton"]
         if skip.waitForExistence(timeout: 6) { skip.tap() }
         // A full-screen ad (if the countdown already elapsed) is closed by its own button.
         let close = app.buttons.matching(NSPredicate(format: "label CONTAINS[c] 'close'")).firstMatch

@@ -88,7 +88,7 @@ struct QuickSilenceView: View {
         .toolbarBackground(.hidden, for: .navigationBar)
         .toolbar {
             ToolbarItem(placement: .topBarLeading) {
-                if privacyOptionsRequired {
+                if privacyOptionsRequired && !store.isPro {
                     privacyOptionsToolbarButton
                 }
             }
@@ -101,6 +101,8 @@ struct QuickSilenceView: View {
                             .padding(.horizontal, 12)
                             .frame(height: 30)
                             .background(qsAccent, in: Capsule())
+                            .frame(minWidth: 44, minHeight: 44)
+                            .contentShape(Rectangle())
                     }
                     .accessibilityLabel("CutSense Pro")
                     .accessibilityIdentifier("proCapsule")
@@ -115,6 +117,8 @@ struct QuickSilenceView: View {
                         .foregroundStyle(.white)
                         .clipShape(Circle())
                         .overlay(Circle().stroke(.white.opacity(0.14)))
+                        .frame(minWidth: 44, minHeight: 44)
+                        .contentShape(Rectangle())
                 }
                 .disabled(isWorking || exportTask != nil)
                 .accessibilityLabel(t("Ayarlar", "Settings"))
@@ -175,6 +179,8 @@ struct QuickSilenceView: View {
                 .foregroundStyle(.white)
                 .clipShape(Circle())
                 .overlay(Circle().stroke(.white.opacity(0.14)))
+                .frame(minWidth: 44, minHeight: 44)
+                .contentShape(Rectangle())
         }
         .accessibilityLabel(t("Gizlilik seçenekleri", "Privacy options"))
     }
@@ -448,7 +454,9 @@ struct QuickSilenceView: View {
         let size = (try? inputURL.resourceValues(forKeys: [.fileSizeKey]).fileSize) ?? 0
         let available = WorkFiles.availableBytes()  // 0 means the volume could not be read; don't block on that
         guard available == 0 || Double(available) >= Double(size) * 1.1 else {
-            fail(t("Yeterli boş alan yok. Biraz yer açıp tekrar dene.", "Not enough free storage. Free up some space and try again."))
+            // Keep the review: the user can free space and retry without re-importing.
+            saveError = t("Yeterli boş alan yok. Biraz yer açıp tekrar dene.", "Not enough free storage. Free up some space and try again.")
+            saveNeedsSettings = false
             return
         }
         skipProcessingAdBreak()
@@ -737,23 +745,31 @@ private struct ProcessingAdCountdownView: View {
                 }
                 Spacer(minLength: 0)
                 if state.canSkip {
-                    Button(appText(language, "Atla", "Skip"), action: onSkip)
-                        .font(.system(size: 12, weight: .heavy, design: .rounded))
-                        .lineLimit(1)
-                        .fixedSize()
-                        .foregroundStyle(.white)
-                        .padding(.horizontal, 12)
-                        .padding(.vertical, 8)
-                        .background(.white.opacity(0.12))
-                        .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+                    Button(action: onSkip) {
+                        Text(appText(language, "Atla", "Skip"))
+                            .font(.system(size: 12, weight: .heavy, design: .rounded))
+                            .lineLimit(1)
+                            .fixedSize()
+                            .foregroundStyle(.white)
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 8)
+                            .background(.white.opacity(0.12))
+                            .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+                            .frame(minWidth: 44, minHeight: 44)
+                            .contentShape(Rectangle())
+                    }
+                    .accessibilityIdentifier("skipAdButton")
                 }
             }
             if state.canSkip, let onRemoveAds {
-                Button(appText(language, "Reklamları kalıcı kaldır", "Remove ads forever"), action: onRemoveAds)
-                    .font(.system(size: 13, weight: .heavy, design: .rounded))
-                    .foregroundStyle(.black)
-                    .frame(maxWidth: .infinity, minHeight: 36)
-                    .background(qsAccent, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+                Button(action: onRemoveAds) {
+                    Text(appText(language, "Reklamları kalıcı kaldır", "Remove ads forever"))
+                        .font(.system(size: 13, weight: .heavy, design: .rounded))
+                        .foregroundStyle(.black)
+                        .frame(maxWidth: .infinity, minHeight: 44)
+                        .background(qsAccent, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+                        .contentShape(Rectangle())
+                }
             }
         }
         .padding(14)

@@ -88,6 +88,7 @@ struct SettingsScreen: View {
         .navigationTitle(t("Ayarlar", "Settings"))
         .preferredColorScheme(.dark)
         .onAppear { usage = WorkFiles.usageBytes() }
+        .task { if store.product == nil { await store.loadProduct() } }
         .sheet(isPresented: $showsPaywall) { PaywallView(language: language) }
     }
 

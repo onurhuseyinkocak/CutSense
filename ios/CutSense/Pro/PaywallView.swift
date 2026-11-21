@@ -20,7 +20,7 @@ struct PaywallView: View {
                            startPoint: .top, endPoint: .bottom)
                 .ignoresSafeArea()
 
-            VStack(alignment: .leading, spacing: 24) {
+            VStack(alignment: .leading, spacing: 16) {
                 HStack {
                     Spacer()
                     Button { dismiss() } label: {
@@ -32,19 +32,24 @@ struct PaywallView: View {
                     .accessibilityLabel(appText(language, "Kapat", "Close"))
                 }
 
-                Text("CutSense Pro")
-                    .font(.system(size: 34, weight: .bold, design: .rounded))
-                    .foregroundStyle(.white)
+                // Scrolls only when large text outgrows the screen; purchase buttons stay pinned below.
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 24) {
+                        Text("CutSense Pro")
+                            .font(.system(size: 34, weight: .bold, design: .rounded))
+                            .foregroundStyle(.white)
 
-                VStack(alignment: .leading, spacing: 16) {
-                    bullet("nosign", appText(language, "Reklamsız, sonsuza dek", "No ads, ever"))
-                    bullet("slider.horizontal.3", appText(language, "İnce ayar: en kısa duraklama ve nefes payı", "Fine-tune: minimum pause and breathing room"))
-                    bullet("checkmark.seal", appText(language, "Tek seferlik satın alma. Abonelik yok.", "One-time purchase. No subscription."))
+                        VStack(alignment: .leading, spacing: 16) {
+                            bullet("nosign", appText(language, "Reklamsız, sonsuza dek", "No ads, ever"))
+                            bullet("slider.horizontal.3", appText(language, "İnce ayar: en kısa duraklama ve nefes payı", "Fine-tune: minimum pause and breathing room"))
+                            bullet("checkmark.seal", appText(language, "Tek seferlik satın alma. Abonelik yok.", "One-time purchase. No subscription."))
+                        }
+
+                        comparison
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
                 }
-
-                comparison
-
-                Spacer(minLength: 0)
+                .scrollBounceBehavior(.basedOnSize)
 
                 if let message {
                     Text(message)
@@ -90,6 +95,7 @@ struct PaywallView: View {
             .padding(.horizontal, 24)
             .padding(.bottom, 16)
         }
+        .dynamicTypeSize(...DynamicTypeSize.xxLarge)
         .preferredColorScheme(.dark)
         .task {
             if store.product == nil {
@@ -105,7 +111,7 @@ struct PaywallView: View {
         VStack(spacing: 0) {
             HStack {
                 Spacer()
-                Text(appText(language, "Ücretsiz", "Free")).frame(width: 64)
+                Text(appText(language, "Ücretsiz", "Free")).lineLimit(1).minimumScaleFactor(0.6).frame(width: 64)
                 Text("Pro").foregroundStyle(Self.accent).frame(width: 64)
             }
             .font(.footnote.weight(.bold))
@@ -176,8 +182,12 @@ struct PaywallView: View {
             break
         case .pending:
             message = appText(language, "Satın alma onay bekliyor. Onaylanınca Pro açılır.", "Purchase is pending approval. Pro unlocks once it is approved.")
-        case .failed(let reason):
+        case .unavailable:
+            message = appText(language, "Ürün şu an yüklenemedi. Daha sonra tekrar dene.", "The product could not be loaded right now. Try again later.")
+        case .failed(let reason?):
             message = String(format: appText(language, "Satın alma tamamlanamadı: %@", "Purchase could not be completed: %@"), reason)
+        case .failed(nil):
+            message = appText(language, "Satın alma tamamlanamadı.", "Purchase could not be completed.")
         }
     }
 

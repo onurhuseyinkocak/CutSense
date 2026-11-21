@@ -3,6 +3,8 @@ import AVFoundation
 
 @main
 struct QuickSilenceApp: App {
+    @Environment(\.scenePhase) private var scenePhase
+
     init() {
         WorkFiles.sweepAtLaunch()
     }
@@ -15,9 +17,15 @@ struct QuickSilenceApp: App {
             .modifier(DebugScreenClamp())
             .task {
                 try? AVAudioSession.sharedInstance().setCategory(.playback, mode: .moviePlayback)
-                // Pro first: AdMobService.isEnabled reads the cached entitlement.
+                // Pro first: AdMobService.isEnabled reads the cached entitlement, so refresh it before ads start.
+                await ProStore.shared.refresh()
                 ProStore.shared.start()
                 AdMobService.start()
+            }
+            .onChange(of: scenePhase) { _, phase in
+                // A launch-time product load failure would otherwise hide every Pro entry point all session.
+                guard phase == .active, ProStore.shared.product == nil else { return }
+                Task { await ProStore.shared.loadProduct() }
             }
         }
     }

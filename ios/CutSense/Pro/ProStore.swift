@@ -17,7 +17,8 @@ enum ProEntitlement {
 @MainActor @Observable
 final class ProStore {
     enum Outcome: Equatable, Sendable {
-        case purchased, cancelled, pending, failed(String)
+        /// `failed(nil)` means no system message; the paywall shows its own localized text.
+        case purchased, cancelled, pending, unavailable, failed(String?)
     }
 
     static let shared = ProStore()
@@ -44,8 +45,9 @@ final class ProStore {
             }
         }
         Task {
-            await loadProduct()
+            // Entitlements first (local, fast) so a returning owner never sees ad gating flip.
             await refresh()
+            await loadProduct()
         }
     }
 
@@ -69,7 +71,7 @@ final class ProStore {
 
     func purchase() async -> Outcome {
         if product == nil { await loadProduct() }
-        guard let product else { return .failed("Product unavailable") }
+        guard let product else { return .unavailable }
         do {
             switch try await product.purchase() {
             case .success(.verified(let transaction)):
@@ -83,7 +85,7 @@ final class ProStore {
             case .userCancelled:
                 return .cancelled
             @unknown default:
-                return .failed("Unknown purchase result")
+                return .failed(nil)
             }
         } catch {
             return .failed(error.localizedDescription)

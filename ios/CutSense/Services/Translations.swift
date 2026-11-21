@@ -271,6 +271,7 @@ enum Translations {
             ja: "購入は承認待ちです。承認されるとProが使えるようになります。",
             ko: "구매 승인 대기 중입니다. 승인되면 Pro가 잠금 해제됩니다.")),
         ("Purchase could not be completed: %@", row(es: "No se pudo completar la compra: %@", pt: "Não foi possível concluir a compra: %@", de: "Kauf konnte nicht abgeschlossen werden: %@", fr: "Achat impossible : %@", it: "Impossibile completare l'acquisto: %@", ja: "購入を完了できませんでした: %@", ko: "구매를 완료할 수 없습니다: %@")),
+        ("Purchase could not be completed.", row(es: "No se pudo completar la compra.", pt: "Não foi possível concluir a compra.", de: "Kauf konnte nicht abgeschlossen werden.", fr: "Achat impossible.", it: "Impossibile completare l'acquisto.", ja: "購入を完了できませんでした。", ko: "구매를 완료할 수 없습니다.")),
         ("No purchase found to restore.", row(es: "No hay compras para restaurar.", pt: "Nenhuma compra para restaurar.", de: "Keine Käufe zum Wiederherstellen gefunden.", fr: "Aucun achat à restaurer.", it: "Nessun acquisto da ripristinare.", ja: "復元できる購入はありません。", ko: "복원할 구매 내역이 없습니다.")),
 
         // MARK: Settings

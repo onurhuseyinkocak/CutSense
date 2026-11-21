@@ -9,12 +9,17 @@ let qsAccent = Color(red: 182 / 255, green: 243 / 255, blue: 92 / 255)
 final class PreviewPlayer {
     @ObservationIgnored let player = AVPlayer()
     private(set) var usesFallback = false
+    /// Counted, not a flag: a cancelled load can finish after its replacement started.
+    private var activeLoads = 0
+    var isLoading: Bool { activeLoads > 0 }
     @ObservationIgnored private var plan: QuickSilenceEngine.CutPlan?
     @ObservationIgnored private var fallbackURL: URL?
     @ObservationIgnored private var skipObserver: Any?
 
     func load(url: URL, plan: QuickSilenceEngine.CutPlan, seekToOriginal: Double?) async {
         self.plan = plan
+        activeLoads += 1
+        defer { activeLoads -= 1 }
         if !usesFallback && !Self.forceFallback {
             if let item = try? await QuickSilenceEngine.makePreviewItem(url: url, plan: plan) {
                 guard !Task.isCancelled else { return }
@@ -121,6 +126,11 @@ struct ReviewScreen: View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .background(.white.opacity(0.04))
                 .clipShape(RoundedRectangle(cornerRadius: 18))
+                .overlay {
+                    if preview.isLoading {
+                        ProgressView().tint(.white).controlSize(.large)
+                    }
+                }
                 .layoutPriority(-1)
 
             CutStrip(plan: plan)
@@ -185,6 +195,7 @@ struct ReviewScreen: View {
             }
             .disabled(isExporting)
         }
+        .dynamicTypeSize(...DynamicTypeSize.xxLarge)
         .overlay {
             if let exportProgress {
                 ExportOverlay(progress: exportProgress, language: language, onCancel: onCancelExport)
@@ -277,6 +288,8 @@ private struct CutListSheet: View {
                     }
                     .tint(qsAccent)
                     .fixedSize()
+                    .accessibilityLabel(rowTitle(cut))
+                    .accessibilityValue(cut.isRestored ? appText(language, "Kalsın", "Keep") : appText(language, "Kes", "Cut"))
                     .accessibilityIdentifier("cutToggle_\(cut.id)")
                 }
             }
