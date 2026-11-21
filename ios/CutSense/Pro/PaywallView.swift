@@ -4,169 +4,212 @@ struct PaywallView: View {
     let language: AppLanguage
 
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var store = ProStore.shared
     @State private var isWorking = false
     @State private var message: String?
-
-    private static let accent = Color(red: 182 / 255, green: 243 / 255, blue: 92 / 255)
+    @State private var revealed = false
 
     init(language: AppLanguage) {
         self.language = language
     }
 
+    private func t(_ tr: String, _ en: String) -> String { appText(language, tr, en) }
+
     var body: some View {
-        ZStack {
-            LinearGradient(colors: [Color(red: 0.05, green: 0.06, blue: 0.09), .black],
-                           startPoint: .top, endPoint: .bottom)
-                .ignoresSafeArea()
-
-            VStack(alignment: .leading, spacing: 16) {
-                HStack {
-                    Spacer()
-                    Button { dismiss() } label: {
-                        Image(systemName: "xmark")
-                            .font(.system(size: 15, weight: .bold))
-                            .foregroundStyle(.white.opacity(0.7))
-                            .frame(width: 44, height: 44)
-                    }
-                    .accessibilityLabel(appText(language, "Kapat", "Close"))
-                }
-
-                // Scrolls only when large text outgrows the screen; purchase buttons stay pinned below.
-                ScrollView {
-                    VStack(alignment: .leading, spacing: 24) {
-                        Text("CutSense Pro")
-                            .font(.system(size: 34, weight: .bold, design: .rounded))
-                            .foregroundStyle(.white)
-
-                        VStack(alignment: .leading, spacing: 16) {
-                            bullet("nosign", appText(language, "Reklamsız, sonsuza dek", "No ads, ever"))
-                            bullet("slider.horizontal.3", appText(language, "İnce ayar: en kısa duraklama ve nefes payı", "Fine-tune: minimum pause and breathing room"))
-                            bullet("checkmark.seal", appText(language, "Tek seferlik satın alma. Abonelik yok.", "One-time purchase. No subscription."))
-                        }
-
-                        comparison
-                    }
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                }
-                .scrollBounceBehavior(.basedOnSize)
-
-                if let message {
-                    Text(message)
-                        .font(.footnote)
-                        .foregroundStyle(.white.opacity(0.75))
-                        .frame(maxWidth: .infinity)
-                        .multilineTextAlignment(.center)
-                }
-
-                VStack(spacing: 12) {
-                    if let product = store.product {
-                        Button { Task { await buy() } } label: {
-                            Group {
-                                if isWorking {
-                                    ProgressView().tint(.black)
-                                } else {
-                                    Text(String(format: appText(language, "%@ ile aç", "Unlock for %@"), product.displayPrice))
-                                }
-                            }
-                            .font(.system(.headline, design: .rounded).weight(.bold))
-                            .foregroundStyle(.black)
-                            .frame(maxWidth: .infinity, minHeight: 54)
-                            .background(Self.accent, in: Capsule())
-                        }
-                        .disabled(isWorking)
-                    }
-
-                    Button { Task { await restore() } } label: {
-                        Text(appText(language, "Satın Alımları Geri Yükle", "Restore Purchases"))
-                            .font(.subheadline.weight(.semibold))
-                            .foregroundStyle(.white)
-                            .frame(maxWidth: .infinity, minHeight: 44)
-                    }
-                    .disabled(isWorking)
-
-                    HStack(spacing: 20) {
-                        link(appText(language, "Koşullar", "Terms"), "https://cutsense.onarika.net/terms")
-                        link(appText(language, "Gizlilik", "Privacy"), "https://cutsense.onarika.net/privacy")
-                    }
-                    .frame(maxWidth: .infinity)
-                }
-            }
-            .padding(.horizontal, 24)
-            .padding(.bottom, 16)
-        }
-        .dynamicTypeSize(...DynamicTypeSize.xxLarge)
-        .preferredColorScheme(.dark)
-        .task {
-            if store.product == nil {
-                await store.loadProduct()
-                if store.product == nil {
-                    message = appText(language, "Ürün şu an yüklenemedi. Daha sonra tekrar dene.", "The product could not be loaded right now. Try again later.")
-                }
-            }
-        }
-    }
-
-    private var comparison: some View {
         VStack(spacing: 0) {
             HStack {
                 Spacer()
-                Text(appText(language, "Ücretsiz", "Free")).lineLimit(1).minimumScaleFactor(0.6).frame(width: 64)
-                Text("Pro").foregroundStyle(Self.accent).frame(width: 64)
+                Button { dismiss() } label: {
+                    Image(systemName: "xmark")
+                        .font(.system(size: 15, weight: .semibold))
+                        .foregroundStyle(Mono.C.text2)
+                        .frame(width: 44, height: 44)
+                        .contentShape(Rectangle())
+                }
+                .accessibilityLabel(t("Kapat", "Close"))
             }
-            .font(.footnote.weight(.bold))
-            .foregroundStyle(.white.opacity(0.7))
-            .padding(.bottom, 8)
-            compareRow(appText(language, "Sınırsız kesim", "Unlimited cuts"), free: true)
-            compareRow(appText(language, "Her kesimi incele", "Review every cut"), free: true)
-            compareRow(appText(language, "Filigran yok", "No watermark"), free: true)
-            compareRow(appText(language, "Reklamsız", "Ad-free"), free: false)
-            compareRow(appText(language, "İnce ayar", "Fine-tune"), free: false)
+            .padding(.horizontal, 12)
+
+            // Scrolls only when large text outgrows the screen; purchase buttons stay pinned below.
+            ScrollView {
+                VStack(alignment: .leading, spacing: 0) {
+                    Text("CutSense Pro")
+                        .monoText(.overline)
+                        .foregroundStyle(Mono.C.text3)
+                        .monoEntrance(0)
+                    Text(t("Reklam yok. Daha ince ayar. Tek ödeme.", "No ads. Finer control. Pay once."))
+                        .font(.system(size: 34, weight: .semibold))
+                        .tracking(-0.8)
+                        .lineLimit(3)
+                        .minimumScaleFactor(0.8)
+                        .foregroundStyle(Mono.C.text)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .padding(.top, Mono.Space.s)
+                        .monoEntrance(1)
+                    Text(t("İnce ayar: en kısa duraklama ve nefes payı", "Fine-tune: minimum pause and breathing room"))
+                        .monoText(.body)
+                        .foregroundStyle(Mono.C.text2)
+                        .padding(.top, Mono.Space.s)
+                        .monoEntrance(2)
+                    comparison
+                        .padding(.top, Mono.Space.xl)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.horizontal, Mono.Space.l)
+                .padding(.bottom, Mono.Space.m)
+            }
+            .scrollBounceBehavior(.basedOnSize)
+
+            footer
+                .padding(.horizontal, Mono.Space.l)
+                .padding(.top, Mono.Space.s)
+                .padding(.bottom, Mono.Space.xs)
+                .overlay(alignment: .top) { Rectangle().fill(Mono.C.hairline).frame(height: 1) }
         }
-        .padding(16)
-        .background(.white.opacity(0.06), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .background(Mono.C.bg.ignoresSafeArea())
+        .presentationBackground(Mono.C.bg)
+        .dynamicTypeSize(...DynamicTypeSize.xxLarge)
+        .preferredColorScheme(.dark)
+        .tint(Mono.C.text)
+        .sensoryFeedback(.warning, trigger: message) { _, new in new != nil }
+        .sensoryFeedback(.success, trigger: store.isPro) { _, new in new }
+        .task {
+            withAnimation(Mono.Motion.pick(Mono.Motion.smooth, reduce: reduceMotion).delay(0.15)) { revealed = true }
+            if store.product == nil {
+                await store.loadProduct()
+                if store.product == nil {
+                    message = t("Ürün şu an yüklenemedi. Daha sonra tekrar dene.", "The product could not be loaded right now. Try again later.")
+                }
+            }
+        }
     }
 
-    private func compareRow(_ title: String, free: Bool) -> some View {
-        HStack {
+    // MARK: - Comparison
+
+    private static let freeWidth: CGFloat = 64
+    private static let proWidth: CGFloat = 72
+
+    private var comparison: some View {
+        VStack(spacing: 0) {
+            HStack(spacing: 0) {
+                Spacer(minLength: 0)
+                Text(t("Ücretsiz", "Free"))
+                    .monoText(.label)
+                    .foregroundStyle(Mono.C.text2)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.6)
+                    .frame(width: Self.freeWidth)
+                Text("Pro")
+                    .font(.system(size: 15, weight: .bold))
+                    .foregroundStyle(.black)
+                    .frame(width: Self.proWidth)
+            }
+            .frame(height: 48)
+            .accessibilityHidden(true)
+            compareRow(0, t("Sınırsız kesim", "Unlimited cuts"), free: true)
+            compareRow(1, t("Her kesimi incele", "Review every cut"), free: true)
+            compareRow(2, t("Filigran yok", "No watermark"), free: true)
+            compareRow(3, t("Reklamsız", "Ad-free"), free: false)
+            compareRow(4, t("İnce ayar", "Fine-tune"), free: false)
+        }
+        .background(alignment: .trailing) {
+            RoundedRectangle(cornerRadius: 20, style: .continuous)
+                .fill(Mono.C.text)
+                .frame(width: Self.proWidth)
+                .mask {
+                    // Reveal top-down; Reduce Motion fades instead.
+                    GeometryReader { geo in
+                        Rectangle().frame(height: revealed || reduceMotion ? geo.size.height : 0)
+                    }
+                }
+                .opacity(revealed ? 1 : 0)
+        }
+    }
+
+    private func compareRow(_ index: Int, _ title: String, free: Bool) -> some View {
+        HStack(spacing: 0) {
             Text(title)
-                .font(.subheadline.weight(.medium))
-                .foregroundStyle(.white)
+                .monoText(.body)
+                .foregroundStyle(Mono.C.text)
                 .lineLimit(2)
                 .minimumScaleFactor(0.85)
             Spacer(minLength: 8)
-            mark(free).frame(width: 64)
-            mark(true).frame(width: 64)
+            Image(systemName: free ? "checkmark" : "minus")
+                .font(.system(size: 14, weight: .semibold))
+                .foregroundStyle(free ? Mono.C.text2 : Mono.C.disabled)
+                .frame(width: Self.freeWidth)
+            Image(systemName: "checkmark")
+                .font(.system(size: 15, weight: .bold))
+                .foregroundStyle(.black)
+                .frame(width: Self.proWidth)
         }
-        .padding(.vertical, 7)
+        .frame(minHeight: 48)
+        .overlay(alignment: .top) {
+            Rectangle().fill(Mono.C.hairline).frame(height: 1).padding(.trailing, Self.proWidth)
+        }
+        .monoEntrance(index + 3)
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel("\(title): \(free ? appText(language, "Ücretsiz", "Free") : "Pro")")
+        .accessibilityLabel("\(title): \(free ? t("Ücretsiz", "Free") : "Pro")")
     }
 
-    private func mark(_ included: Bool) -> some View {
-        Image(systemName: included ? "checkmark" : "minus")
-            .font(.subheadline.weight(.bold))
-            .foregroundStyle(included ? Self.accent : .white.opacity(0.3))
-    }
+    // MARK: - Footer
 
-    private func bullet(_ icon: String, _ text: String) -> some View {
-        HStack(alignment: .firstTextBaseline, spacing: 12) {
-            Image(systemName: icon)
-                .foregroundStyle(Self.accent)
-                .frame(width: 24)
-                .accessibilityHidden(true)
-            Text(text)
-                .font(.system(.body, design: .rounded).weight(.medium))
-                .foregroundStyle(.white)
+    private var footer: some View {
+        VStack(spacing: Mono.Space.xs) {
+            if let message {
+                Text(message)
+                    .monoText(.caption)
+                    .foregroundStyle(Mono.C.text2)
+                    .multilineTextAlignment(.center)
+                    .frame(maxWidth: .infinity)
+                    .transition(.opacity)
+            }
+
+            if let product = store.product {
+                Button {
+                    guard !isWorking else { return }
+                    Task { await buy() }
+                } label: {
+                    if isWorking {
+                        ProgressView().tint(.black)
+                    } else {
+                        MonoActionLabel(String(format: t("%@ ile aç", "Unlock for %@"), product.displayPrice),
+                                        systemImage: "arrow.right")
+                    }
+                }
+                .buttonStyle(MonoPrimaryButtonStyle())
+                .padding(.top, Mono.Space.xxs)
+            }
+
+            Text(t("Tek seferlik satın alma. Abonelik yok.", "One-time purchase. No subscription."))
+                .monoText(.caption)
+                .foregroundStyle(Mono.C.text2)
+                .multilineTextAlignment(.center)
+
+            Button { Task { await restore() } } label: {
+                Text(t("Satın Alımları Geri Yükle", "Restore Purchases"))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
+            }
+            .buttonStyle(MonoTertiaryButtonStyle())
+            .disabled(isWorking)
+
+            HStack(spacing: Mono.Space.xs) {
+                link(t("Koşullar", "Terms"), "https://cutsense.onarika.net/terms")
+                Text("·").foregroundStyle(Mono.C.text3).accessibilityHidden(true)
+                link(t("Gizlilik", "Privacy"), "https://cutsense.onarika.net/privacy")
+            }
         }
+        .animation(Mono.Motion.fade, value: message)
     }
 
     @ViewBuilder
     private func link(_ title: String, _ address: String) -> some View {
         if let url = URL(string: address) {
             Link(title, destination: url)
-                .font(.footnote)
-                .foregroundStyle(.white.opacity(0.6))
+                .font(.system(size: 13, weight: .medium))
+                .foregroundStyle(Mono.C.text3)
                 .frame(minHeight: 44)
         }
     }
@@ -181,13 +224,13 @@ struct PaywallView: View {
         case .cancelled:
             break
         case .pending:
-            message = appText(language, "Satın alma onay bekliyor. Onaylanınca Pro açılır.", "Purchase is pending approval. Pro unlocks once it is approved.")
+            message = t("Satın alma onay bekliyor. Onaylanınca Pro açılır.", "Purchase is pending approval. Pro unlocks once it is approved.")
         case .unavailable:
-            message = appText(language, "Ürün şu an yüklenemedi. Daha sonra tekrar dene.", "The product could not be loaded right now. Try again later.")
+            message = t("Ürün şu an yüklenemedi. Daha sonra tekrar dene.", "The product could not be loaded right now. Try again later.")
         case .failed(let reason?):
-            message = String(format: appText(language, "Satın alma tamamlanamadı: %@", "Purchase could not be completed: %@"), reason)
+            message = String(format: t("Satın alma tamamlanamadı: %@", "Purchase could not be completed: %@"), reason)
         case .failed(nil):
-            message = appText(language, "Satın alma tamamlanamadı.", "Purchase could not be completed.")
+            message = t("Satın alma tamamlanamadı.", "Purchase could not be completed.")
         }
     }
 
@@ -199,7 +242,7 @@ struct PaywallView: View {
         if store.isPro {
             dismiss()
         } else {
-            message = appText(language, "Geri yüklenecek satın alma bulunamadı.", "No purchase found to restore.")
+            message = t("Geri yüklenecek satın alma bulunamadı.", "No purchase found to restore.")
         }
     }
 }

@@ -11,7 +11,8 @@ struct NativeAdCard: View {
             if let ad = loader.nativeAd {
                 NativeAdRepresentable(nativeAd: ad)
                     .frame(height: 236)
-                    .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+                    // Never above 12: a larger radius clips the SDK's AdChoices corner.
+                    .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
             }
         }
         .task { await loader.loadIfNeeded() }
@@ -73,15 +74,19 @@ private final class CutSenseNativeAdView: NativeAdView {
 
     override init(frame: CGRect) {
         super.init(frame: frame)
-        backgroundColor = UIColor.white.withAlphaComponent(0.07)
+        backgroundColor = UIColor(white: 23 / 255, alpha: 1)
+        layer.borderWidth = 1
+        layer.borderColor = UIColor.white.withAlphaComponent(0.1).cgColor
+        layer.cornerRadius = 12
+        layer.cornerCurve = .continuous
 
         badge.text = " \(appText(AppLanguage.current, "Reklam", "Ad")) "
-        badge.font = .preferredFont(forTextStyle: .caption2).withWeight(.bold)
-        badge.textColor = .black
-        badge.backgroundColor = UIColor(red: 0.98, green: 0.8, blue: 0.2, alpha: 1)
+        badge.font = .systemFont(ofSize: 10, weight: .bold)
+        badge.textColor = .white
         badge.textAlignment = .center
-        badge.layer.cornerRadius = 3
-        badge.layer.masksToBounds = true
+        badge.layer.borderWidth = 1
+        badge.layer.borderColor = UIColor.white.withAlphaComponent(0.5).cgColor
+        badge.layer.cornerRadius = 8
 
         icon.contentMode = .scaleAspectFill
         icon.layer.cornerRadius = 6
@@ -93,7 +98,7 @@ private final class CutSenseNativeAdView: NativeAdView {
         headline.adjustsFontForContentSizeCategory = true
 
         bodyLabel.font = .preferredFont(forTextStyle: .caption1)
-        bodyLabel.textColor = UIColor.white.withAlphaComponent(0.72)
+        bodyLabel.textColor = UIColor(white: 163 / 255, alpha: 1)
         bodyLabel.numberOfLines = 2
         bodyLabel.adjustsFontForContentSizeCategory = true
 
@@ -103,7 +108,12 @@ private final class CutSenseNativeAdView: NativeAdView {
         var config = UIButton.Configuration.filled()
         config.baseBackgroundColor = .white
         config.baseForegroundColor = .black
-        config.cornerStyle = .medium
+        config.cornerStyle = .capsule
+        config.titleTextAttributesTransformer = UIConfigurationTextAttributesTransformer {
+            var attributes = $0
+            attributes.font = .systemFont(ofSize: 15, weight: .semibold)
+            return attributes
+        }
         cta.configuration = config
         cta.isUserInteractionEnabled = false // SDK handles the tap
 

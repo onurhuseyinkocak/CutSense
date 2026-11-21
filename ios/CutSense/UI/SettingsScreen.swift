@@ -12,6 +12,7 @@ struct SettingsScreen: View {
     @State private var showsPaywall = false
     @State private var isRestoring = false
     @State private var restoreMessage: String?
+    @State private var adFreeUntil = AdFreePass.expiry
 
     private var language: AppLanguage { AppLanguage.value(from: languageRaw) }
     private func t(_ tr: String, _ en: String) -> String { appText(language, tr, en) }
@@ -24,73 +25,195 @@ struct SettingsScreen: View {
 
     var body: some View {
         List {
-            Section(t("Dil", "Language")) {
-                Picker(t("Uygulama dili", "App language"), selection: $languageRaw) {
+            // Always reachable for non-Pro users so App Review can find the IAP even if the product loads late.
+            if !store.isPro {
+                Section {
+                    proCard
+                        .listRowInsets(EdgeInsets())
+                        .listRowBackground(Color.clear)
+                }
+            }
+
+            Section {
+                Picker(selection: $languageRaw) {
                     ForEach(AppLanguage.allCases) { option in
                         Text(option.title).tag(option.rawValue)
                     }
+                } label: {
+                    row(t("Uygulama dili", "App language"), "globe")
                 }
+            } header: {
+                header(t("Dil", "Language"))
             }
+            .monoRows()
 
             Section {
-                LabeledContent(t("Geçici dosyalar", "Temporary files"),
-                               value: ByteCountFormatter.string(fromByteCount: usage, countStyle: .file))
-                    .accessibilityIdentifier("storageUsageRow")
-                Button(t("Temizle", "Clear")) {
+                HStack(spacing: Mono.Space.s) {
+                    glyph("internaldrive")
+                    LabeledContent {
+                        Text(ByteCountFormatter.string(fromByteCount: usage, countStyle: .file))
+                            .contentTransition(.numericText())
+                    } label: {
+                        Text(t("Geçici dosyalar", "Temporary files"))
+                    }
+                }
+                .accessibilityElement(children: .combine)
+                .accessibilityIdentifier("storageUsageRow")
+                Button {
                     _ = WorkFiles.clearUnused(keeping: urlsInUse)
-                    usage = WorkFiles.usageBytes()
+                    withAnimation(Mono.Motion.smooth) { usage = WorkFiles.usageBytes() }
+                } label: {
+                    row(t("Temizle", "Clear"), "trash")
                 }
                 .disabled(usage == 0)
             } header: {
-                Text(t("Depolama", "Storage"))
+                header(t("Depolama", "Storage"))
             } footer: {
-                Text(t("CutSense videolarının kopyasını saklamaz.", "CutSense keeps no copies of your videos."))
+                footer(t("CutSense videolarının kopyasını saklamaz.", "CutSense keeps no copies of your videos."))
             }
+            .monoRows()
 
             Section {
-                LabeledContent(t("Durum", "Status"),
-                               value: store.isPro ? t("Açık", "Unlocked") : t("Ücretsiz sürüm", "Free version"))
-                // Always reachable for non-Pro users so App Review can find the IAP even if the product loads late.
-                if !store.isPro {
-                    Button(t("Pro'yu Aç", "Unlock Pro")) { showsPaywall = true }
+                if store.isPro {
+                    HStack(spacing: Mono.Space.s) {
+                        glyph("checkmark.seal.fill", color: Mono.C.text)
+                        LabeledContent(t("Durum", "Status"), value: t("Açık", "Unlocked"))
+                    }
+                    .accessibilityElement(children: .combine)
+                } else if let adFreeUntil {
+                    HStack(spacing: Mono.Space.s) {
+                        glyph("pause.circle")
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(t("Banner reklamlar şu saate kadar kapalı", "Banner ads paused until"))
+                            Text(adFreeUntil.formatted(.dateTime.day().month(.abbreviated).hour().minute()
+                                .locale(Locale(identifier: language == .pt ? "pt-BR" : language.rawValue))))
+                                .monoText(.numeralM, size: 15)
+                                .foregroundStyle(Mono.C.text2)
+                        }
+                    }
+                    .accessibilityElement(children: .combine)
                 }
                 Button {
                     Task { await restore() }
                 } label: {
-                    if isRestoring { ProgressView() } else { Text(t("Satın Alımları Geri Yükle", "Restore Purchases")) }
+                    HStack(spacing: Mono.Space.s) {
+                        glyph("arrow.clockwise")
+                        if isRestoring {
+                            ProgressView()
+                        } else {
+                            Text(t("Satın Alımları Geri Yükle", "Restore Purchases"))
+                        }
+                    }
                 }
                 .disabled(isRestoring)
             } header: {
-                Text("CutSense Pro")
+                header("CutSense Pro")
             } footer: {
-                if let restoreMessage { Text(restoreMessage) }
+                if let restoreMessage { footer(restoreMessage) }
             }
+            .monoRows()
 
             if AdMobService.isEnabled && privacyOptionsRequired {
-                Section(t("Reklam gizliliği", "Ad privacy")) {
-                    Button(t("Gizlilik tercihlerini yönet", "Manage privacy choices")) {
+                Section {
+                    Button {
                         Task {
                             await AdMobService.presentPrivacyOptions()
                             privacyOptionsRequired = AdMobService.isPrivacyOptionsRequired
                         }
+                    } label: {
+                        row(t("Gizlilik tercihlerini yönet", "Manage privacy choices"), "hand.raised")
                     }
+                } header: {
+                    header(t("Reklam gizliliği", "Ad privacy"))
                 }
+                .monoRows()
             }
 
-            Section(t("Hakkında", "About")) {
-                link(t("Gizlilik Politikası", "Privacy Policy"), path: "privacy")
-                link(t("Kullanım Şartları", "Terms of Use"), path: "terms")
-                link(t("Destek", "Support"), path: "support")
-                LabeledContent(t("Sürüm", "Version"), value: Self.versionText)
+            Section {
+                link(t("Gizlilik Politikası", "Privacy Policy"), path: "privacy", glyph: "doc.text")
+                link(t("Kullanım Şartları", "Terms of Use"), path: "terms", glyph: "doc.plaintext")
+                link(t("Destek", "Support"), path: "support", glyph: "questionmark.circle")
+                HStack(spacing: Mono.Space.s) {
+                    glyph("info.circle")
+                    LabeledContent(t("Sürüm", "Version"), value: Self.versionText)
+                }
+                .accessibilityElement(children: .combine)
+            } header: {
+                header(t("Hakkında", "About"))
             }
+            .monoRows()
         }
+        .listStyle(.insetGrouped)
         .scrollContentBackground(.hidden)
-        .background(Color.black.ignoresSafeArea())
+        .background(Mono.C.bg.ignoresSafeArea())
+        .tint(Mono.C.text)
         .navigationTitle(t("Ayarlar", "Settings"))
         .preferredColorScheme(.dark)
-        .onAppear { usage = WorkFiles.usageBytes() }
+        .sensoryFeedback(.success, trigger: store.isPro) { _, new in new }
+        .onAppear {
+            usage = WorkFiles.usageBytes()
+            adFreeUntil = AdFreePass.expiry
+        }
         .task { if store.product == nil { await store.loadProduct() } }
         .sheet(isPresented: $showsPaywall) { PaywallView(language: language) }
+    }
+
+    private var proCard: some View {
+        Button { showsPaywall = true } label: {
+            HStack(spacing: Mono.Space.m) {
+                VStack(alignment: .leading, spacing: Mono.Space.xxs) {
+                    Text("CutSense Pro")
+                        .monoText(.headline)
+                        .foregroundStyle(.black)
+                    Text(t("Tek seferlik satın alma. Abonelik yok.", "One-time purchase. No subscription."))
+                        .monoText(.label)
+                        .foregroundStyle(Mono.C.onWhite2)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                Spacer(minLength: 0)
+                Image(systemName: "arrow.right")
+                    .font(.system(size: 16, weight: .semibold))
+                    .foregroundStyle(Mono.C.text)
+                    .frame(width: 40, height: 40)
+                    .background(Circle().fill(.black))
+            }
+            .padding(20)
+            .background(Mono.C.text, in: RoundedRectangle(cornerRadius: Mono.Radius.card, style: .continuous))
+            .contentShape(RoundedRectangle(cornerRadius: Mono.Radius.card, style: .continuous))
+        }
+        .buttonStyle(.plain)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(t("Pro'yu Aç", "Unlock Pro"))
+        .accessibilityAddTraits(.isButton)
+    }
+
+    private func glyph(_ name: String, color: Color = Mono.C.text2) -> some View {
+        Image(systemName: name)
+            .font(.system(size: 17, weight: .regular))
+            .foregroundStyle(color)
+            .frame(width: 28)
+            .accessibilityHidden(true)
+    }
+
+    private func row(_ title: String, _ glyphName: String) -> some View {
+        HStack(spacing: Mono.Space.s) {
+            glyph(glyphName)
+            Text(title)
+        }
+    }
+
+    private func header(_ text: String) -> some View {
+        Text(text)
+            .monoText(.overline)
+            .foregroundStyle(Mono.C.text3)
+            .textCase(nil)
+    }
+
+    private func footer(_ text: String) -> some View {
+        Text(text)
+            .monoText(.caption)
+            .foregroundStyle(Mono.C.text3)
+            .padding(.bottom, Mono.Space.xs)
     }
 
     private func restore() async {
@@ -104,9 +227,19 @@ struct SettingsScreen: View {
     }
 
     @ViewBuilder
-    private func link(_ title: String, path: String) -> some View {
+    private func link(_ title: String, path: String, glyph glyphName: String) -> some View {
         if let url = Self.site?.appending(path: path) {
-            Link(title, destination: url)
+            Link(destination: url) {
+                HStack(spacing: Mono.Space.s) {
+                    glyph(glyphName)
+                    Text(title)
+                    Spacer(minLength: 0)
+                    Image(systemName: "arrow.up.right")
+                        .font(.system(size: 12, weight: .semibold))
+                        .foregroundStyle(Mono.C.text3)
+                        .accessibilityHidden(true)
+                }
+            }
         }
     }
 
@@ -115,5 +248,11 @@ struct SettingsScreen: View {
         let version = info?["CFBundleShortVersionString"] as? String ?? "?"
         let build = info?["CFBundleVersion"] as? String ?? "?"
         return "\(version) (\(build))"
+    }
+}
+
+private extension View {
+    func monoRows() -> some View {
+        listRowBackground(Mono.C.raised).listRowSeparatorTint(Mono.C.hairline)
     }
 }
