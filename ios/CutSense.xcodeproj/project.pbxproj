@@ -10,6 +10,7 @@
 		0238F25AF2FC0F9DE078FCA7 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = AB3F4CFE6EB7DA53D3C755D3 /* PrivacyInfo.xcprivacy */; };
 		0A0E183623B591F89AAA3C93 /* Products.storekit in Resources */ = {isa = PBXBuildFile; fileRef = 615984865BA5FA389EB8226B /* Products.storekit */; };
 		195F33A7FFACCD0C40D88646 /* Products.storekit in Resources */ = {isa = PBXBuildFile; fileRef = 615984865BA5FA389EB8226B /* Products.storekit */; };
+		197186FDBC2287B64F4F9DB5 /* MonoWave.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A44387A54DD488C3F8BC008 /* MonoWave.swift */; };
 		26E48D862C02A3CACFCC666D /* AudioAnalysisService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 66C373ACE0E41C68BEC62183 /* AudioAnalysisService.swift */; };
 		2D2228652CDBCD23D0A1A2AA /* AdMobIDs.swift in Sources */ = {isa = PBXBuildFile; fileRef = 90FCDC4392123011833F3ADC /* AdMobIDs.swift */; };
 		41D3F7BC6A3962213750C9DA /* ProStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A29D62925185EF25613EC49B /* ProStoreTests.swift */; };
@@ -17,7 +18,9 @@
 		4F679B0A91607C40888C1D6B /* NativeAdCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5B25D226E27756B8668579FF /* NativeAdCard.swift */; };
 		50748F442AEF77CC4220228B /* silence_fixture.mp4 in Resources */ = {isa = PBXBuildFile; fileRef = 66419CEE6970408DD0364682 /* silence_fixture.mp4 */; };
 		55D6C5D1E8CC4A9EE8904A9A /* QuickSilenceReleaseTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8A0F74EC6E72BFA26270CD11 /* QuickSilenceReleaseTests.swift */; };
+		561874C3A9AB619740F6F090 /* MonoKit.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6FC8DDB8051423239B3C0AC0 /* MonoKit.swift */; };
 		5C2F30243E7024441DEC15CD /* PhotosSaveService.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0362DFB1D828F4A88A12862 /* PhotosSaveService.swift */; };
+		6F2AFFB3F9B95785EBC560FC /* MonoWaveTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 127D3CEB71E9B92C26E5F83E /* MonoWaveTests.swift */; };
 		7A1D7311FD27448ECE00BB6D /* SettingsScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = 28901B74846173D20088B4D4 /* SettingsScreen.swift */; };
 		888EE52AA670A80854D14A24 /* AppLanguage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2B4C7785DDFE37A3C7288498 /* AppLanguage.swift */; };
 		8C11A2F976D58980C7375A42 /* ShareSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 88CA88FBF174BF48827AEA02 /* ShareSheet.swift */; };
@@ -57,6 +60,8 @@
 
 /* Begin PBXFileReference section */
 		08EF21FB2749D3913F7B45B5 /* CutSenseUITests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = CutSenseUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		0A44387A54DD488C3F8BC008 /* MonoWave.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MonoWave.swift; sourceTree = "<group>"; };
+		127D3CEB71E9B92C26E5F83E /* MonoWaveTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MonoWaveTests.swift; sourceTree = "<group>"; };
 		1D9ADDEE72E898A7542A3E28 /* AdMobService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdMobService.swift; sourceTree = "<group>"; };
 		28901B74846173D20088B4D4 /* SettingsScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsScreen.swift; sourceTree = "<group>"; };
 		2AE1516E17CA740B67BCC3DC /* WorkFilesTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkFilesTests.swift; sourceTree = "<group>"; };
@@ -68,6 +73,7 @@
 		615984865BA5FA389EB8226B /* Products.storekit */ = {isa = PBXFileReference; path = Products.storekit; sourceTree = "<group>"; };
 		66419CEE6970408DD0364682 /* silence_fixture.mp4 */ = {isa = PBXFileReference; path = silence_fixture.mp4; sourceTree = "<group>"; };
 		66C373ACE0E41C68BEC62183 /* AudioAnalysisService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioAnalysisService.swift; sourceTree = "<group>"; };
+		6FC8DDB8051423239B3C0AC0 /* MonoKit.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MonoKit.swift; sourceTree = "<group>"; };
 		7363938B0F76D35960F216DC /* DeviceFlowUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeviceFlowUITests.swift; sourceTree = "<group>"; };
 		76D307ED363DB96DE47A88D7 /* ProStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProStore.swift; sourceTree = "<group>"; };
 		88CA88FBF174BF48827AEA02 /* ShareSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShareSheet.swift; sourceTree = "<group>"; };
@@ -122,6 +128,8 @@
 		37DA1D1D53558F9670FA2B0E /* QuickSilence */ = {
 			isa = PBXGroup;
 			children = (
+				6FC8DDB8051423239B3C0AC0 /* MonoKit.swift */,
+				0A44387A54DD488C3F8BC008 /* MonoWave.swift */,
 				3E3BFDA791131FEC48D257D4 /* QuickSilenceApp.swift */,
 				FB97188D8E41E8EDA18FFC31 /* QuickSilenceEngine.swift */,
 				E58D84C896EEF6326B68D129 /* QuickSilenceView.swift */,
@@ -142,6 +150,7 @@
 		5A39D3BCEFF3DA443E3968C3 /* Release */ = {
 			isa = PBXGroup;
 			children = (
+				127D3CEB71E9B92C26E5F83E /* MonoWaveTests.swift */,
 				A29D62925185EF25613EC49B /* ProStoreTests.swift */,
 				B489C5F2177971DC7A3350E6 /* QuickSilencePlanTests.swift */,
 				8A0F74EC6E72BFA26270CD11 /* QuickSilenceReleaseTests.swift */,
@@ -387,6 +396,8 @@
 				FCC3A11D6F78C346121A111C /* AdMobService.swift in Sources */,
 				888EE52AA670A80854D14A24 /* AppLanguage.swift in Sources */,
 				26E48D862C02A3CACFCC666D /* AudioAnalysisService.swift in Sources */,
+				561874C3A9AB619740F6F090 /* MonoKit.swift in Sources */,
+				197186FDBC2287B64F4F9DB5 /* MonoWave.swift in Sources */,
 				4F679B0A91607C40888C1D6B /* NativeAdCard.swift in Sources */,
 				AF36EB525821348164F48197 /* PaywallView.swift in Sources */,
 				5C2F30243E7024441DEC15CD /* PhotosSaveService.swift in Sources */,
@@ -415,6 +426,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				6F2AFFB3F9B95785EBC560FC /* MonoWaveTests.swift in Sources */,
 				41D3F7BC6A3962213750C9DA /* ProStoreTests.swift in Sources */,
 				CD22B3E9047CE97BC252EAA0 /* QuickSilencePlanTests.swift in Sources */,
 				55D6C5D1E8CC4A9EE8904A9A /* QuickSilenceReleaseTests.swift in Sources */,

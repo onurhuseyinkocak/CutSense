@@ -98,6 +98,7 @@ final class PreviewPlayer {
 struct ReviewScreen: View {
     let inputURL: URL
     @Binding var plan: QuickSilenceEngine.CutPlan
+    let waveform: [Float]
     @Binding var intensity: QuickSilenceEngine.CutIntensity
     let usesPresetSettings: Bool
     let preview: PreviewPlayer

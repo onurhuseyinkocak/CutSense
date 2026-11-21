@@ -268,6 +268,7 @@ struct QuickSilenceView: View {
         ReviewScreen(
             inputURL: inputURL,
             plan: plan,
+            waveform: analysis?.windowRMS ?? [],
             intensity: $cutIntensity,
             usesPresetSettings: cutSettings == QuickSilenceEngine.CutSettings(cutIntensity),
             preview: preview,

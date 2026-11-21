@@ -303,6 +303,15 @@ enum Translations {
         ("Support", row(es: "Soporte", pt: "Suporte", de: "Support", fr: "Assistance", it: "Assistenza", ja: "サポート", ko: "지원")),
         ("Version", row(es: "Versión", pt: "Versão", de: "Version", fr: "Version", it: "Versione", ja: "バージョン", ko: "버전")),
         ("Pro restored.", row(es: "Pro restaurado.", pt: "Pro restaurado.", de: "Pro wiederhergestellt.", fr: "Pro restauré.", it: "Pro ripristinato.", ja: "Proを復元しました。", ko: "Pro가 복원되었습니다.")),
+
+        // MARK: Mono redesign (1.1.0)
+        ("No ads. Finer control. Pay once.", row(es: "Sin anuncios. Más control. Pago único.", pt: "Sem anúncios. Mais controle. Pague uma vez.", de: "Keine Werbung. Feinere Kontrolle. Einmal zahlen.", fr: "Sans pubs. Contrôle plus fin. Un seul paiement.", it: "Niente pubblicità. Controllo più fine. Paghi una volta.", ja: "広告なし。より細かな調整。買い切り。", ko: "광고 없음. 더 세밀한 조절. 한 번 결제.")),
+        ("Removing %@", row(es: "Eliminando %@", pt: "Removendo %@", de: "%@ wird entfernt", fr: "Suppression de %@", it: "Rimozione di %@", ja: "%@を削除", ko: "%@ 제거")),
+        ("Pauses shorter than this are kept.", row(es: "Las pausas más cortas se mantienen.", pt: "Pausas mais curtas que isso são mantidas.", de: "Kürzere Pausen bleiben erhalten.", fr: "Les pauses plus courtes sont conservées.", it: "Le pause più brevi vengono mantenute.", ja: "これより短い間はそのまま残ります。", ko: "이보다 짧은 멈춤은 유지됩니다.")),
+        ("Silence left around each sentence.", row(es: "Silencio que queda alrededor de cada frase.", pt: "Silêncio mantido ao redor de cada frase.", de: "Stille, die um jeden Satz bleibt.", fr: "Silence conservé autour de chaque phrase.", it: "Silenzio lasciato attorno a ogni frase.", ja: "各文の前後に残す無音。", ko: "각 문장 앞뒤에 남기는 무음.")),
+        ("This video couldn't be processed", row(es: "No se pudo procesar este video", pt: "Não foi possível processar este vídeo", de: "Dieses Video konnte nicht verarbeitet werden", fr: "Impossible de traiter cette vidéo", it: "Impossibile elaborare questo video", ja: "この動画を処理できませんでした", ko: "이 동영상을 처리할 수 없습니다")),
+        ("Banner ads paused until", row(es: "Anuncios de banner pausados hasta", pt: "Anúncios em banner pausados até", de: "Bannerwerbung pausiert bis", fr: "Bannières publicitaires suspendues jusqu'au", it: "Banner pubblicitari in pausa fino al", ja: "バナー広告の停止期限", ko: "배너 광고 중지 기한")),
+        ("Timeline", row(es: "Línea de tiempo", pt: "Linha do tempo", de: "Zeitleiste", fr: "Chronologie", it: "Timeline", ja: "タイムライン", ko: "타임라인")),
     ]
 
     static let table: [String: [AppLanguage: String]] = Dictionary(rows, uniquingKeysWith: { first, _ in first })
