@@ -35,6 +35,7 @@ struct QuickSilenceView: View {
     @State private var isScreenVisible = true
     @AppStorage(AppLanguage.storageKey) private var languageRaw = AppLanguage.systemDefault.rawValue
     @Environment(\.requestReview) private var requestReview
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     enum Phase {
         case idle
@@ -57,9 +58,7 @@ struct QuickSilenceView: View {
 
     var body: some View {
         ZStack(alignment: .bottom) {
-            LinearGradient(colors: [Color(red: 0.05, green: 0.06, blue: 0.09), .black],
-                           startPoint: .top, endPoint: .bottom)
-                .ignoresSafeArea()
+            Mono.C.bg.ignoresSafeArea()
 
             if case .review = phase, let current = plan, let inputURL = session.inputURL {
                 // Not Binding($plan): its force-unwrap crashes when New Video clears the plan while
@@ -67,24 +66,36 @@ struct QuickSilenceView: View {
                 review(plan: Binding(get: { plan ?? current }, set: { if plan != nil { plan = $0 } }), inputURL: inputURL)
                     .padding(.horizontal, 16)
                     .padding(.bottom, 8)
+                    .transition(phaseTransition)
             } else {
-                VStack(spacing: 28) {
-                    // Hidden while working so a loaded native ad still fits a 6.1" screen.
-                    if !isWorking { header }
-                    Spacer(minLength: 0)
+                VStack(spacing: 0) {
+                    Spacer(minLength: 8)
+                    // Outside the phase switch so its identity (and animatable progress) survives updates.
+                    SignalField(mode: signalMode)
+                        .frame(height: isIdle ? 96 : 64)
+                        .animation(.easeOut(duration: 0.4), value: workingProgress)
+                        .monoEntrance(0)
+                        .padding(.bottom, isIdle ? 28 : 12)
                     content
-                    Spacer(minLength: 0)
+                    if !isIdle { Spacer(minLength: 0) }
                 }
                 .padding(.horizontal, 24)
-                .padding(.vertical, 44)
+                .padding(.vertical, 16)
                 .padding(.bottom, showsPersistentBanner ? AdBannerSlot.height + 8 : 0)
+                .transition(phaseTransition)
             }
 
             if showsPersistentBanner {
                 AdBannerSlot()
-                    .background(.black.opacity(0.72))
+                    .background(Mono.C.bg)
+                    .overlay(alignment: .top) {
+                        Rectangle().fill(Mono.C.hairline).frame(height: 1)
+                    }
             }
         }
+        .animation(Mono.Motion.pick(Mono.Motion.smooth, reduce: reduceMotion), value: phaseKey)
+        .sensoryFeedback(.impact(weight: .medium), trigger: pickerItem) { _, new in new != nil }
+        .sensoryFeedback(.error, trigger: phaseKey) { _, new in new == 3 }
         .preferredColorScheme(.dark)
         .navigationBarTitleDisplayMode(.inline)
         .toolbarColorScheme(.dark, for: .navigationBar)
@@ -98,12 +109,7 @@ struct QuickSilenceView: View {
             ToolbarItemGroup(placement: .topBarTrailing) {
                 if isIdle && store.canOfferPro {
                     Button { showsPaywall = true } label: {
-                        Text("PRO")
-                            .font(.system(size: 13, weight: .heavy, design: .rounded))
-                            .foregroundStyle(.black)
-                            .padding(.horizontal, 12)
-                            .frame(height: 30)
-                            .background(qsAccent, in: Capsule())
+                        proCapsuleLabel
                             .frame(minWidth: 44, minHeight: 44)
                             .contentShape(Rectangle())
                     }
@@ -113,15 +119,7 @@ struct QuickSilenceView: View {
                 NavigationLink {
                     SettingsScreen(urlsInUse: session.urlsInUse)
                 } label: {
-                    Image(systemName: "gearshape.fill")
-                        .font(.system(size: 15, weight: .bold))
-                        .frame(width: 38, height: 38)
-                        .background(.white.opacity(0.1))
-                        .foregroundStyle(.white)
-                        .clipShape(Circle())
-                        .overlay(Circle().stroke(.white.opacity(0.14)))
-                        .frame(minWidth: 44, minHeight: 44)
-                        .contentShape(Rectangle())
+                    toolbarGlyph("gearshape")
                 }
                 .disabled(isWorking || exportTask != nil)
                 .accessibilityLabel(t("Ayarlar", "Settings"))
@@ -170,6 +168,55 @@ struct QuickSilenceView: View {
         }
     }
 
+    /// `Phase` is not Equatable; this drives phase animations and the failed haptic.
+    private var phaseKey: Int {
+        switch phase {
+        case .idle: 0
+        case .working: 1
+        case .review: 2
+        case .failed: 3
+        }
+    }
+
+    private var phaseTransition: AnyTransition {
+        reduceMotion ? .opacity : AnyTransition(.blurReplace)
+    }
+
+    private var workingProgress: Double {
+        if case .working(let state) = phase { return state.progress }
+        return 0
+    }
+
+    private var signalMode: SignalField.Mode {
+        switch phase {
+        case .idle, .review: .demo
+        case .working(let state): .scanning(progress: state.progress)
+        case .failed: .flat
+        }
+    }
+
+    private func toolbarGlyph(_ systemName: String) -> some View {
+        Image(systemName: systemName)
+            .font(.system(size: 17, weight: .medium))
+            .foregroundStyle(Mono.C.text)
+            .frame(width: 44, height: 44)
+            .contentShape(Rectangle())
+    }
+
+    @ViewBuilder
+    private var proCapsuleLabel: some View {
+        let text = Text("PRO").monoText(.overline).bold().foregroundStyle(Mono.C.text)
+        // iOS 26 already wraps toolbar items in a glass capsule; earlier versions need our own.
+        if #available(iOS 26.0, *) {
+            text
+        } else {
+            text
+                .padding(.horizontal, 10)
+                .frame(height: 26)
+                .overlay(Capsule().strokeBorder(Mono.C.strong, lineWidth: 1))
+        }
+    }
+
     private var privacyOptionsToolbarButton: some View {
         Button {
             Task {
@@ -177,90 +224,116 @@ struct QuickSilenceView: View {
                 privacyOptionsRequired = AdMobService.isPrivacyOptionsRequired
             }
         } label: {
-            Image(systemName: "hand.raised.fill")
-                .font(.system(size: 15, weight: .bold))
-                .frame(width: 38, height: 38)
-                .background(.white.opacity(0.1))
-                .foregroundStyle(.white)
-                .clipShape(Circle())
-                .overlay(Circle().stroke(.white.opacity(0.14)))
-                .frame(minWidth: 44, minHeight: 44)
-                .contentShape(Rectangle())
+            toolbarGlyph("hand.raised")
         }
         .accessibilityLabel(t("Gizlilik seçenekleri", "Privacy options"))
-    }
-
-    private var header: some View {
-        VStack(spacing: 8) {
-            Image(systemName: "scissors")
-                .font(.system(size: 30, weight: .semibold))
-                .foregroundStyle(.white)
-            Text(t("Sessizlik Kes", "Cut Silence"))
-                .font(.system(size: 30, weight: .bold, design: .rounded))
-                .foregroundStyle(.white)
-            Text(t("Videondaki sessizlikleri ve duraklamaları otomatik kes.", "Automatically remove silence and long pauses from your video."))
-                .font(.subheadline)
-                .multilineTextAlignment(.center)
-                .foregroundStyle(.white.opacity(0.6))
-        }
     }
 
     @ViewBuilder
     private var content: some View {
         switch phase {
         case .idle, .review:
-            VStack(spacing: 16) {
-                let chooseVideoTitle = t("Video Seç", "Choose Video")
-                PhotosPicker(selection: $pickerItem, matching: .videos, photoLibrary: .shared()) {
-                    Label(chooseVideoTitle, systemImage: "photo.on.rectangle.angled")
-                        .frame(maxWidth: .infinity)
-                }
-                .accessibilityIdentifier("chooseVideoButton")
-                .buttonStyle(QSPrimary())
-
-                Text(t("Ücretsiz · Filigransız · Cihazda", "Free · No watermark · On-device"))
-                    .font(.footnote.weight(.semibold))
-                    .foregroundStyle(qsAccent.opacity(0.9))
-
-                CutIntensityPicker(selection: $cutIntensity, language: appLanguage, hint: nil)
-                    .padding(.top, 8)
-            }
+            home
+                .transition(phaseTransition)
 
         case .working(let state):
-            VStack(spacing: 18) {
-                VStack(spacing: 10) {
-                    ProgressView(value: state.progress)
-                        .tint(qsAccent)
-                        .frame(maxWidth: 280)
-                    Text(state.title)
-                        .font(.system(.headline, design: .rounded).weight(.bold))
-                        .foregroundStyle(.white)
+            VStack(spacing: 0) {
+                VStack(spacing: 4) {
                     Text("\(Int(state.progress * 100))%")
-                        .font(.system(.title3, design: .rounded).weight(.semibold))
-                        .monospacedDigit()
-                        .foregroundStyle(.white)
+                        .monoText(.numeralXL)
+                        .foregroundStyle(Mono.C.text)
+                        .contentTransition(.numericText(value: state.progress))
+                        .animation(Mono.Motion.pick(Mono.Motion.smooth, reduce: reduceMotion), value: state.progress)
+                    Text(state.title)
+                        .monoText(.headline)
+                        .foregroundStyle(Mono.C.text2)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.8)
                 }
+                .accessibilityElement(children: .ignore)
+                .accessibilityLabel(state.title)
+                .accessibilityValue("\(Int(state.progress * 100))%")
+                .accessibilityAddTraits(.updatesFrequently)
+                .padding(.bottom, 12)
 
-                Button {
+                Button(t("İptal", "Cancel")) {
                     cancelActiveWork(returnToIdle: true)
-                } label: {
-                    Label(t("İptal", "Cancel"), systemImage: "xmark.circle.fill")
-                        .frame(maxWidth: .infinity)
                 }
-                .buttonStyle(QSSecondary())
+                .buttonStyle(MonoTertiaryButtonStyle())
+                .padding(.bottom, 16)
 
                 // Below Cancel so a late-loading ad never shifts the button.
                 if AdMobService.isEnabled && !store.isPro && !AdFreePass.isActive {
                     NativeAdCard()
                 }
             }
+            .frame(maxWidth: .infinity)
+            .transition(phaseTransition)
 
         case .failed(let message):
-            VStack(spacing: 18) {
-                Image(systemName: "exclamationmark.triangle.fill").font(.largeTitle).foregroundStyle(.orange)
-                Text(message).font(.callout).multilineTextAlignment(.center).foregroundStyle(.white.opacity(0.8))
-                Button(t("Tekrar Dene", "Try Again")) { reset() }.buttonStyle(QSPrimary())
+            VStack(spacing: 0) {
+                Text(t("Bu video işlenemedi", "This video couldn't be processed"))
+                    .monoText(.title)
+                    .foregroundStyle(Mono.C.text)
+                    .multilineTextAlignment(.center)
+                    .padding(.bottom, 8)
+                Text(message)
+                    .monoText(.body)
+                    .foregroundStyle(Mono.C.text2)
+                    .multilineTextAlignment(.center)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .padding(.bottom, 32)
+                Button { reset() } label: {
+                    MonoActionLabel(t("Tekrar Dene", "Try Again"), systemImage: "arrow.clockwise")
+                }
+                .buttonStyle(MonoPrimaryButtonStyle())
             }
+            .frame(maxWidth: .infinity)
+            .transition(phaseTransition)
+        }
+    }
+
+    /// A Group, so its parts become siblings of the hero and the two Spacers split the free height.
+    private var home: some View {
+        Group {
+            VStack(alignment: .leading, spacing: 0) {
+                Text("CutSense")
+                    .monoText(.overline)
+                    .foregroundStyle(Mono.C.text3)
+                    .padding(.bottom, 8)
+                    .monoEntrance(1)
+                Text(t("Sessizlik Kes", "Cut Silence"))
+                    .monoText(.display)
+                    .foregroundStyle(Mono.C.text)
+                    .padding(.bottom, 8)
+                    .monoEntrance(2)
+                Text(t("Videondaki sessizlikleri ve duraklamaları otomatik kes.", "Automatically remove silence and long pauses from your video."))
+                    .monoText(.body)
+                    .foregroundStyle(Mono.C.text2)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .monoEntrance(3)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+
+            Spacer(minLength: 24)
+
+            MonoIntensityControl(selection: $cutIntensity, language: appLanguage, hint: nil)
+                .padding(.bottom, 16)
+                .monoEntrance(4)
+
+            VStack(spacing: 12) {
+                PhotosPicker(selection: $pickerItem, matching: .videos, photoLibrary: .shared()) {
+                    MonoActionLabel(t("Video Seç", "Choose Video"), systemImage: "plus")
+                }
+                .buttonStyle(MonoPrimaryButtonStyle())
+                .accessibilityIdentifier("chooseVideoButton")
+
+                Text(t("Ücretsiz · Filigransız · Cihazda", "Free · No watermark · On-device"))
+                    .monoText(.overline)
+                    .foregroundStyle(Mono.C.text3)
+                    .frame(maxWidth: .infinity)
+            }
+            .monoEntrance(5)
         }
     }
 
@@ -302,10 +375,10 @@ struct QuickSilenceView: View {
                     } : nil
                 )
                 .padding(8)
-                .transition(.opacity)
+                .transition(reduceMotion ? .opacity : .move(edge: .top).combined(with: .opacity))
             }
         }
-        .animation(.easeInOut(duration: 0.22), value: processingAdOverlay)
+        .animation(Mono.Motion.pick(Mono.Motion.smooth, reduce: reduceMotion), value: processingAdOverlay)
     }
 
     // MARK: - Pick, import, analyze
@@ -718,72 +791,100 @@ private struct ProcessingAdCountdownView: View {
     let onSkip: () -> Void
     /// Set only while Pro can be offered.
     let onRemoveAds: (() -> Void)?
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var thanksBounce = 0
 
     var body: some View {
-        VStack(spacing: 10) {
-            HStack(spacing: 14) {
-                ZStack {
-                    Circle()
-                        .fill(.white.opacity(0.12))
-                        .frame(width: 58, height: 58)
-
-                    if let countdown = state.countdown, countdown > 0 {
-                        Text("\(countdown)")
-                            .font(.system(size: 28, weight: .black, design: .rounded))
-                            .foregroundStyle(.white)
-                    } else if state.isOpening {
-                        ProgressView()
-                            .tint(.white)
-                    } else {
-                        Image(systemName: "play.rectangle.fill")
-                            .font(.system(size: 22, weight: .bold))
-                            .foregroundStyle(.white)
-                    }
-                }
+        VStack(spacing: 12) {
+            HStack(spacing: 12) {
+                ring
 
                 VStack(alignment: .leading, spacing: 4) {
                     Text(appText(language, "Reklam arası", "Ad break"))
-                        .font(.system(size: 14, weight: .heavy, design: .rounded))
-                        .foregroundStyle(.white)
+                        .monoText(.overline)
+                        .foregroundStyle(Mono.C.text)
                     Text(state.status)
-                        .font(.caption)
-                        .foregroundStyle(.white.opacity(0.65))
+                        .monoText(.caption)
+                        .foregroundStyle(Mono.C.text2)
                         .fixedSize(horizontal: false, vertical: true)
                 }
                 Spacer(minLength: 0)
                 if state.canSkip {
                     Button(action: onSkip) {
+                        // Visual 36 pt capsule inside a 44 pt hit area.
                         Text(appText(language, "Atla", "Skip"))
-                            .font(.system(size: 12, weight: .heavy, design: .rounded))
+                            .font(.system(size: 15, weight: .semibold))
                             .lineLimit(1)
                             .fixedSize()
-                            .foregroundStyle(.white)
-                            .padding(.horizontal, 12)
-                            .padding(.vertical, 8)
-                            .background(.white.opacity(0.12))
-                            .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+                            .foregroundStyle(Mono.C.text)
+                            .padding(.horizontal, 16)
+                            .frame(height: 36)
+                            .background(Capsule().fill(Mono.C.elevated))
+                            .overlay(Capsule().strokeBorder(Mono.C.hairline, lineWidth: 1))
                             .frame(minWidth: 44, minHeight: 44)
                             .contentShape(Rectangle())
                     }
+                    .buttonStyle(.plain)
                     .accessibilityIdentifier("skipAdButton")
                 }
             }
             if state.canSkip, let onRemoveAds {
                 Button(action: onRemoveAds) {
                     Text(appText(language, "Reklamları kalıcı kaldır", "Remove ads forever"))
-                        .font(.system(size: 13, weight: .heavy, design: .rounded))
+                        .font(.system(size: 15, weight: .semibold))
                         .foregroundStyle(.black)
                         .frame(maxWidth: .infinity, minHeight: 44)
-                        .background(qsAccent, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
-                        .contentShape(Rectangle())
+                        .background(Capsule().fill(Mono.C.text))
+                        .contentShape(Capsule())
                 }
+                .buttonStyle(.plain)
             }
         }
-        .padding(14)
+        .padding(16)
         .frame(maxWidth: .infinity)
-        .background(Color(red: 0.08, green: 0.09, blue: 0.11).opacity(0.96))
-        .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: 8, style: .continuous).stroke(.white.opacity(0.12)))
+        .background(Mono.C.raised.opacity(0.97), in: RoundedRectangle(cornerRadius: Mono.Radius.card, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: Mono.Radius.card, style: .continuous).strokeBorder(Mono.C.hairline, lineWidth: 1))
+    }
+
+    private var ring: some View {
+        ZStack {
+            Circle().strokeBorder(Mono.C.hairline, lineWidth: 2)
+            if let countdown = state.countdown, countdown > 0 {
+                // Re-keyed per tick so each second drains a fresh ring.
+                CountdownTrim(animated: !reduceMotion).id(countdown)
+                Text("\(countdown)")
+                    .monoText(.numeralM)
+                    .foregroundStyle(Mono.C.text)
+                    .contentTransition(.numericText(countsDown: true))
+            } else if state.isOpening {
+                ProgressView().tint(Mono.C.text)
+            } else {
+                Image(systemName: "checkmark")
+                    .font(.system(size: 18, weight: .semibold))
+                    .foregroundStyle(Mono.C.text)
+                    .symbolEffect(.bounce, value: thanksBounce)
+                    .onAppear { if !reduceMotion { thanksBounce += 1 } }
+            }
+        }
+        .frame(width: 48, height: 48)
+        .accessibilityHidden(state.countdown == nil)
+    }
+
+    private struct CountdownTrim: View {
+        let animated: Bool
+        @State private var remaining: CGFloat = 1
+
+        var body: some View {
+            Circle()
+                .inset(by: 1)
+                .trim(from: 0, to: remaining)
+                .stroke(Mono.C.text, style: StrokeStyle(lineWidth: 2, lineCap: .round))
+                .rotationEffect(.degrees(-90))
+                .onAppear {
+                    guard animated else { return }
+                    withAnimation(.linear(duration: 1)) { remaining = 0 }
+                }
+        }
     }
 }
 
