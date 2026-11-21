@@ -2,11 +2,12 @@ import XCTest
 
 /// End-to-end flows meant for a real iPhone (run with -destination id=<device>).
 /// Env passed through TEST_RUNNER_* is forwarded to the app via launchEnvironment.
+@MainActor
 final class DeviceFlowUITests: XCTestCase {
     private var app: XCUIApplication!
     private let springboard = XCUIApplication(bundleIdentifier: "com.apple.springboard")
 
-    override func setUp() {
+    override func setUp() async throws {
         continueAfterFailure = false
         app = XCUIApplication()
         app.launchArguments += ["-app_language", "en", "-AppleLanguages", "(en)"]
@@ -35,10 +36,12 @@ final class DeviceFlowUITests: XCTestCase {
         let choose = app.buttons["chooseVideoButton"]
         XCTAssertTrue(choose.waitForExistence(timeout: 15))
         choose.tap()
-        let firstVideo = app.images.firstMatch
-        XCTAssertTrue(firstVideo.waitForExistence(timeout: 20), "Photos picker did not show any item")
+        let cells = app.images.matching(identifier: "PXGGridLayout-Info")
+        XCTAssertTrue(cells.firstMatch.waitForExistence(timeout: 20), "Photos picker did not show any item")
         snapshot("picker")
-        firstVideo.tap()
+        // Prefer the owner's minutes-long clip (picker labels follow the system language).
+        let longVideo = cells.matching(NSPredicate(format: "label CONTAINS 'dakika' OR label CONTAINS[c] 'minute'")).firstMatch
+        (longVideo.exists ? longVideo : cells.firstMatch).tap()
         try reviewRestoreSave()
     }
 
@@ -64,9 +67,10 @@ final class DeviceFlowUITests: XCTestCase {
         XCTAssertTrue(reviewCuts.waitForExistence(timeout: 10))
         let lengthBefore = newLengthText()
         reviewCuts.tap()
-        let toggle = app.descendants(matching: .any).matching(NSPredicate(format: "identifier BEGINSWITH 'cutToggle_'")).firstMatch
+        let toggle = app.switches.firstMatch
         XCTAssertTrue(toggle.waitForExistence(timeout: 10))
-        toggle.tap()
+        // Tap the knob side; a centered tap on a labeled SwiftUI toggle can land on the label.
+        toggle.coordinate(withNormalizedOffset: CGVector(dx: 0.92, dy: 0.5)).tap()
         snapshot("cut-sheet")
         app.swipeDown(velocity: .fast)
         if reviewCuts.waitForExistence(timeout: 2), !save.isHittable { app.swipeDown(velocity: .fast) }
