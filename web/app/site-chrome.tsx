@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { landingPages } from "./landing-data";
 import { LanguageToggle, useLanguage } from "./language-context";
 
 export function SiteNav() {
@@ -48,6 +49,13 @@ export function SiteFooter() {
         <Link href="/terms">{t("Kullanım Şartları", "Terms of Service")}</Link>
         <Link href="/support">{t("Destek", "Support")}</Link>
         <a href="mailto:info@vibecodingturkey.com">{t("İletişim", "Contact")}</a>
+      </div>
+      <div className="footer-links footer-guides" aria-label="Guides">
+        {landingPages.map((p) => (
+          <Link key={p.path} href={p.path} hrefLang={p.locale}>
+            {p.h1}
+          </Link>
+        ))}
       </div>
     </footer>
   );
