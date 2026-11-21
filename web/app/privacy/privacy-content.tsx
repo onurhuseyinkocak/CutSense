@@ -48,8 +48,8 @@ export function PrivacyContent() {
       title: t("Cihazında saklanan ayarlar", "Settings stored on your device"),
       body: [
         t(
-          "CutSense birkaç küçük ayarı yalnızca cihazında saklar: seçtiğin dil, Pro'nun açık olup olmadığı, reklamsız süre bitiş zamanı, teklif zamanlayıcıları ve kaydettiğin video sayısı, tanıtım ve değerlendirme isteğinin gösterilip gösterilmediği. Bunlar bize gönderilmez. Uygulamayı silince hepsi silinir.",
-          "CutSense keeps a few small settings only on your device: your chosen language, whether Pro is unlocked, when an ad-free period ends, offer timers and how many videos you have saved, and whether the intro and the rating prompt were shown. They are not sent to us. Deleting the app deletes them.",
+          "CutSense birkaç küçük ayarı yalnızca cihazında saklar: seçtiğin dil, Pro'nun açık olup olmadığı, reklamsız süre bitiş zamanı, teklif zamanlayıcıları ve kaydettiğin video sayısı, tanıtım ve değerlendirme isteğinin gösterilip gösterilmediği. Ayrıca Fotoğraflar'a kaydettiğin videolar için küçük bir önizleme karesi ve sayıları (tarih, eski ve yeni süre, kesim oranı) Geçmiş ekranında tutulur; videonun kendisi saklanmaz. Bunlar iCloud yedeğine girmez ve bize gönderilmez. Uygulamayı silince hepsi silinir.",
+          "CutSense keeps a few small settings only on your device: your chosen language, whether Pro is unlocked, when an ad-free period ends, offer timers and how many videos you have saved, and whether the intro and the rating prompt were shown. For videos you save to Photos, the History screen also keeps a small preview frame and the numbers (date, original and new length, how much was cut); the video itself is not stored. None of this goes into iCloud backups or is sent to us. Deleting the app deletes them.",
         ),
       ],
     },
@@ -131,8 +131,8 @@ export function PrivacyContent() {
       title: t("Saklama ve silme", "Retention and deletion"),
       body: [
         t(
-          "Geçici video kopyaları iş bitince ve bir sonraki açılışta silinir. Cihazdaki ayarlar uygulamayı silene kadar kalır. E-postalar talebin çözülene kadar saklanır. Google reklam verilerini kendi saklama politikasına göre tutar: policies.google.com/technologies/retention.",
-          "Temporary video copies are deleted when the job ends and at the next launch. On-device settings remain until you delete the app. Emails are kept until your request is resolved. Google keeps advertising data according to its own retention policy: policies.google.com/technologies/retention.",
+          "Geçici video kopyaları iş bitince ve bir sonraki açılışta silinir. Cihazdaki ayarlar uygulamayı silene kadar kalır. Geçmiş en fazla 200 kayıt tutar; tek tek ya da Ayarlar > Geçmişi temizle ile hepsini silebilirsin. E-postalar talebin çözülene kadar saklanır. Google reklam verilerini kendi saklama politikasına göre tutar: policies.google.com/technologies/retention.",
+          "Temporary video copies are deleted when the job ends and at the next launch. On-device settings remain until you delete the app. History keeps at most 200 entries; you can delete them one by one or all at once in Settings > Clear history. Emails are kept until your request is resolved. Google keeps advertising data according to its own retention policy: policies.google.com/technologies/retention.",
         ),
       ],
     },
