@@ -9,9 +9,11 @@
 /* Begin PBXBuildFile section */
 		0238F25AF2FC0F9DE078FCA7 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = AB3F4CFE6EB7DA53D3C755D3 /* PrivacyInfo.xcprivacy */; };
 		026D1DA0672C345D35A0426D /* LanguageSwitcher.swift in Sources */ = {isa = PBXBuildFile; fileRef = C04A9212E7DD2001C8957A41 /* LanguageSwitcher.swift */; };
+		0A0E183623B591F89AAA3C93 /* Products.storekit in Resources */ = {isa = PBXBuildFile; fileRef = 615984865BA5FA389EB8226B /* Products.storekit */; };
 		195F33A7FFACCD0C40D88646 /* Products.storekit in Resources */ = {isa = PBXBuildFile; fileRef = 615984865BA5FA389EB8226B /* Products.storekit */; };
 		26E48D862C02A3CACFCC666D /* AudioAnalysisService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 66C373ACE0E41C68BEC62183 /* AudioAnalysisService.swift */; };
 		2D2228652CDBCD23D0A1A2AA /* AdMobIDs.swift in Sources */ = {isa = PBXBuildFile; fileRef = 90FCDC4392123011833F3ADC /* AdMobIDs.swift */; };
+		41D3F7BC6A3962213750C9DA /* ProStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A29D62925185EF25613EC49B /* ProStoreTests.swift */; };
 		4D98206A34DA299213C53E86 /* QuickSilenceApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3E3BFDA791131FEC48D257D4 /* QuickSilenceApp.swift */; };
 		4F679B0A91607C40888C1D6B /* NativeAdCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5B25D226E27756B8668579FF /* NativeAdCard.swift */; };
 		50748F442AEF77CC4220228B /* silence_fixture.mp4 in Resources */ = {isa = PBXBuildFile; fileRef = 66419CEE6970408DD0364682 /* silence_fixture.mp4 */; };
@@ -21,8 +23,13 @@
 		888EE52AA670A80854D14A24 /* AppLanguage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2B4C7785DDFE37A3C7288498 /* AppLanguage.swift */; };
 		99128F340EED2CAADD304369 /* GoogleMobileAds in Frameworks */ = {isa = PBXBuildFile; productRef = 4761CA77849DAE470AA8FC20 /* GoogleMobileAds */; };
 		A27C5761649779A1BCE3B638 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = C568ED16C5A5569D901E936F /* Assets.xcassets */; };
+		AF36EB525821348164F48197 /* PaywallView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 540A6003B72CEFEAB224B81E /* PaywallView.swift */; };
+		CD22B3E9047CE97BC252EAA0 /* QuickSilencePlanTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B489C5F2177971DC7A3350E6 /* QuickSilencePlanTests.swift */; };
 		CDF0ACC03AF3EDCFA64C3D94 /* QuickSilenceView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E58D84C896EEF6326B68D129 /* QuickSilenceView.swift */; };
+		CE75044298708EE413E5FC2D /* WorkFilesTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2AE1516E17CA740B67BCC3DC /* WorkFilesTests.swift */; };
 		D2BD8EF815D8FB6530381BE4 /* VideoImportService.swift in Sources */ = {isa = PBXBuildFile; fileRef = C62FC1631B126EE52AC1C53B /* VideoImportService.swift */; };
+		ED4D21C239CACAD8D6D15CD5 /* ProStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 76D307ED363DB96DE47A88D7 /* ProStore.swift */; };
+		EDA7F2C44BE660D743112F3C /* WorkFiles.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37CA1075A0AAFD9751456F3A /* WorkFiles.swift */; };
 		F2FAAC8BD865412DB715DC8B /* QuickSilenceEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB97188D8E41E8EDA18FFC31 /* QuickSilenceEngine.swift */; };
 		FCC3A11D6F78C346121A111C /* AdMobService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D9ADDEE72E898A7542A3E28 /* AdMobService.swift */; };
 /* End PBXBuildFile section */
@@ -40,16 +47,22 @@
 /* Begin PBXFileReference section */
 		1D9ADDEE72E898A7542A3E28 /* AdMobService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdMobService.swift; sourceTree = "<group>"; };
 		28901B74846173D20088B4D4 /* SettingsScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsScreen.swift; sourceTree = "<group>"; };
+		2AE1516E17CA740B67BCC3DC /* WorkFilesTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkFilesTests.swift; sourceTree = "<group>"; };
 		2B4C7785DDFE37A3C7288498 /* AppLanguage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppLanguage.swift; sourceTree = "<group>"; };
+		37CA1075A0AAFD9751456F3A /* WorkFiles.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkFiles.swift; sourceTree = "<group>"; };
 		3E3BFDA791131FEC48D257D4 /* QuickSilenceApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuickSilenceApp.swift; sourceTree = "<group>"; };
+		540A6003B72CEFEAB224B81E /* PaywallView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaywallView.swift; sourceTree = "<group>"; };
 		5B25D226E27756B8668579FF /* NativeAdCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativeAdCard.swift; sourceTree = "<group>"; };
 		615984865BA5FA389EB8226B /* Products.storekit */ = {isa = PBXFileReference; path = Products.storekit; sourceTree = "<group>"; };
 		66419CEE6970408DD0364682 /* silence_fixture.mp4 */ = {isa = PBXFileReference; path = silence_fixture.mp4; sourceTree = "<group>"; };
 		66C373ACE0E41C68BEC62183 /* AudioAnalysisService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioAnalysisService.swift; sourceTree = "<group>"; };
+		76D307ED363DB96DE47A88D7 /* ProStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProStore.swift; sourceTree = "<group>"; };
 		8A0F74EC6E72BFA26270CD11 /* QuickSilenceReleaseTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuickSilenceReleaseTests.swift; sourceTree = "<group>"; };
 		8CE7C67F669CC7C139D97E42 /* CutSenseTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = CutSenseTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		90FCDC4392123011833F3ADC /* AdMobIDs.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdMobIDs.swift; sourceTree = "<group>"; };
+		A29D62925185EF25613EC49B /* ProStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProStoreTests.swift; sourceTree = "<group>"; };
 		AB3F4CFE6EB7DA53D3C755D3 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
+		B489C5F2177971DC7A3350E6 /* QuickSilencePlanTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuickSilencePlanTests.swift; sourceTree = "<group>"; };
 		B9A4ECAEAEB959B791A3372C /* CutSense.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = CutSense.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		C04A9212E7DD2001C8957A41 /* LanguageSwitcher.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LanguageSwitcher.swift; sourceTree = "<group>"; };
 		C568ED16C5A5569D901E936F /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
@@ -111,8 +124,11 @@
 		5A39D3BCEFF3DA443E3968C3 /* Release */ = {
 			isa = PBXGroup;
 			children = (
+				A29D62925185EF25613EC49B /* ProStoreTests.swift */,
+				B489C5F2177971DC7A3350E6 /* QuickSilencePlanTests.swift */,
 				8A0F74EC6E72BFA26270CD11 /* QuickSilenceReleaseTests.swift */,
 				66419CEE6970408DD0364682 /* silence_fixture.mp4 */,
+				2AE1516E17CA740B67BCC3DC /* WorkFilesTests.swift */,
 			);
 			path = Release;
 			sourceTree = "<group>";
@@ -133,6 +149,14 @@
 				8CE7C67F669CC7C139D97E42 /* CutSenseTests.xctest */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		90FC386ABC0727C85E48A2B7 /* Storage */ = {
+			isa = PBXGroup;
+			children = (
+				37CA1075A0AAFD9751456F3A /* WorkFiles.swift */,
+			);
+			path = Storage;
 			sourceTree = "<group>";
 		};
 		B13EE0F1465544ABDE683A92 /* Services */ = {
@@ -160,6 +184,7 @@
 				EAB2D8C08839F9CF71950CCF /* Resources */,
 				4003C4E064D905B994EE3F12 /* RoughCut */,
 				B13EE0F1465544ABDE683A92 /* Services */,
+				90FC386ABC0727C85E48A2B7 /* Storage */,
 				D505E2BC1266530AD3BF7987 /* Tests */,
 				6AF1FF056AF9A1586A4A5EDA /* UI */,
 				3191EC79147EC13BA7639368 /* Video */,
@@ -178,7 +203,9 @@
 		DA164BADCE5E54557F0D0408 /* Pro */ = {
 			isa = PBXGroup;
 			children = (
+				540A6003B72CEFEAB224B81E /* PaywallView.swift */,
 				615984865BA5FA389EB8226B /* Products.storekit */,
+				76D307ED363DB96DE47A88D7 /* ProStore.swift */,
 			);
 			path = Pro;
 			sourceTree = "<group>";
@@ -292,6 +319,7 @@
 			files = (
 				A27C5761649779A1BCE3B638 /* Assets.xcassets in Resources */,
 				0238F25AF2FC0F9DE078FCA7 /* PrivacyInfo.xcprivacy in Resources */,
+				0A0E183623B591F89AAA3C93 /* Products.storekit in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -308,12 +336,15 @@
 				26E48D862C02A3CACFCC666D /* AudioAnalysisService.swift in Sources */,
 				026D1DA0672C345D35A0426D /* LanguageSwitcher.swift in Sources */,
 				4F679B0A91607C40888C1D6B /* NativeAdCard.swift in Sources */,
+				AF36EB525821348164F48197 /* PaywallView.swift in Sources */,
 				5C2F30243E7024441DEC15CD /* PhotosSaveService.swift in Sources */,
+				ED4D21C239CACAD8D6D15CD5 /* ProStore.swift in Sources */,
 				4D98206A34DA299213C53E86 /* QuickSilenceApp.swift in Sources */,
 				F2FAAC8BD865412DB715DC8B /* QuickSilenceEngine.swift in Sources */,
 				CDF0ACC03AF3EDCFA64C3D94 /* QuickSilenceView.swift in Sources */,
 				7A1D7311FD27448ECE00BB6D /* SettingsScreen.swift in Sources */,
 				D2BD8EF815D8FB6530381BE4 /* VideoImportService.swift in Sources */,
+				EDA7F2C44BE660D743112F3C /* WorkFiles.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -321,7 +352,10 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				41D3F7BC6A3962213750C9DA /* ProStoreTests.swift in Sources */,
+				CD22B3E9047CE97BC252EAA0 /* QuickSilencePlanTests.swift in Sources */,
 				55D6C5D1E8CC4A9EE8904A9A /* QuickSilenceReleaseTests.swift in Sources */,
+				CE75044298708EE413E5FC2D /* WorkFilesTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

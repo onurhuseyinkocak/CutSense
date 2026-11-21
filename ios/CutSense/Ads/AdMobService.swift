@@ -32,6 +32,7 @@ enum AdMobService {
     static var isEnabled: Bool {
         ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] == nil
             && ProcessInfo.processInfo.environment["CUTSENSE_DISABLE_ADS"] != "1"
+            && !ProEntitlement.isPro
     }
 
     static func start() {

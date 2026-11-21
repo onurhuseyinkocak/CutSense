@@ -29,7 +29,7 @@ fi
 echo -n "2. Build... "
 if xcodebuild build \
     -scheme CutSense \
-    -destination 'platform=iOS Simulator,name=iPhone 17 Pro Max' \
+    -destination 'platform=iOS Simulator,id=3C9044C5-36C3-4899-BAEB-6A9563BB790E' \
     -quiet 2>/dev/null; then
     echo -e "${GREEN}OK${NC}"
 else
@@ -41,7 +41,7 @@ fi
 echo -n "3. Tests... "
 if xcodebuild test \
     -scheme CutSense \
-    -destination 'platform=iOS Simulator,name=iPhone 17 Pro Max' \
+    -destination 'platform=iOS Simulator,id=3C9044C5-36C3-4899-BAEB-6A9563BB790E' \
     -only-testing:CutSenseTests \
     -quiet 2>/dev/null; then
     echo -e "${GREEN}OK${NC}"

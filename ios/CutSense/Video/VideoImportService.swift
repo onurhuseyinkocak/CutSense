@@ -9,22 +9,26 @@ import AVFoundation
 final class VideoImportService {
     private(set) var importedVideoURL: URL?
     private(set) var isImporting = false
-    private(set) var errorMessage: String?
+    private(set) var error: ImportError?
+    // shortcut: compat shim until QuickSilenceView moves to error.message(for:)
+    var errorMessage: String? {
+        error?.message(for: AppLanguage.value(from: UserDefaults.standard.string(forKey: AppLanguage.storageKey) ?? ""))
+    }
     /// 0...1 while Photos is downloading the file, -1 when unknown.
     private(set) var downloadProgress: Double = -1
 
     private var loadProgress: Progress?
 
-    enum ImportError: LocalizedError {
+    enum ImportError: Error {
         case loadFailed
         case noVideo
         case missingAudio
 
-        var errorDescription: String? {
+        func message(for language: AppLanguage) -> String {
             switch self {
-            case .loadFailed: "Video yüklenemedi. Lütfen farklı bir dosya deneyin."
-            case .noVideo: "Bu dosyada video bulunamadı."
-            case .missingAudio: "Bu videoda ses bulunamadı. Konuşma içeren bir video seç."
+            case .loadFailed: appText(language, "Video yüklenemedi. Lütfen farklı bir dosya deneyin.", "The video could not be loaded. Try a different file.")
+            case .noVideo: appText(language, "Bu dosyada video bulunamadı.", "No video was found in this file.")
+            case .missingAudio: appText(language, "Bu videoda ses bulunamadı. Konuşma içeren bir video seç.", "This video has no audio. Choose a video with speech.")
             }
         }
     }
@@ -35,9 +39,8 @@ final class VideoImportService {
         cancelImport()
         let token = UUID()
         importToken = token
-        if let previous = importedVideoURL { try? FileManager.default.removeItem(at: previous) }
-        importedVideoURL = nil
-        errorMessage = nil
+        discardImport()
+        error = nil
         downloadProgress = -1
         isImporting = true
         defer {
@@ -61,13 +64,19 @@ final class VideoImportService {
             guard importToken == token, !Task.isCancelled else { throw CancellationError() }
             importedVideoURL = movie.url
         } catch {
-            if let copiedURL { try? FileManager.default.removeItem(at: copiedURL) }
+            WorkFiles.delete(copiedURL)
             guard importToken == token, !(error is CancellationError) else { return }
             #if DEBUG
             print("[VideoImport] failed: \(error)")
             #endif
-            errorMessage = (error as? ImportError)?.errorDescription ?? ImportError.loadFailed.errorDescription
+            self.error = (error as? ImportError) ?? .loadFailed
         }
+    }
+
+    /// Deletes the imported copy (managed files only) and forgets it.
+    func discardImport() {
+        WorkFiles.delete(importedVideoURL)
+        importedVideoURL = nil
     }
 
     func cancelImport() {
@@ -110,11 +119,13 @@ struct VideoTransferable: Transferable, Sendable {
         FileRepresentation(contentType: .movie) { movie in
             SentTransferredFile(movie.url)
         } importing: { received in
-            let dir = URL.cachesDirectory.appending(path: "CutSense/imports", directoryHint: .isDirectory)
+            let dir = WorkFiles.importsDirectory
             try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
             let ext = received.file.pathExtension.isEmpty ? "mov" : received.file.pathExtension
             let destination = dir.appending(path: "\(UUID().uuidString).\(ext)")
-            try FileManager.default.copyItem(at: received.file, to: destination)
+            // Move first: copying would briefly double a multi-GB file on disk.
+            do { try FileManager.default.moveItem(at: received.file, to: destination) }
+            catch { try FileManager.default.copyItem(at: received.file, to: destination) }
             return Self(url: destination)
         }
     }

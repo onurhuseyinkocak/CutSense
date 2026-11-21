@@ -143,22 +143,70 @@ enum QuickSilenceEngine {
         }
     }
 
-    static func cut(
+    /// Per-intensity knobs for `plan`. `minCutLength` folds the old `merged(gap:)` pass in,
+    /// so every listed cut is one that is really removed.
+    struct CutSettings: Sendable, Equatable {
+        var minSilence: Double
+        var pad: Double
+        var minCutLength: Double
+        var thresholdFallbackDB: Float
+
+        init(_ intensity: CutIntensity) {
+            minSilence = intensity.analysisOptions.minSilenceDuration
+            pad = intensity.padSeconds
+            minCutLength = max(intensity.finalMinimumRemovedGap, intensity.mergeGap)
+            thresholdFallbackDB = intensity.analysisOptions.silenceThresholdDB
+        }
+    }
+
+    /// Intensity-independent audio scan; re-planning with new settings needs no new scan.
+    struct Analysis: Sendable {
+        let windowRMS: [Float]
+        let duration: Double
+    }
+
+    struct Cut: Identifiable, Sendable, Equatable {
+        let id: Int
+        let range: ClosedRange<Double>
+        var isRestored: Bool
+    }
+
+    struct CutPlan: Sendable, Equatable {
+        let duration: Double
+        var cuts: [Cut]
+
+        private var activeCuts: [ClosedRange<Double>] { cuts.filter { !$0.isRestored }.map(\.range) }
+
+        var keepRanges: [ClosedRange<Double>] { QuickSilenceEngine.keepRanges(silence: activeCuts, duration: duration) }
+
+        var outputDuration: Double { keepRanges.reduce(0) { $0 + $1.upperBound - $1.lowerBound } }
+
+        var removedPercent: Int {
+            guard duration > 0 else { return 0 }
+            return Int(((duration - outputDuration) / duration * 100).rounded())
+        }
+
+        /// Where original time `t` lands in the cut output; a time inside a removed cut maps to the jump point.
+        func outputTime(forOriginal t: Double) -> Double {
+            let removedBefore = activeCuts.reduce(0) { sum, cut in
+                sum + max(0, min(t, cut.upperBound) - cut.lowerBound)
+            }
+            return min(max(t, 0), duration) - removedBefore
+        }
+    }
+
+    static func analyze(
         url: URL,
-        intensity: CutIntensity = .tight,
-        language: AppLanguage = .tr,
+        language: AppLanguage,
         progress: @escaping @MainActor (ProgressUpdate) -> Void
-    ) async throws -> Result {
+    ) async throws -> Analysis {
         await progress(.update(
             .analyzingAudio,
             0.08,
             appText(language, "Ses haritası çıkarılıyor", "Mapping audio"),
             appText(language, "Konuşma ve sessizlik pencereleri cihaz üstünde taranıyor.", "Speech and silence windows are scanned on device.")
         ))
-        let analysis = try await AudioAnalysisService.analyze(
-            url: url,
-            options: intensity.analysisOptions
-        ) { processedSeconds, duration in
+        let result = try await AudioAnalysisService.analyze(url: url) { processedSeconds, duration in
             let audioFraction = duration > 0 ? min(max(processedSeconds / duration, 0), 1) : 0
             Task { @MainActor in
                 progress(.update(
@@ -173,39 +221,63 @@ enum QuickSilenceEngine {
                 ))
             }
         }
+        return Analysis(windowRMS: result.segments.map(\.energy), duration: result.duration)
+    }
+
+    static func plan(_ analysis: Analysis, settings: CutSettings) throws -> CutPlan {
         let duration = analysis.duration
-        guard analysis.segments.contains(where: { $0.type == .speech || $0.type == .clipping }) else {
+        let threshold = AudioAnalysisService.silenceThreshold(windowRMS: analysis.windowRMS, fallback: settings.thresholdFallbackDB)
+        let classified = AudioAnalysisService.classify(
+            windowRMS: analysis.windowRMS,
+            thresholdDB: threshold,
+            minSilence: settings.minSilence,
+            duration: duration
+        )
+        guard classified.segments.contains(where: { $0.type == .speech || $0.type == .clipping }) else {
             throw Failure.nothingToKeep
         }
+        let ranges = protectedCutRanges(
+            silence: classified.silenceIntervals,
+            pad: settings.pad,
+            minimumRemovedGap: settings.minCutLength,
+            duration: duration
+        )
+        let plan = CutPlan(
+            duration: duration,
+            cuts: ranges.enumerated().map { Cut(id: $0.offset, range: $0.element, isRestored: false) }
+        )
+        guard plan.outputDuration > 0.05 else { throw Failure.nothingToKeep }
+        return plan
+    }
 
+    @MainActor
+    static func makePreviewItem(url: URL, plan: CutPlan) async throws -> AVPlayerItem {
+        AVPlayerItem(asset: try await makeComposition(url: url, plan: plan))
+    }
+
+    static func cut(
+        url: URL,
+        intensity: CutIntensity = .tight,
+        language: AppLanguage = .tr,
+        progress: @escaping @MainActor (ProgressUpdate) -> Void
+    ) async throws -> Result {
+        let analysis = try await analyze(url: url, language: language, progress: progress)
+        let plan = try Self.plan(analysis, settings: CutSettings(intensity))
         await progress(.update(
             .planningCuts,
             0.18,
             appText(language, "Kesimler planlanıyor", "Planning cuts"),
             appText(
                 language,
-                "\(intensity.title(for: language)): \(analysis.silenceIntervals.count) kesilebilir aralık bulundu.",
-                "\(intensity.title(for: language)): \(analysis.silenceIntervals.count) cuttable pause(s) found."
+                "\(intensity.title(for: language)): \(plan.cuts.count) kesilebilir aralık bulundu.",
+                "\(intensity.title(for: language)): \(plan.cuts.count) cuttable pause(s) found."
             )
         ))
-        let cutRanges = protectedCutRanges(
-            silence: analysis.silenceIntervals,
-            pad: intensity.padSeconds,
-            minimumRemovedGap: intensity.finalMinimumRemovedGap,
-            duration: duration
-        )
-        var keep = keepRanges(silence: cutRanges, duration: duration)
-        keep = merged(keep, gap: intensity.mergeGap)
-        guard keep.contains(where: { $0.upperBound - $0.lowerBound > 0.05 }) else {
-            throw Failure.nothingToKeep
-        }
+        return try await export(url: url, plan: plan, language: language, progress: progress)
+    }
 
-        await progress(.update(
-            .buildingTimeline,
-            0.28,
-            appText(language, "Zaman çizgisi kuruluyor", "Building timeline"),
-            appText(language, "\(keep.count) konuşma bölümü korunacak.", "\(keep.count) speech segment(s) will be kept.")
-        ))
+    /// Single place that turns a plan into a timeline; preview and export must match.
+    private static func makeComposition(url: URL, plan: CutPlan) async throws -> sending AVMutableComposition {
         let asset = AVURLAsset(url: url)
         let composition = AVMutableComposition()
         guard
@@ -219,10 +291,9 @@ enum QuickSilenceEngine {
 
         let scale: CMTimeScale = 600
         var cursor = CMTime.zero
-        var kept = 0
-        for range in keep {
-            let lower = min(max(range.lowerBound, 0), duration)
-            let upper = min(max(range.upperBound, lower), duration)
+        for range in plan.keepRanges {
+            let lower = min(max(range.lowerBound, 0), plan.duration)
+            let upper = min(max(range.upperBound, lower), plan.duration)
             let start = CMTime(seconds: lower, preferredTimescale: scale)
             let end = CMTime(seconds: upper, preferredTimescale: scale)
             guard end > start else { continue }
@@ -233,12 +304,29 @@ enum QuickSilenceEngine {
                     try compAudio.insertTimeRange(timeRange, of: srcAudio, at: cursor)
                 }
                 cursor = cursor + timeRange.duration
-                kept += 1
             } catch {
                 throw Failure.timelineInsertFailed(error.localizedDescription)
             }
         }
-        guard kept > 0, cursor.seconds > 0.05 else { throw Failure.nothingToKeep }
+        guard cursor.seconds > 0.05 else { throw Failure.nothingToKeep }
+        return composition
+    }
+
+    static func export(
+        url: URL,
+        plan: CutPlan,
+        language: AppLanguage,
+        progress: @escaping @MainActor (ProgressUpdate) -> Void
+    ) async throws -> Result {
+        let segmentsKept = plan.keepRanges.count
+        await progress(.update(
+            .buildingTimeline,
+            0.28,
+            appText(language, "Zaman çizgisi kuruluyor", "Building timeline"),
+            appText(language, "\(segmentsKept) konuşma bölümü korunacak.", "\(segmentsKept) speech segment(s) will be kept.")
+        ))
+        let composition = try await makeComposition(url: url, plan: plan)
+        let outputSeconds = composition.duration.seconds
 
         await progress(.update(
             .exporting,
@@ -274,8 +362,8 @@ enum QuickSilenceEngine {
             progressCeiling: 0.88,
             title: appText(language, "Video oluşturuluyor", "Creating video"),
             detail: appText(language, "Hızlı dışa aktarım sürüyor.", "Fast export is running."),
-            stallFallbackAfter: fastExportStallLimit(for: cursor.seconds),
-            timeoutAfter: fastExportTimeout(for: cursor.seconds),
+            stallFallbackAfter: fastExportStallLimit(for: outputSeconds),
+            timeoutAfter: fastExportTimeout(for: outputSeconds),
             language: language,
             progress: progress
         )
@@ -284,7 +372,7 @@ enum QuickSilenceEngine {
             try validateOutput(at: outURL)
             await progress(.update(.done, 1.0, appText(language, "Hazır", "Ready"), appText(language, "Video oluşturuldu.", "Video created.")))
             completedOutput = true
-            return Result(outputURL: outURL, originalDuration: duration, outputDuration: cursor.seconds, segmentsKept: kept)
+            return Result(outputURL: outURL, originalDuration: plan.duration, outputDuration: outputSeconds, segmentsKept: segmentsKept)
         }
 
         await progress(.update(
@@ -311,7 +399,7 @@ enum QuickSilenceEngine {
         try validateOutput(at: outURL)
         await progress(.update(.done, 1.0, appText(language, "Hazır", "Ready"), appText(language, "Video oluşturuldu.", "Video created.")))
         completedOutput = true
-        return Result(outputURL: outURL, originalDuration: duration, outputDuration: cursor.seconds, segmentsKept: kept)
+        return Result(outputURL: outURL, originalDuration: plan.duration, outputDuration: outputSeconds, segmentsKept: segmentsKept)
     }
 
     // MARK: - Cut planning
