@@ -31,6 +31,21 @@
       "productID" : "com.cutsense.app.pro.lifetime.offer",
       "referenceName" : "CutSense Pro Offer",
       "type" : "NonConsumable"
+    },
+    {
+      "displayPrice" : "5.99",
+      "familyShareable" : false,
+      "internalID" : "6770030003",
+      "localizations" : [
+        {
+          "description" : "Remove all ads and unlock fine-tune controls.",
+          "displayName" : "CutSense Pro Welcome",
+          "locale" : "en_US"
+        }
+      ],
+      "productID" : "com.cutsense.app.pro.lifetime.welcome",
+      "referenceName" : "CutSense Pro Welcome",
+      "type" : "NonConsumable"
     }
   ],
   "settings" : {

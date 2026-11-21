@@ -26,82 +26,102 @@ final class OfferCenterTests: XCTestCase {
 
     private func advance(_ seconds: TimeInterval) { clock = clock.addingTimeInterval(seconds) }
 
-    func testFirstSaveStartsWelcome() {
+    private func finishOnboarding(_ center: OfferCenter, purchased: Bool = false) -> Date {
+        center.noteOnboardingFinished(purchased: purchased)
+        return clock
+    }
+
+    func testFlashStartsAt600AndLasts900() {
         let center = makeCenter()
+        let finished = finishOnboarding(center)
         XCTAssertNil(center.active)
-        center.noteSave()
-        XCTAssertEqual(center.active, .init(kind: .welcome, endsAt: clock.addingTimeInterval(86_400)))
-    }
-
-    func testNewInstanceSeesSameEnd() {
-        let center = makeCenter()
-        center.noteSave()
-        advance(3_600)
-        let reopened = makeCenter()
-        XCTAssertEqual(reopened.active, center.active)
-    }
-
-    func testWelcomeEndsAfter24Hours() {
-        let center = makeCenter()
-        center.noteSave()
-        advance(86_399)
+        XCTAssertEqual(center.pendingStart, finished.addingTimeInterval(600))
+        advance(599)
         center.refresh()
-        XCTAssertNotNil(center.active)
+        XCTAssertNil(center.active)
         advance(1)
         center.refresh()
-        XCTAssertNil(center.active)
-    }
-
-    func testFlashNeedsSevenDaysAndThreeSaves() {
-        let center = makeCenter()
-        center.noteSave()                      // save 1: welcome
-        advance(86_400)
-        center.refresh()
-        XCTAssertNil(center.active)
-        center.noteSave()                      // save 2, day 1
-        center.noteSave()                      // save 3, still < 7 days after welcome end
-        XCTAssertNil(center.active)
-        advance(7 * 86_400 - 1)
-        center.noteSave()                      // save 4, 1 s short of the gap
-        XCTAssertNil(center.active)
-        advance(1)
-        center.noteSave()
-        XCTAssertEqual(center.active?.kind, .flash)
-    }
-
-    func testFlashNeedsThreeSavesEvenAfterGap() {
-        let center = makeCenter()
-        center.noteSave()
-        advance(86_400 + 8 * 86_400)
-        center.noteSave()                      // save 2 only
-        XCTAssertNil(center.active)
-        center.noteSave()                      // save 3
-        XCTAssertEqual(center.active?.kind, .flash)
-    }
-
-    func testFlashLasts900SecondsAndNeverRepeats() {
-        let center = makeCenter()
-        center.noteSave()
-        advance(86_400 + 7 * 86_400)
-        center.noteSave()
-        center.noteSave()
-        let started = clock
-        XCTAssertEqual(center.active, .init(kind: .flash, endsAt: started.addingTimeInterval(900)))
+        XCTAssertEqual(center.active, .init(kind: .flash, endsAt: finished.addingTimeInterval(1_500)))
+        XCTAssertNil(center.pendingStart)
         advance(899)
         center.refresh()
         XCTAssertNotNil(center.active)
         advance(1)
         center.refresh()
         XCTAssertNil(center.active)
-        advance(30 * 86_400)
-        center.noteSave()
-        center.noteSave()
+        XCTAssertNil(center.pendingStart)
+    }
+
+    func testOncePerInstall() {
+        let center = makeCenter()
+        _ = finishOnboarding(center)
+        advance(1_500)
+        center.refresh()
+        XCTAssertNil(center.active)
+        _ = finishOnboarding(center)
+        XCTAssertNil(center.pendingStart)
+        advance(600)
+        center.refresh()
+        XCTAssertNil(center.active)
+        let reopened = makeCenter()
+        reopened.noteOnboardingFinished(purchased: false)
+        XCTAssertNil(reopened.pendingStart)
+    }
+
+    func testSecondFinishDoesNotReArmOrShift() {
+        let center = makeCenter()
+        let finished = finishOnboarding(center)
+        advance(300)
+        _ = finishOnboarding(center)
+        XCTAssertEqual(center.pendingStart, finished.addingTimeInterval(600))
+    }
+
+    func testPurchaseAtFinishSchedulesNothing() {
+        let center = makeCenter()
+        _ = finishOnboarding(center, purchased: true)
+        XCTAssertNil(center.pendingStart)
+        advance(600)
+        center.refresh()
         XCTAssertNil(center.active)
     }
 
-    func testClockRollbackEndsOffer() {
+    func testProAtFinishSchedulesNothing() {
+        UserDefaults.standard.set(true, forKey: ProEntitlement.key)
+        defer { UserDefaults.standard.removeObject(forKey: ProEntitlement.key) }
         let center = makeCenter()
-        center.noteSave()
+        _ = finishOnboarding(center)
+        XCTAssertNil(center.pendingStart)
+    }
+
+    func testRelaunchWhilePendingActiveAndAfter() {
+        let finished = finishOnboarding(makeCenter())
+        advance(100)
+        XCTAssertEqual(makeCenter().pendingStart, finished.addingTimeInterval(600))
+        advance(600)
+        XCTAssertEqual(makeCenter().active, .init(kind: .flash, endsAt: finished.addingTimeInterval(1_500)))
+        advance(800)
+        XCTAssertNil(makeCenter().active)
+        advance(-100)                          // back inside the window, within tolerance: stays over
+        XCTAssertNil(makeCenter().active)
+    }
+
+    func testProEndsActiveFlash() {
+        let center = makeCenter()
+        _ = finishOnboarding(center)
+        advance(700)
+        center.refresh()
+        XCTAssertNotNil(center.active)
+        UserDefaults.standard.set(true, forKey: ProEntitlement.key)
+        defer { UserDefaults.standard.removeObject(forKey: ProEntitlement.key) }
+        center.refresh()
+        XCTAssertNil(center.active)
+        UserDefaults.standard.removeObject(forKey: ProEntitlement.key)
+        XCTAssertNil(makeCenter().active)
+    }
+
+    func testClockRollbackEndsActiveFlash() {
+        let center = makeCenter()
+        _ = finishOnboarding(center)
         advance(1_000)
         center.refresh()
         advance(-100)                          // within tolerance
@@ -110,36 +130,42 @@ final class OfferCenterTests: XCTestCase {
         advance(-200)                          // 300 s behind the high-water mark
         center.refresh()
         XCTAssertNil(center.active)
+        advance(300)
         XCTAssertNil(makeCenter().active)
     }
 
-    func testNoRightSpentWhileCannotOffer() {
-        offerable = false
+    func testClockRollbackCancelsPendingFlash() {
         let center = makeCenter()
-        center.noteSave()
+        _ = finishOnboarding(center)
+        advance(-300)
+        center.refresh()
+        XCTAssertNil(center.pendingStart)
+        advance(1_000)
+        center.refresh()
         XCTAssertNil(center.active)
-        XCTAssertFalse(defaults.bool(forKey: OfferCenter.Key.welcomeDone))
-        offerable = true
-        center.noteSave()
-        XCTAssertEqual(center.active?.kind, .welcome)
     }
 
-    func testAutoPresentOnlyOnce() {
+    func testAutoPresentOnlyOnceWhileActive() {
         let center = makeCenter()
         XCTAssertFalse(center.takeAutoPresent())
-        center.noteSave()
+        _ = finishOnboarding(center)
+        XCTAssertFalse(center.takeAutoPresent())   // pending
+        advance(600)
+        offerable = false
+        XCTAssertFalse(center.takeAutoPresent())   // prices not loaded: flag not burnt
+        offerable = true
         XCTAssertTrue(center.takeAutoPresent())
         XCTAssertFalse(center.takeAutoPresent())
         XCTAssertFalse(makeCenter().takeAutoPresent())
     }
 
-    func testProOwnerEndsOffer() {
+    func testSaveOnlyCounts() {
         let center = makeCenter()
         center.noteSave()
-        UserDefaults.standard.set(true, forKey: ProEntitlement.key)
-        defer { UserDefaults.standard.removeObject(forKey: ProEntitlement.key) }
-        center.refresh()
+        center.noteSave()
+        XCTAssertEqual(defaults.integer(forKey: OfferCenter.Key.saves), 2)
         XCTAssertNil(center.active)
+        XCTAssertNil(center.pendingStart)
     }
 
     func testUnitTestHostBypassesOnboarding() {

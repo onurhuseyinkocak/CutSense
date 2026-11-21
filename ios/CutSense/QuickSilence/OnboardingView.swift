@@ -1,7 +1,7 @@
 import SwiftUI
 
-/// First-launch onboarding, 3 pages. Spec: docs/onboarding-offer-1.1.0.md §1.
-/// The caller persists completion in `onFinish`; this view writes nothing.
+/// First-launch onboarding, 3 pages, then the welcome offer when it can be sold. Policy: docs/offer-policy-owner.md.
+/// The caller persists completion in `onFinish`; this view only tells OfferCenter how onboarding ended.
 struct OnboardingView: View {
     private let onFinish: () -> Void
     private let freeze: Double?
@@ -10,6 +10,7 @@ struct OnboardingView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var page: Int
     @State private var enteredAt = Date.now
+    @State private var showsOffer = false
 
     private static let pageCount = 3
     private static let badgeTimes: [Double] = [0.8, 0.95, 1.1]
@@ -32,6 +33,18 @@ struct OnboardingView: View {
     private var isLast: Bool { page == Self.pageCount - 1 }
 
     var body: some View {
+        ZStack {
+            if showsOffer {
+                OfferPanel(kind: .welcome, endsAt: nil, language: language, onClose: finish, onExpired: finish)
+                    .transition(.opacity)
+            } else {
+                pages.transition(.opacity)
+            }
+        }
+        .animation(Mono.Motion.pick(Mono.Motion.smooth, reduce: reduceMotion), value: showsOffer)
+    }
+
+    private var pages: some View {
         GeometryReader { geo in
             let screenHeight = geo.size.height + geo.safeAreaInsets.top + geo.safeAreaInsets.bottom
             VStack(spacing: 0) {
@@ -83,7 +96,7 @@ struct OnboardingView: View {
             }
             .accessibilityHidden(true)
             Spacer()
-            Button(t("Geç", "Skip"), action: onFinish)
+            Button(t("Geç", "Skip"), action: finish)
                 .buttonStyle(MonoTertiaryButtonStyle())
                 .accessibilityIdentifier("onboardingSkip")
         }
@@ -153,13 +166,20 @@ struct OnboardingView: View {
 
     private func badgeRow(_ count: Int) -> some View {
         let items = [t("Yükleme yok", "No upload"), t("Hesap yok", "No account"), t("Filigran yok", "No watermark")]
-        return HStack(spacing: Mono.Space.xs) {
-            ForEach(0..<count, id: \.self) { i in
-                MonoBadge(items[i])
-                    .transition(reduceMotion ? .opacity : .scale(scale: 0.8).combined(with: .opacity))
+        let badge = { (i: Int) in
+            MonoBadge(items[i])
+                .fixedSize()
+                .transition(reduceMotion ? .opacity : .scale(scale: 0.8).combined(with: .opacity))
+        }
+        // QA-FIX: long translations (de "Kein Wasserzeichen", es/pt) truncated in one row; wrap the third badge instead.
+        return ViewThatFits(in: .horizontal) {
+            HStack(spacing: Mono.Space.xs) { ForEach(0..<count, id: \.self, content: badge) }
+            VStack(alignment: .leading, spacing: Mono.Space.xs) {
+                HStack(spacing: Mono.Space.xs) { ForEach(0..<min(count, 2), id: \.self, content: badge) }
+                if count > 2 { badge(2) }
             }
         }
-        .frame(height: 22, alignment: .leading)
+        .frame(minHeight: 22, alignment: .leading)
         .animation(Mono.Motion.pick(Mono.Motion.bouncy, reduce: reduceMotion), value: count)
     }
 
@@ -174,7 +194,15 @@ struct OnboardingView: View {
     }
 
     private func advance() {
-        if isLast { onFinish() } else { go(to: page + 1) }
+        guard isLast else { return go(to: page + 1) }
+        let store = ProStore.shared
+        if store.welcomePrices != nil, !store.isPro { showsOffer = true } else { finish() }
+    }
+
+    /// Every exit: Skip, Start cutting without an offer, and the offer's close / Not now / success.
+    private func finish() {
+        OfferCenter.shared.noteOnboardingFinished(purchased: ProStore.shared.isPro)
+        onFinish()
     }
 
     private func go(to target: Int) {

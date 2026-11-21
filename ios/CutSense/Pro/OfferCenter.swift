@@ -1,8 +1,8 @@
 import Foundation
 import Observation
 
-/// Reduced-price Pro windows: one welcome offer (24 h from the first save) and one 15-minute flash offer
-/// (≥ 7 days after the welcome ended, ≥ 3 saves). End times are absolute and survive relaunch.
+/// One flash offer per install: it starts `flashDelay` after onboarding finishes without a purchase and lasts
+/// `flashSeconds`. Start and end are absolute and survive relaunch; Pro or a rolled-back clock cancels it for good.
 @MainActor @Observable
 final class OfferCenter {
     enum Kind: String { case welcome, flash }
@@ -10,40 +10,36 @@ final class OfferCenter {
 
     static let shared = OfferCenter()
 
+    /// Non-nil only inside the flash window; nil while pending.
     private(set) var active: Active?
+    /// Scheduled flash start while it is still in the future.
+    private(set) var pendingStart: Date?
 
     enum Key {
-        static let kind = "offer_kind"
-        static let endsAt = "offer_ends_at"
-        static let welcomeDone = "offer_welcome_done"
-        static let flashDone = "offer_flash_done"
+        static let armed = "offer_flash_armed"
+        static let startsAt = "offer_flash_starts_at"
+        static let endsAt = "offer_flash_ends_at"
         static let autoShown = "offer_auto_shown"
-        static let lastEndedAt = "offer_last_ended_at"
         static let clockHigh = "offer_clock_high"
         static let saves = "stat_saves"
-        static let all = [kind, endsAt, welcomeDone, flashDone, autoShown, lastEndedAt, clockHigh, saves]
+        static let all = [armed, startsAt, endsAt, autoShown, clockHigh, saves]
     }
 
-    nonisolated static let welcomeSeconds: TimeInterval = 86_400
+    nonisolated static let flashDelaySeconds: TimeInterval = 600
     nonisolated static let flashSeconds: TimeInterval = 900
-    static let flashGap: TimeInterval = 7 * 86_400
-    static let flashMinSaves = 3
-    /// Tolerated backwards clock drift before an active offer is treated as gamed.
+    /// Tolerated backwards clock drift before the offer is treated as gamed.
     static let rollbackTolerance: TimeInterval = 120
 
     @ObservationIgnored private let defaults: UserDefaults
     @ObservationIgnored private let now: () -> Date
     @ObservationIgnored private let canOffer: @MainActor () -> Bool
+    @ObservationIgnored private var wake: Task<Void, Never>?
 
     init(defaults: UserDefaults = .standard, now: @escaping () -> Date = Date.init,
          canOffer: @escaping @MainActor () -> Bool = { ProStore.shared.offerPrices != nil && !ProStore.shared.isPro }) {
         self.defaults = defaults
         self.now = now
         self.canOffer = canOffer
-        if let raw = defaults.string(forKey: Key.kind), let kind = Kind(rawValue: raw),
-           defaults.object(forKey: Key.endsAt) != nil {
-            active = Active(kind: kind, endsAt: Date(timeIntervalSince1970: defaults.double(forKey: Key.endsAt)))
-        }
         refresh()
     }
 
@@ -51,61 +47,87 @@ final class OfferCenter {
         let t = now().timeIntervalSince1970
         let high = defaults.double(forKey: Key.clockHigh)
         if t < high - Self.rollbackTolerance {
-            if active != nil { end(at: high) }
+            cancel()
             return
         }
         defaults.set(max(high, t), forKey: Key.clockHigh)
-        if let active, t >= active.endsAt.timeIntervalSince1970 || ProEntitlement.isPro {
-            end(at: min(t, active.endsAt.timeIntervalSince1970))
+        guard defaults.object(forKey: Key.startsAt) != nil else { return publish(nil, nil) }
+        let start = defaults.double(forKey: Key.startsAt)
+        let end = defaults.double(forKey: Key.endsAt)
+        if t >= end || ProEntitlement.isPro { return cancel() }
+        if t < start {
+            publish(nil, Date(timeIntervalSince1970: start))
+            schedule(after: start - t)
+        } else {
+            publish(Active(kind: .flash, endsAt: Date(timeIntervalSince1970: end)), nil)
+            schedule(after: end - t)
         }
     }
 
+    /// Call once when onboarding closes. Arms the flash exactly once per install; a purchase or Pro arms nothing.
+    func noteOnboardingFinished(purchased: Bool) {
+        refresh()
+        guard !defaults.bool(forKey: Key.armed) else { return }
+        defaults.set(true, forKey: Key.armed)
+        guard !purchased, !ProEntitlement.isPro else { return }
+        // Time-based on purpose: it starts even if products are offline; the UI only shows it once prices load.
+        let start = now().timeIntervalSince1970 + Self.flashDelay()
+        defaults.set(start, forKey: Key.startsAt)
+        defaults.set(start + Self.duration(Self.flashSeconds), forKey: Key.endsAt)
+        refresh()
+    }
+
+    /// Save counter only; offers no longer key off saves.
     func noteSave() {
         refresh()
-        let saves = defaults.integer(forKey: Key.saves) + 1
-        defaults.set(saves, forKey: Key.saves)
-        let t = now().timeIntervalSince1970
-        let high = defaults.double(forKey: Key.clockHigh)
-        // Offline / no products / Pro: nothing starts and no right is spent. A rolled-back clock would end it at once.
-        guard active == nil, canOffer(), t >= high - Self.rollbackTolerance else { return }
-        if !defaults.bool(forKey: Key.welcomeDone) {
-            defaults.set(true, forKey: Key.welcomeDone)
-            start(.welcome, endsAt: t + Self.duration(Self.welcomeSeconds))
-        } else if !defaults.bool(forKey: Key.flashDone), saves >= Self.flashMinSaves,
-                  max(t, high) >= defaults.double(forKey: Key.lastEndedAt) + Self.flashGap {
-            defaults.set(true, forKey: Key.flashDone)
-            start(.flash, endsAt: t + Self.duration(Self.flashSeconds))
-        }
+        defaults.set(defaults.integer(forKey: Key.saves) + 1, forKey: Key.saves)
     }
 
-    /// True exactly once per install: the welcome offer is live and the sheet has not opened on its own yet.
+    /// True exactly once per install while the flash is live. Burns the flag, so call it only when the panel can open.
     func takeAutoPresent() -> Bool {
         refresh()
-        guard active?.kind == .welcome, !defaults.bool(forKey: Key.autoShown), canOffer() else { return false }
+        guard active?.kind == .flash, !defaults.bool(forKey: Key.autoShown), canOffer() else { return false }
         defaults.set(true, forKey: Key.autoShown)
         return true
     }
 
-    private func start(_ kind: Kind, endsAt: TimeInterval) {
-        defaults.set(kind.rawValue, forKey: Key.kind)
-        defaults.set(endsAt, forKey: Key.endsAt)
-        active = Active(kind: kind, endsAt: Date(timeIntervalSince1970: endsAt))
+    private func publish(_ newActive: Active?, _ newPending: Date?) {
+        if active != newActive { active = newActive }
+        if pendingStart != newPending { pendingStart = newPending }
+        if newActive == nil, newPending == nil { wake?.cancel(); wake = nil }
     }
 
-    private func end(at time: TimeInterval) {
-        defaults.removeObject(forKey: Key.kind)
+    private func cancel() {
+        defaults.removeObject(forKey: Key.startsAt)
         defaults.removeObject(forKey: Key.endsAt)
-        defaults.set(time, forKey: Key.lastEndedAt)
-        active = nil
+        publish(nil, nil)
+    }
+
+    /// Wakes at the next boundary so the pill appears (and disappears) mid-session without a scene change.
+    private func schedule(after seconds: TimeInterval) {
+        wake?.cancel()
+        wake = Task { [weak self] in
+            try? await Task.sleep(for: .seconds(max(0, seconds) + 0.05))
+            guard !Task.isCancelled else { return }
+            self?.refresh()
+        }
     }
 
     nonisolated static func duration(_ standard: TimeInterval) -> TimeInterval {
+        debugSeconds("CUTSENSE_OFFER_SECONDS") ?? standard
+    }
+
+    nonisolated static func flashDelay() -> TimeInterval {
+        debugSeconds("CUTSENSE_FLASH_DELAY_SECONDS") ?? flashDelaySeconds
+    }
+
+    private nonisolated static func debugSeconds(_ name: String) -> TimeInterval? {
         #if DEBUG
-        if let raw = ProcessInfo.processInfo.environment["CUTSENSE_OFFER_SECONDS"], let seconds = TimeInterval(raw), seconds > 0 {
+        if let raw = ProcessInfo.processInfo.environment[name], let seconds = TimeInterval(raw), seconds >= 0 {
             return seconds
         }
         #endif
-        return standard
+        return nil
     }
 }
 
@@ -132,20 +154,11 @@ enum OnboardingGate {
             defaults.removeObject(forKey: key)
             OfferCenter.Key.all.forEach(defaults.removeObject(forKey:))
         }
-        let forced: (OfferCenter.Kind, TimeInterval)?
         if env["CUTSENSE_FORCE_FLASH_OFFER"] == "1" {
-            forced = (.flash, OfferCenter.flashSeconds)
-        } else if env["CUTSENSE_FORCE_WELCOME_OFFER"] == "1" {
-            forced = (.welcome, OfferCenter.welcomeSeconds)
-        } else {
-            forced = nil
-        }
-        if let forced {
-            let (kind, seconds) = forced
             let t = Date().timeIntervalSince1970
-            defaults.set(kind.rawValue, forKey: OfferCenter.Key.kind)
-            defaults.set(t + OfferCenter.duration(seconds), forKey: OfferCenter.Key.endsAt)
-            defaults.set(true, forKey: kind == .welcome ? OfferCenter.Key.welcomeDone : OfferCenter.Key.flashDone)
+            defaults.set(true, forKey: OfferCenter.Key.armed)
+            defaults.set(t, forKey: OfferCenter.Key.startsAt)
+            defaults.set(t + OfferCenter.duration(OfferCenter.flashSeconds), forKey: OfferCenter.Key.endsAt)
             defaults.set(t, forKey: OfferCenter.Key.clockHigh)
         }
         #endif

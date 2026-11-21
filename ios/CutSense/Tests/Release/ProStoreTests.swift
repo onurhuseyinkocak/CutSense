@@ -72,6 +72,7 @@ final class ProStoreTests: XCTestCase {
         XCTAssertEqual(rule(Decimal(string: "3.99")!, Decimal(string: "7.99")!)?.percent, 50)
         XCTAssertEqual(rule(Decimal(string: "3.99")!, Decimal(string: "7.99")!),
                        ProStore.OfferPrices(offer: "o", regular: "r", percent: 50))
+        XCTAssertEqual(rule(Decimal(string: "5.99")!, Decimal(string: "7.99")!)?.percent, 25)
         XCTAssertEqual(rule(9, 10)?.percent, 10)
         XCTAssertNil(rule(Decimal(string: "9.01")!, 10))   // 9.9% floors to 9
         XCTAssertNil(rule(10, 10))
@@ -93,6 +94,28 @@ final class ProStoreTests: XCTestCase {
         XCTAssertEqual(store.offerPrices?.percent, 50)
         XCTAssertEqual(store.offerPrices?.regular, store.product?.displayPrice)
         XCTAssertEqual(store.offerPrices?.offer, store.offerProduct?.displayPrice)
+    }
+
+    func testWelcomeProductLoadsWithWelcomePrices() async throws {
+        let store = ProStore()
+        await store.loadProduct()
+        guard store.welcomeProduct != nil else {
+            throw XCTSkip("\(ProStore.welcomeID) not served by the StoreKit backend on this host")
+        }
+        XCTAssertEqual(store.welcomeProduct?.id, ProStore.welcomeID)
+        XCTAssertEqual(store.welcomeProduct?.type, .nonConsumable)
+        XCTAssertEqual(store.welcomePrices?.percent, 25)
+        XCTAssertEqual(store.welcomePrices?.regular, store.product?.displayPrice)
+        XCTAssertEqual(store.welcomePrices?.offer, store.welcomeProduct?.displayPrice)
+    }
+
+    func testMissingWelcomeProductHasNoWelcomePrices() async {
+        let store = ProStore(welcomeID: "com.cutsense.app.does.not.exist")
+        await store.loadProduct()
+        XCTAssertNil(store.welcomeProduct)
+        XCTAssertNil(store.welcomePrices)
+        let outcome = await store.purchaseWelcome()
+        XCTAssertEqual(outcome, .unavailable)
     }
 
     func testMissingOfferProductHasNoOfferPrices() async {

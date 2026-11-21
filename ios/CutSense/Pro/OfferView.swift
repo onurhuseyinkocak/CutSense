@@ -38,7 +38,8 @@ struct ProSheet: View {
 
 struct OfferPanel: View {
     let kind: OfferCenter.Kind
-    let endsAt: Date
+    /// nil for the welcome offer: it has no timer.
+    let endsAt: Date?
     let language: AppLanguage
     let onClose: () -> Void
     let onExpired: () -> Void
@@ -53,7 +54,7 @@ struct OfferPanel: View {
     @State private var strike: CGFloat = 0
     @Namespace private var priceSpace
 
-    init(kind: OfferCenter.Kind, endsAt: Date, language: AppLanguage,
+    init(kind: OfferCenter.Kind, endsAt: Date?, language: AppLanguage,
          onClose: @escaping () -> Void, onExpired: @escaping () -> Void) {
         self.kind = kind
         self.endsAt = endsAt
@@ -63,7 +64,8 @@ struct OfferPanel: View {
     }
 
     private func t(_ tr: String, _ en: String) -> String { appText(language, tr, en) }
-    private var isExpired: Bool { Date() >= endsAt }
+    private var isExpired: Bool { endsAt.map { Date() >= $0 } ?? false }
+    private var prices: ProStore.OfferPrices? { kind == .welcome ? store.welcomePrices : store.offerPrices }
 
     var body: some View {
         VStack(spacing: 0) {
@@ -95,7 +97,7 @@ struct OfferPanel: View {
                         .fixedSize(horizontal: false, vertical: true)
                         .padding(.top, Mono.Space.s)
                         .monoEntrance(1)
-                    if let prices = store.offerPrices {
+                    if let prices {
                         priceBlock(prices)
                             .padding(.top, Mono.Space.l)
                     }
@@ -140,13 +142,14 @@ struct OfferPanel: View {
         .sensoryFeedback(.impact(weight: .medium), trigger: phase) { _, new in new == 2 && !reduceMotion }
         .task { await reveal() }
         .task(id: endsAt) {
-            // One expiry path for both kinds; the countdown view only renders.
+            // One expiry path; the countdown view only renders.
+            guard let endsAt else { return }
             let wait = endsAt.timeIntervalSinceNow
             if wait > 0 { try? await Task.sleep(for: .seconds(wait)) }
             guard !Task.isCancelled else { return }
             expireIfIdle()
         }
-        .onChange(of: store.offerPrices == nil) { _, gone in
+        .onChange(of: prices == nil) { _, gone in
             if gone, !isWorking, !succeeded { onExpired() }
         }
     }
@@ -160,7 +163,7 @@ struct OfferPanel: View {
     // MARK: Price
 
     private func reveal() async {
-        if store.offerPrices == nil, !isWorking { await store.loadProduct() }
+        if prices == nil, !isWorking { await store.loadProduct() }
         if reduceMotion {
             strike = 1
             withAnimation(Mono.Motion.fade) { phase = 2 }
@@ -219,12 +222,7 @@ struct OfferPanel: View {
 
     @ViewBuilder
     private var timeRow: some View {
-        switch kind {
-        case .welcome:
-            Text(String(format: t("Hoş geldin fiyatı %@ tarihine kadar", "Welcome price until %@"), formatted(endsAt, time: true)))
-                .monoText(.caption)
-                .foregroundStyle(Mono.C.text2)
-        case .flash:
+        if kind == .flash, let endsAt {
             VStack(alignment: .leading, spacing: Mono.Space.xs) {
                 TimelineView(.periodic(from: .now, by: 1)) { context in
                     let remaining = max(0, endsAt.timeIntervalSince(context.date))
@@ -298,7 +296,7 @@ struct OfferPanel: View {
                     .transition(.opacity)
             }
 
-            if let prices = store.offerPrices {
+            if let prices {
                 Button {
                     guard !isWorking, !succeeded else { return }
                     Task { await buy() }
@@ -313,6 +311,14 @@ struct OfferPanel: View {
                 .buttonStyle(MonoPrimaryButtonStyle())
                 .accessibilityIdentifier("offerBuyButton")
                 .padding(.top, Mono.Space.xxs)
+            }
+
+            if kind == .welcome {
+                Button(t("Şimdi değil", "Not now"), action: onClose)
+                    .buttonStyle(MonoTertiaryButtonStyle())
+                    .disabled(isWorking || succeeded)
+                    .frame(minHeight: 44)
+                    .accessibilityIdentifier("offerNotNow")
             }
 
             HStack(spacing: Mono.Space.xs) {
@@ -357,7 +363,7 @@ struct OfferPanel: View {
     private func buy() async {
         isWorking = true
         message = nil
-        let outcome = await store.purchaseOffer()
+        let outcome = kind == .welcome ? await store.purchaseWelcome() : await store.purchaseOffer()
         isWorking = false
         switch outcome {
         case .purchased:
