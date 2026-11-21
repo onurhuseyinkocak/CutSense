@@ -11,7 +11,7 @@ export const metadata: Metadata = {
     template: "%s | CutSense",
   },
   description:
-    "CutSense is a free, ad-supported iPhone app that cuts silent pauses from selected videos on device. No account, no onboarding, no paywall.",
+    "CutSense is a free, ad-supported iPhone app that cuts silent pauses from selected videos on device. No account, no subscription, optional one-time Pro upgrade.",
   alternates: {
     canonical: "/",
   },

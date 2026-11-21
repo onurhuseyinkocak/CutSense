@@ -32,8 +32,22 @@ export function SupportContent() {
     {
       title: t("Reklam gizlilik tercihleri", "Ad privacy choices"),
       body: t(
-        "Gerekli olduğu bölgelerde CutSense, uygulama ayarlarında Google gizlilik seçeneklerini gösterir. Bu tercihler bölgen için uygun Google reklam ve rıza davranışını kontrol eder.",
-        "Where required, CutSense shows Google privacy options in the app settings. Those choices control eligible Google ad and consent behavior for your region.",
+        "Gerekli olduğu bölgelerde (ör. AEA, Birleşik Krallık, İsviçre) rızanı Ayarlar > Reklam gizliliği > Gizlilik tercihlerini yönet bölümünden (CutSense 1.1 ve sonrası) istediğin an değiştirebilir veya geri çekebilirsin. Ayrıntılar Gizlilik Politikası'nda.",
+        "Where required (for example in the EEA, UK, and Switzerland), you can change or withdraw consent any time in Settings > Ad privacy > Manage privacy choices (CutSense 1.1 and later). Details are in the Privacy Policy.",
+      ),
+    },
+    {
+      title: t("Pro'yu geri yükleme", "Restoring Pro"),
+      body: t(
+        "Yeni bir iPhone'da veya yeniden kurduktan sonra, satın aldığın Apple Kimliğiyle oturum açıp Ayarlar > Satın Alımları Geri Yükle'ye dokun. Tekrar ücret alınmaz.",
+        "On a new iPhone or after reinstalling, sign in with the Apple ID you bought Pro with and tap Settings > Restore Purchases. You are not charged again.",
+      ),
+    },
+    {
+      title: t("İade", "Refunds"),
+      body: t(
+        "Ödemeleri Apple işlediği için iadeleri de Apple yapar: reportaproblem.apple.com adresinden talep et. İade edilen satın alımda Pro kapanır.",
+        "Apple processes payments, so refunds are handled by Apple: request one at reportaproblem.apple.com. If a purchase is refunded, Pro turns off.",
       ),
     },
   ];

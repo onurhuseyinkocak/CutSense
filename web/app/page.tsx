@@ -38,7 +38,7 @@ export default function Home() {
 
   const facts = [
     t("Hesap yok", "No account"),
-    t("Onboarding duvarı yok", "No onboarding wall"),
+    t("İsteğe bağlı tek seferlik Pro", "Optional one-time Pro"),
     t("Abonelik yok", "No subscription"),
     t("Reklam destekli", "Ad-supported"),
     t("Orijinal dosya değişmez", "Original file untouched"),
