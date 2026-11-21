@@ -32,7 +32,8 @@ final class PreviewPlayer {
         }
     }
 
-    func load(url: URL, plan: QuickSilenceEngine.CutPlan, seekToOriginal: Double?) async {
+    /// `leadIn`: seconds before `seekToOriginal` to land on (row tap 1 s, replan 0 keeps the playhead).
+    func load(url: URL, plan: QuickSilenceEngine.CutPlan, seekToOriginal: Double?, leadIn: Double = 1) async {
         self.plan = plan
         activeLoads += 1
         defer { activeLoads -= 1 }
@@ -42,7 +43,7 @@ final class PreviewPlayer {
                 player.replaceCurrentItem(with: item)
                 installedKeepRanges = plan.keepRanges
                 if await Self.becomesReady(item) {
-                    if let seekToOriginal { seek(toOriginal: seekToOriginal) }
+                    if let seekToOriginal { seek(toOriginal: seekToOriginal, leadIn: leadIn) }
                     if autoplayPending { autoplayOnce() }
                     return
                 }
@@ -62,15 +63,15 @@ final class PreviewPlayer {
                 MainActor.assumeIsolated { self?.skipActiveCut(at: time.seconds) }
             }
         }
-        if let seekToOriginal { seek(toOriginal: seekToOriginal) }
+        if let seekToOriginal { seek(toOriginal: seekToOriginal, leadIn: leadIn) }
         if autoplayPending { autoplayOnce() }
     }
 
     /// Row tap: one second before the cut, in whichever clock the player runs on.
-    func seek(toOriginal t: Double) {
+    func seek(toOriginal t: Double, leadIn: Double = 1) {
         guard let plan else { return }
         let target = usesFallback ? t : plan.outputTime(forOriginal: t)
-        player.seek(to: CMTime(seconds: max(0, target - 1), preferredTimescale: 600),
+        player.seek(to: CMTime(seconds: max(0, target - leadIn), preferredTimescale: 600),
                     toleranceBefore: .zero, toleranceAfter: .zero)
     }
 
@@ -110,6 +111,12 @@ final class PreviewPlayer {
         autoplayPending = false
         didAutoplay = true
         player.play()
+    }
+
+    /// The user started listening on their own: a later automatic play would talk over it.
+    func cancelAutoplay() {
+        autoplayPending = false
+        didAutoplay = true
     }
 
     /// Removes the observer and the item; the next video starts on the composition path again.
@@ -181,6 +188,7 @@ final class CutAuditioner {
 
     func beginCompare(at t: Double, preview: PreviewPlayer) {
         stop(preview: preview)
+        preview.cancelAutoplay()
         isComparing = true
         original.seek(to: CMTime(seconds: max(0, t), preferredTimescale: 600),
                       toleranceBefore: .zero, toleranceAfter: .zero) { [weak self] finished in
@@ -216,6 +224,7 @@ final class CutAuditioner {
     func toggle(_ cut: QuickSilenceEngine.Cut, plan: QuickSilenceEngine.CutPlan, preview: PreviewPlayer) {
         if activeID == cut.id { stop(preview: preview); return }
         stop(preview: preview)
+        preview.cancelAutoplay()
         cutRange = cut.range
         let player: AVPlayer
         switch mode {
@@ -243,9 +252,10 @@ final class CutAuditioner {
         }
         observer = (player, token)
         player.seek(to: CMTime(seconds: window.lowerBound, preferredTimescale: 600),
-                    toleranceBefore: .zero, toleranceAfter: .zero) { finished in
+                    toleranceBefore: .zero, toleranceAfter: .zero) { [weak self] finished in
             guard finished else { return }
-            Task { @MainActor in player.play() }
+            // A second tap, mode change or sheet close may have stopped this audition mid-seek.
+            Task { @MainActor in if self?.activeID == cut.id { player.play() } }
         }
     }
 
@@ -270,10 +280,16 @@ final class CutAuditioner {
         if t >= window.upperBound - 0.02 { stop(preview: preview) }
     }
 
+    /// Keyed by the frame's time, not `cut.id` (an index that a replan reuses for a different pause).
+    nonisolated static func thumbnailKey(for cut: QuickSilenceEngine.Cut) -> Int {
+        Int((cut.range.lowerBound * 10).rounded())
+    }
+
     func thumbnail(for cut: QuickSilenceEngine.Cut) async {
-        guard thumbnails[cut.id] == nil, let url else { return }
+        let key = Self.thumbnailKey(for: cut)
+        guard thumbnails[key] == nil, let url else { return }
         guard let image = await Self.frame(url: url, at: cut.range.lowerBound), !Task.isCancelled else { return }
-        thumbnails[cut.id] = image
+        thumbnails[key] = image
     }
 
     /// Off the main actor; one small generator per row (rows load lazily, cancelled when scrolled away).
@@ -294,6 +310,8 @@ struct ReviewScreen: View {
     @Binding var intensity: QuickSilenceEngine.CutIntensity
     let usesPresetSettings: Bool
     let preview: PreviewPlayer
+    /// Owned by QuickSilenceView so the result ad can wait while the user is listening.
+    let auditioner: CutAuditioner
     let language: AppLanguage
     let exportProgress: Double?
     let saved: Bool
@@ -320,7 +338,6 @@ struct ReviewScreen: View {
     @State private var counted = false
     @State private var compacted = false
     @State private var showsSeal = false
-    @State private var auditioner = CutAuditioner()
     @State private var holdingOriginal = false
     @State private var compares = 0
     @State private var confirmsNewVideo = false
@@ -445,9 +462,10 @@ struct ReviewScreen: View {
         .task(id: saved) { await savedMoment() }
         .task(id: plan) {
             // Replans keep the playhead; a row toggle seeks to its own cut.
-            let seek = pendingSeek ?? (preview.originalTime > 0.5 ? preview.originalTime : nil)
+            let rowSeek = pendingSeek
+            let seek = rowSeek ?? (preview.originalTime > 0.5 ? preview.originalTime : nil)
             pendingSeek = nil
-            await preview.load(url: inputURL, plan: plan, seekToOriginal: seek)
+            await preview.load(url: inputURL, plan: plan, seekToOriginal: seek, leadIn: rowSeek == nil ? 0 : 1)
         }
         .sheet(isPresented: $showsCuts, onDismiss: {
             auditioner.stop(preview: preview)
@@ -559,7 +577,7 @@ struct ReviewScreen: View {
         guard short > 0 else { return nil }
         let label = short >= 2160 ? "4K" : "\(Int(short))p"
         let bytes = Int64(Double(sourceInfo.fileBytes) * plan.outputDuration / plan.duration)
-        return "\(label) · ≈\(ByteCountFormatter.string(fromByteCount: bytes, countStyle: .file))"
+        return "\(label) · ≈\(bytes.formatted(.byteCount(style: .file).locale(Locale(identifier: language.rawValue))))"
     }
 
     private var timeline: some View {
@@ -659,6 +677,8 @@ struct ReviewScreen: View {
         if plan.cuts.isEmpty {
             return intensity == .hardcore
                 ? appText(language, "Bu videoda kesilecek duraklama yok.", "No pauses to cut in this video.")
+                : intensity == .tight
+                ? appText(language, "Kesilecek kadar uzun duraklama yok. Hardcore'u dene.", "No pauses long enough to cut. Try Hardcore.")
                 : appText(language, "Kesilecek kadar uzun duraklama yok. Sıkı'yı dene.", "No pauses long enough to cut. Try Tight.")
         }
         let lowSpeech = intensity == .balanced && usesPresetSettings && plan.removedPercent > 50
@@ -873,7 +893,7 @@ private struct CutListSheet: View {
     private func thumbnail(_ cut: QuickSilenceEngine.Cut, isActive: Bool) -> some View {
         ZStack {
             Mono.C.raised
-            if let image = auditioner.thumbnails[cut.id] {
+            if let image = auditioner.thumbnails[CutAuditioner.thumbnailKey(for: cut)] {
                 Image(decorative: image, scale: 3)
                     .resizable()
                     .scaledToFill()
@@ -889,7 +909,7 @@ private struct CutListSheet: View {
         .frame(width: 56, height: 56)
         .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
         .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous).strokeBorder(Mono.C.hairline, lineWidth: 1))
-        .task(id: cut.id) { await auditioner.thumbnail(for: cut) }
+        .task(id: CutAuditioner.thumbnailKey(for: cut)) { await auditioner.thumbnail(for: cut) }
     }
 
     /// Indices into `plan.cuts`; toggles never reorder the array, so an index is a stable row id.
@@ -900,6 +920,8 @@ private struct CutListSheet: View {
     }
 
     private func setAll(restored: Bool) {
+        // Same as a row toggle: the edited preview is about to be rebuilt under an After audition.
+        if auditioner.mode == .after { auditioner.stop(preview: preview) }
         for index in plan.cuts.indices { plan.cuts[index].isRestored = restored }
         bulkChanges += 1
     }
@@ -1035,6 +1057,8 @@ struct FineTuneSheet: View {
         .padding(.top, 28)
         .sensoryFeedback(.impact(weight: .light), trigger: commits)
         .presentationDetents([.height(300)])
+        // Sheets don't inherit the review's cap; the fixed 300 pt detent clips at AX sizes.
+        .dynamicTypeSize(...DynamicTypeSize.xxLarge)
         .monoSheet()
     }
 
@@ -1085,7 +1109,7 @@ private struct ExportOverlay: View {
             VStack(spacing: 0) {
                 MonoProgressRing(progress: progress)
                     .overlay {
-                        Text("\(percent)%")
+                        Text(String(format: appText(language, "%%%d", "%d%%"), percent))
                             .monoText(.numeralL)
                             .contentTransition(.numericText(value: Double(percent)))
                             .animation(Mono.Motion.smooth, value: percent)
@@ -1095,7 +1119,7 @@ private struct ExportOverlay: View {
                     .padding(.bottom, 24)
                     .accessibilityElement(children: .ignore)
                     .accessibilityLabel(appText(language, "Video oluşturuluyor", "Creating video"))
-                    .accessibilityValue("\(percent)%")
+                    .accessibilityValue(String(format: appText(language, "%%%d", "%d%%"), percent))
                     .accessibilityAddTraits(.updatesFrequently)
                 Text(appText(language, "Video oluşturuluyor", "Creating video"))
                     .monoText(.headline)

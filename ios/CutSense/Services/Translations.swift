@@ -34,7 +34,6 @@ enum Translations {
         ("Try Again", row(es: "Reintentar", pt: "Tentar de novo", de: "Erneut versuchen", fr: "Réessayer", it: "Riprova", ja: "もう一度試す", ko: "다시 시도")),
         ("Importing video", row(es: "Importando video", pt: "Importando vídeo", de: "Video wird importiert", fr: "Importation de la vidéo", it: "Importazione video", ja: "動画を読み込み中", ko: "동영상 가져오는 중")),
         ("Video ready", row(es: "Video listo", pt: "Vídeo pronto", de: "Video bereit", fr: "Vidéo prête", it: "Video pronto", ja: "動画の準備完了", ko: "동영상 준비 완료")),
-        ("Downloading iCloud video", row(es: "Descargando video de iCloud", pt: "Baixando vídeo do iCloud", de: "iCloud-Video wird geladen", fr: "Téléchargement depuis iCloud", it: "Download video da iCloud", ja: "iCloudから動画をダウンロード中", ko: "iCloud 동영상 다운로드 중")),
         ("Could not load the video. Try a different file.", row(
             es: "No se pudo cargar el video. Prueba con otro archivo.",
             pt: "Não foi possível carregar o vídeo. Tente outro arquivo.",
@@ -405,6 +404,23 @@ enum Translations {
             it: "Nessuna pausa abbastanza lunga da tagliare. Prova Deciso.",
             ja: "カットできるほど長い間がありません。タイトをお試しください。",
             ko: "자를 만큼 긴 멈춤이 없습니다. 타이트를 사용해 보세요.")),
+        ("Offer ends in %@", row(es: "La oferta termina en %@", pt: "A oferta termina em %@", de: "Angebot endet in %@", fr: "L'offre se termine dans %@", it: "L'offerta termina tra %@", ja: "オファー終了まで%@", ko: "%@ 후 혜택 종료")),
+        ("No pauses long enough to cut. Try Hardcore.", row(
+            es: "No hay pausas lo bastante largas para cortar. Prueba Extremo.",
+            pt: "Não há pausas longas o bastante para cortar. Tente Extremo.",
+            de: "Keine Pausen, die lang genug zum Schneiden sind. Versuch Extrem.",
+            fr: "Aucune pause assez longue à couper. Essayez Extrême.",
+            it: "Nessuna pausa abbastanza lunga da tagliare. Prova Estremo.",
+            ja: "カットできるほど長い間がありません。最大をお試しください。",
+            ko: "자를 만큼 긴 멈춤이 없습니다. 최대를 사용해 보세요.")),
+        ("Creating the video stopped while the app was in the background. Try again.", row(
+            es: "La creación del video se detuvo mientras la app estaba en segundo plano. Inténtalo de nuevo.",
+            pt: "A criação do vídeo parou enquanto o app estava em segundo plano. Tente de novo.",
+            de: "Die Videoerstellung wurde angehalten, während die App im Hintergrund war. Versuch es erneut.",
+            fr: "La création de la vidéo s'est arrêtée pendant que l'app était en arrière-plan. Réessayez.",
+            it: "La creazione del video si è interrotta mentre l'app era in background. Riprova.",
+            ja: "アプリがバックグラウンドにある間に動画の作成が停止しました。もう一度お試しください。",
+            ko: "앱이 백그라운드에 있는 동안 동영상 만들기가 중단되었습니다. 다시 시도하세요.")),
         ("No pauses to cut in this video.", row(
             es: "No hay pausas para cortar en este video.",
             pt: "Não há pausas para cortar neste vídeo.",

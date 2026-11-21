@@ -15,6 +15,7 @@ struct QuickSilenceView: View {
     @State private var offers = OfferCenter.shared
     @State private var session = WorkSession()
     @State private var preview = PreviewPlayer()
+    @State private var auditioner = CutAuditioner()
     @State private var analysis: QuickSilenceEngine.Analysis?
     @State private var plan: QuickSilenceEngine.CutPlan?
     // Balanced by default: over-cutting is the top complaint about silence removers.
@@ -30,7 +31,10 @@ struct QuickSilenceView: View {
     @State private var exportProgress: Double?
     @State private var exportTask: Task<Void, Never>?
     @State private var saved = false
-    @State private var saveError: String?
+    /// An error, not text: it is localized when shown, so a language change re-renders it.
+    @State private var saveError: Error?
+    /// Set when iOS ends the background grace period, which cancels the export like the user would.
+    @State private var exportExpired = false
     @State private var saveNeedsSettings = false
     @State private var activeJobID: UUID?
     @State private var processingTask: Task<Void, Never>?
@@ -51,7 +55,7 @@ struct QuickSilenceView: View {
         case idle
         case working(WorkingState)
         case review
-        case failed(String)
+        case failed(Error)
     }
 
     struct WorkingState {
@@ -67,6 +71,13 @@ struct QuickSilenceView: View {
     }
 
     var body: some View {
+        observers(screen
+            .toolbar { toolbarContent }
+            .sheet(isPresented: $showsPaywall) { ProSheet(language: appLanguage) })
+    }
+
+    /// Split out of `body`: one long modifier chain exceeded the type checker's time limit.
+    private var screen: some View {
         ZStack(alignment: .bottom) {
             Mono.C.bg.ignoresSafeArea()
 
@@ -112,7 +123,10 @@ struct QuickSilenceView: View {
         .navigationBarTitleDisplayMode(.inline)
         .toolbarColorScheme(.dark, for: .navigationBar)
         .toolbarBackground(.hidden, for: .navigationBar)
-        .toolbar {
+    }
+
+    @ToolbarContentBuilder
+    private var toolbarContent: some ToolbarContent {
             ToolbarItem(placement: .principal) {
                 OfferPill(language: appLanguage) { showsPaywall = true }
                     .disabled(exportTask != nil)
@@ -123,7 +137,8 @@ struct QuickSilenceView: View {
                 }
             }
             ToolbarItemGroup(placement: .topBarTrailing) {
-                if isIdle && store.canOfferPro && offers.active == nil {
+                // The pill needs both an active offer and its price; without either, keep the PRO entry.
+                if isIdle && store.canOfferPro && !(offers.active != nil && store.offerPrices != nil) {
                     Button { showsPaywall = true } label: {
                         proCapsuleLabel
                             .frame(minWidth: 44, minHeight: 44)
@@ -141,10 +156,11 @@ struct QuickSilenceView: View {
                 .accessibilityLabel(t("Ayarlar", "Settings"))
                 .accessibilityIdentifier("settingsButton")
             }
-        }
-        .sheet(isPresented: $showsPaywall) {
-            ProSheet(language: appLanguage)
-        }
+    }
+
+    /// Fine-tune sheet and state observers; split from `body` so it type-checks in time.
+    private func observers(_ content: some View) -> some View {
+        content
         .sheet(isPresented: $showsFineTune) {
             FineTuneSheet(settings: cutSettings, preset: QuickSilenceEngine.CutSettings(cutIntensity), language: appLanguage) { newSettings in
                 cutSettings = newSettings
@@ -154,7 +170,13 @@ struct QuickSilenceView: View {
                 replan()
             }
         }
-        .onAppear { isScreenVisible = true }
+        .onChange(of: showsPaywall) { _, shown in
+            if shown { auditioner.stop(); preview.pause() }
+        }
+        .onAppear {
+            isScreenVisible = true
+            autoPresentFlashIfPossible()  // back from Settings
+        }
         .onDisappear {
             isScreenVisible = false
             preview.pause()
@@ -166,6 +188,8 @@ struct QuickSilenceView: View {
         // Flash offer: one automatic presentation per install, only on home/review when nothing else is up.
         .onChange(of: offers.active, initial: true) { _, _ in autoPresentFlashIfPossible() }
         .onChange(of: scenePhase) { _, phase in if phase == .active { autoPresentFlashIfPossible() } }
+        // Cold launch: the earlier triggers run before StoreKit products load, when no offer can be sold yet.
+        .onChange(of: store.offerPrices != nil) { _, _ in autoPresentFlashIfPossible() }
         .onChange(of: phaseKey) { _, key in
             // Long analyses must not let the screen lock.
             UIApplication.shared.isIdleTimerDisabled = key == 1 || exportTask != nil
@@ -268,7 +292,7 @@ struct QuickSilenceView: View {
         case .working(let state):
             VStack(spacing: 0) {
                 VStack(spacing: 4) {
-                    Text("\(Int(state.progress * 100))%")
+                    Text(percentText(state.progress))
                         .monoText(.numeralXL)
                         .foregroundStyle(Mono.C.text)
                         .contentTransition(.numericText(value: state.progress))
@@ -281,7 +305,7 @@ struct QuickSilenceView: View {
                 }
                 .accessibilityElement(children: .ignore)
                 .accessibilityLabel(state.title)
-                .accessibilityValue("\(Int(state.progress * 100))%")
+                .accessibilityValue(percentText(state.progress))
                 .accessibilityAddTraits(.updatesFrequently)
                 .padding(.bottom, 8)
 
@@ -301,7 +325,8 @@ struct QuickSilenceView: View {
                     cancelActiveWork(returnToIdle: true)
                 }
                 .buttonStyle(MonoTertiaryButtonStyle())
-                .padding(.bottom, 16)
+                // 28 pt keeps the native ad clear of Cancel (AdMob accidental-click policy).
+                .padding(.bottom, 28)
 
                 // Below Cancel so a late-loading ad never shifts the button.
                 if AdMobService.isEnabled && !store.isPro && !AdFreePass.isActive {
@@ -311,14 +336,14 @@ struct QuickSilenceView: View {
             .frame(maxWidth: .infinity)
             .transition(phaseTransition)
 
-        case .failed(let message):
+        case .failed(let error):
             VStack(spacing: 0) {
                 Text(t("Bu video işlenemedi", "This video couldn't be processed"))
                     .monoText(.title)
                     .foregroundStyle(Mono.C.text)
                     .multilineTextAlignment(.center)
                     .padding(.bottom, 8)
-                Text(message)
+                Text(userFacingMessage(for: error))
                     .monoText(.body)
                     .foregroundStyle(Mono.C.text2)
                     .multilineTextAlignment(.center)
@@ -358,7 +383,8 @@ struct QuickSilenceView: View {
 
             Color.clear.frame(height: 24)
 
-            MonoIntensityControl(selection: $cutIntensity, language: appLanguage, hint: nil)
+            MonoIntensityControl(selection: intensityBinding, language: appLanguage,
+                                 hint: store.isPro && finetuneActive ? fineTuneHint : nil)
                 .padding(.bottom, 16)
                 .monoEntrance(4)
 
@@ -384,16 +410,14 @@ struct QuickSilenceView: View {
             inputURL: inputURL,
             plan: plan,
             waveform: analysis?.windowRMS ?? [],
-            // Re-tapping the selected level clears a custom fine-tune (onChange can't see that tap).
-            intensity: Binding(get: { cutIntensity }, set: { level in
-                if level != cutIntensity { cutIntensity = level } else { resetFineTune() }
-            }),
+            intensity: intensityBinding,
             usesPresetSettings: cutSettings == QuickSilenceEngine.CutSettings(cutIntensity),
             preview: preview,
+            auditioner: auditioner,
             language: appLanguage,
             exportProgress: exportProgress,
             saved: saved,
-            saveError: saveError,
+            saveError: saveError.map { userFacingMessage(for: $0) },
             saveNeedsSettings: saveNeedsSettings,
             fineTune: store.isPro ? .unlocked : (store.canOfferPro ? .locked : .hidden),
             sourceInfo: sourceInfo,
@@ -429,6 +453,17 @@ struct QuickSilenceView: View {
         .animation(Mono.Motion.pick(Mono.Motion.smooth, reduce: reduceMotion), value: processingAdOverlay)
     }
 
+    /// Re-tapping the selected level clears a custom fine-tune (onChange can't see that tap).
+    private var intensityBinding: Binding<QuickSilenceEngine.CutIntensity> {
+        Binding(get: { cutIntensity }, set: { level in
+            if level != cutIntensity { cutIntensity = level } else { resetFineTune() }
+        })
+    }
+
+    private var fineTuneHint: String {
+        t("Özel ince ayar. Sıfırlamak için bir seviye seç.", "Custom fine-tune. Pick a level to reset.")
+    }
+
     // MARK: - Pick, import, analyze
 
     private func startPickedVideo(_ item: PhotosPickerItem) {
@@ -460,7 +495,7 @@ struct QuickSilenceView: View {
         // Relative paths resolve against Documents so a device run can use a file copied in with devicectl.
         let inputURL = path.hasPrefix("/") ? URL(fileURLWithPath: path) : URL.documentsDirectory.appending(path: path)
         guard FileManager.default.fileExists(atPath: inputURL.path) else {
-            phase = .failed(t("Test videosu bulunamadı.", "Test video was not found."))
+            phase = .failed(ViewFailure.testVideoMissing)
             return
         }
 
@@ -514,7 +549,7 @@ struct QuickSilenceView: View {
             cancelActiveWork(returnToIdle: true)
             return
         }
-        fail(userFacingMessage(for: error))
+        fail(error)
     }
 
     private func importVideo(_ item: PhotosPickerItem, jobID: UUID) async throws -> URL {
@@ -522,9 +557,9 @@ struct QuickSilenceView: View {
         let tracker = Task { @MainActor in
             while !Task.isCancelled {
                 let download = importService.downloadProgress
-                // Photos reports progress for local copies too; only a slow one is really iCloud.
+                // Photos reports progress for local copies too, so the title stays neutral (iCloud can't be proven).
                 if download >= 0, download < 1, Date.now.timeIntervalSince(started) > 3 {
-                    applyProgress(0.02 + download * 0.07, t("iCloud videosu indiriliyor", "Downloading iCloud video"), jobID: jobID)
+                    applyProgress(0.02 + download * 0.07, t("Video hazırlanıyor", "Preparing video"), jobID: jobID)
                 } else {
                     applyProgress(0.04, t("Video hazırlanıyor", "Preparing video"), jobID: jobID)
                 }
@@ -540,13 +575,12 @@ struct QuickSilenceView: View {
 
         if let error = importService.error {
             if error == .loadFailed, (1...300_000_000).contains(WorkFiles.availableBytes()) {
-                throw ViewFailure(t("Bu videoyu içe aktarmak için yeterli boş alan yok. Biraz yer açıp tekrar dene.",
-                                    "Not enough free storage to import this video. Free up some space and try again."))
+                throw ViewFailure.importNoSpace
             }
-            throw ViewFailure(error.message(for: appLanguage))
+            throw error
         }
         guard let url = importService.importedVideoURL else {
-            throw ViewFailure(t("Video yüklenemedi. Lütfen farklı bir dosya deneyin.", "Could not load the video. Try a different file."))
+            throw ViewFailure.loadFailed
         }
         return url
     }
@@ -574,9 +608,10 @@ struct QuickSilenceView: View {
     private func replan() {
         guard let analysis, case .review = phase else { return }
         do {
-            plan = try QuickSilenceEngine.plan(analysis, settings: cutSettings)
+            let fresh = try QuickSilenceEngine.plan(analysis, settings: cutSettings)
+            plan = plan.map(fresh.carryingRestored) ?? fresh
         } catch {
-            fail(userFacingMessage(for: error))
+            fail(error)
         }
     }
 
@@ -590,10 +625,12 @@ struct QuickSilenceView: View {
 
     private func startSave() {
         guard exportTask == nil else { return }
+        // The permission alert is its own window, invisible to the ad gate: end the ad break first.
+        skipProcessingAdBreak()
         Task {
             // Ask before exporting: a denial used to throw the finished export away.
             guard await PhotosSaveService.ensureAddAccess() else {
-                saveError = t("Fotoğraflar izni kapalı. Kaydetmek için Ayarlar'dan izin ver.", "Photos access is off. Allow it in Settings to save.")
+                saveError = ViewFailure.photosAccessOff
                 saveNeedsSettings = true
                 return
             }
@@ -610,8 +647,8 @@ struct QuickSilenceView: View {
             OfferCenter.shared.noteSave()
             scheduleReviewPrompt()
         case .failure(let error):
-            session.discardOutput()
-            saveError = String(format: t("Kaydedilemedi: %@", "Could not save: %@"), saveErrorMessage(for: error))
+            // Keep the finished export: a retry or Share reuses it instead of exporting again.
+            saveError = ViewFailure.saveFailed(error)
             saveNeedsSettings = (error as? PhotosSaveService.SaveError) == .permissionDenied
         }
     }
@@ -630,8 +667,13 @@ struct QuickSilenceView: View {
         if let url = session.outputURL, FileManager.default.fileExists(atPath: url.path) {
             saveError = nil
             saveNeedsSettings = false
+            auditioner.stop()
+            preview.pause()
+            // Overlay locks the controls: a plan change mid-save would delete the file being copied.
+            exportProgress = 1
             exportTask = Task {
                 await finish(url)
+                exportProgress = nil
                 exportTask = nil
             }
             return
@@ -640,20 +682,25 @@ struct QuickSilenceView: View {
         let available = WorkFiles.availableBytes()  // 0 means the volume could not be read; don't block on that
         guard available == 0 || Double(available) >= Double(size) * 1.1 else {
             // Keep the review: the user can free space and retry without re-importing.
-            saveError = t("Yeterli boş alan yok. Biraz yer açıp tekrar dene.", "Not enough free storage. Free up some space and try again.")
+            saveError = ViewFailure.exportNoSpace
             saveNeedsSettings = false
             return
         }
         skipProcessingAdBreak()
+        auditioner.stop()
         preview.pause()
         saveError = nil
         saveNeedsSettings = false
+        exportExpired = false
         exportProgress = 0
         UIApplication.shared.isIdleTimerDisabled = true
         let language = appLanguage
         exportTask = Task {
             // Leaving the app no longer kills the export outright; iOS grants a short grace period.
-            let bg = UIApplication.shared.beginBackgroundTask { exportTask?.cancel() }
+            let bg = UIApplication.shared.beginBackgroundTask {
+                exportExpired = true
+                exportTask?.cancel()
+            }
             defer {
                 UIApplication.shared.endBackgroundTask(bg)
                 UIApplication.shared.isIdleTimerDisabled = false
@@ -662,12 +709,14 @@ struct QuickSilenceView: View {
             }
             do {
                 let result = try await QuickSilenceEngine.export(url: inputURL, plan: plan, language: language) { update in
-                    if exportProgress != nil { exportProgress = max(0, (update.fraction - 0.28) / 0.72) }
+                    // Monotonic: the compatibility fallback restarts the engine's fraction lower.
+                    if let current = exportProgress { exportProgress = max(current, (update.fraction - 0.28) / 0.72) }
                 }
                 // Register before any early return so the file can never be orphaned.
                 session.setOutput(result.outputURL)
                 guard !Task.isCancelled else {
                     session.discardOutput()
+                    if exportExpired { saveError = ViewFailure.backgroundStopped }
                     return
                 }
                 // Dated name for AirDrop/Files; the "cutsense-" prefix keeps it a managed file.
@@ -683,7 +732,8 @@ struct QuickSilenceView: View {
             } catch {
                 session.discardOutput()
                 // Export failures stay on review so the user can retry or pick a softer setting.
-                if !(error is CancellationError) { saveError = userFacingMessage(for: error) }
+                if exportExpired { saveError = ViewFailure.backgroundStopped }
+                else if !(error is CancellationError) { saveError = error }
             }
         }
     }
@@ -729,6 +779,8 @@ struct QuickSilenceView: View {
         session.end()
         importService.discardImport()
         preview.reset()
+        auditioner.stop()
+        auditioner = CutAuditioner()  // drops the previous video's thumbnails and player item
         analysis = nil
         plan = nil
         presetLengths = [:]
@@ -739,11 +791,11 @@ struct QuickSilenceView: View {
         saveNeedsSettings = false
     }
 
-    private func fail(_ message: String) {
+    private func fail(_ error: Error) {
         cancelActiveWork(returnToIdle: false)
         endVideo()
         activeJobID = nil
-        phase = .failed(message)
+        phase = .failed(error)
     }
 
     private func reset() {
@@ -774,10 +826,16 @@ struct QuickSilenceView: View {
     /// (24 h without banner ads) and offers Skip, as AdMob requires. Shown only if the ad is
     /// ready within 3 s and nothing (share sheet, alert, export) is in the way.
     private func startResultAdBreakIfNeeded(jobID: UUID) {
-        guard AdMobService.isEnabled else { preview.autoplayOnce(); return }
+        // A pass with > 48 h left can't honour "24 h without banners" (it is capped at 72 h).
+        let passLeft = AdFreePass.expiry?.timeIntervalSinceNow ?? 0
+        guard AdMobService.isEnabled, passLeft <= 48 * 3600 else { preview.autoplayOnce(); return }
         processingAdTask?.cancel()
         processingAdTask = Task { @MainActor in
-            defer { if !Task.isCancelled, isActive(jobID), isReview, !AdMobService.hasPresentedContent { preview.autoplayOnce() } }
+            defer {
+                if !Task.isCancelled, isActive(jobID), isReview, isScreenVisible, !AdMobService.hasPresentedContent {
+                    preview.autoplayOnce()
+                }
+            }
             try? await Task.sleep(for: .milliseconds(850))
             guard !Task.isCancelled, isActive(jobID), isReview else { return }
             if !rewardedAd.isReady {
@@ -805,6 +863,7 @@ struct QuickSilenceView: View {
                 }
             }
             processingAdOverlay = nil
+            auditioner.stop()
             preview.pause()
             let result = await rewardedAd.showIfAvailable()
             guard result.wasPresented else { return }
@@ -832,6 +891,7 @@ struct QuickSilenceView: View {
     private func canShowResultAd(jobID: UUID) -> Bool {
         isActive(jobID) && isReview && isScreenVisible && rewardedAd.isReady && exportTask == nil
             && !showsPaywall && !AdMobService.hasPresentedContent
+            && !auditioner.isShowingOriginal && auditioner.activeID == nil  // user is listening
     }
 
     private func skipProcessingAdBreak() {
@@ -869,6 +929,11 @@ struct QuickSilenceView: View {
         appText(appLanguage, tr, en)
     }
 
+    /// "%45" in Turkish, "45%" elsewhere (shared key with the review stats).
+    private func percentText(_ fraction: Double) -> String {
+        String(format: t("%%%d", "%d%%"), Int(fraction * 100))
+    }
+
     private func openAppSettings() {
         guard let url = URL(string: UIApplication.openSettingsURLString) else { return }
         UIApplication.shared.open(url)
@@ -885,7 +950,10 @@ struct QuickSilenceView: View {
             return audioError.message(for: appLanguage)
         }
         if let viewError = error as? ViewFailure {
-            return viewError.message
+            return message(for: viewError)
+        }
+        if let importError = error as? VideoImportService.ImportError {
+            return importError.message(for: appLanguage)
         }
         // QA-FIX: a damaged/unreadable file used to get "try a softer cut setting", which can't help.
         let domain = (error as NSError).domain
@@ -896,6 +964,20 @@ struct QuickSilenceView: View {
         return t("Video işlenemedi. Lütfen farklı bir video veya daha yumuşak kesim ayarı dene.", "Could not process this video. Try another video or a softer cut setting.")
     }
 
+    private func message(for failure: ViewFailure) -> String {
+        switch failure {
+        case .testVideoMissing: t("Test videosu bulunamadı.", "Test video was not found.")
+        case .importNoSpace: t("Bu videoyu içe aktarmak için yeterli boş alan yok. Biraz yer açıp tekrar dene.",
+                               "Not enough free storage to import this video. Free up some space and try again.")
+        case .loadFailed: t("Video yüklenemedi. Lütfen farklı bir dosya deneyin.", "Could not load the video. Try a different file.")
+        case .photosAccessOff: t("Fotoğraflar izni kapalı. Kaydetmek için Ayarlar'dan izin ver.", "Photos access is off. Allow it in Settings to save.")
+        case .exportNoSpace: t("Yeterli boş alan yok. Biraz yer açıp tekrar dene.", "Not enough free storage. Free up some space and try again.")
+        case .backgroundStopped: t("Uygulama arka plandayken video oluşturma durdu. Tekrar dene.",
+                                   "Creating the video stopped while the app was in the background. Try again.")
+        case .saveFailed(let error): String(format: t("Kaydedilemedi: %@", "Could not save: %@"), saveErrorMessage(for: error))
+        }
+    }
+
     private func saveErrorMessage(for error: Error) -> String {
         guard let saveError = error as? PhotosSaveService.SaveError else {
             return error.localizedDescription
@@ -904,9 +986,10 @@ struct QuickSilenceView: View {
     }
 }
 
-private struct ViewFailure: Error {
-    let message: String
-    init(_ message: String) { self.message = message }
+/// Kinds, not text: `userFacingMessage` localizes them when shown.
+private enum ViewFailure: Error {
+    case testVideoMissing, importNoSpace, loadFailed, photosAccessOff, exportNoSpace, backgroundStopped
+    case saveFailed(Error)
 }
 
 struct CutIntensityPicker: View {

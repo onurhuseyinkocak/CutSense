@@ -463,7 +463,8 @@ struct MonoNotice: View {
                 .accessibilityHidden(true)
             Text(text)
                 .monoText(.caption)
-                .lineLimit(2)
+                .lineLimit(3)
+                .minimumScaleFactor(0.9)
                 .frame(maxWidth: .infinity, alignment: .leading)
             if let actionTitle, let action {
                 Button(action: action) {

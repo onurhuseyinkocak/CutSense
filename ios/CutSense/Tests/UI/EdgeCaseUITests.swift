@@ -15,7 +15,8 @@ final class EdgeCaseUITests: XCTestCase {
         // No SKTestSession here: on device it terminated the freshly launched app ~4 s in (r2).
         // Entitlement state = whatever OfferFlowUITests.tearDown left (cleared → free user).
         app = XCUIApplication()
-        app.launchArguments += ["-app_language", "en", "-AppleLanguages", "(en)", "-onboarding_done_v1", "YES"]
+        app.launchArguments += ["-app_language", "en", "-AppleLanguages", "(en)", "-onboarding_done_v1", "YES",
+                               "-cut_intensity", "balanced", "-finetune_active", "NO"]
         addUIInterruptionMonitor(withDescription: "System alerts") { [unowned self] alert in
             for label in alertChoice + ["Not Now"] where alert.buttons[label].exists {
                 alert.buttons[label].tap()

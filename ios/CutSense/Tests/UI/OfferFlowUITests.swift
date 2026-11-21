@@ -143,6 +143,35 @@ final class OfferFlowUITests: XCTestCase {
         XCTAssertFalse(buy.exists, "Flash opened automatically a second time")
     }
 
+    func testFlashExpiryRestoresRegularEntry() throws {
+        app.launchArguments += ["-onboarding_done_v1", "YES"]
+        app.launchEnvironment["CUTSENSE_RESET_ONBOARDING"] = "1"
+        app.launchEnvironment["CUTSENSE_FORCE_FLASH_OFFER"] = "1"
+        app.launchEnvironment["CUTSENSE_OFFER_SECONDS"] = "25"
+        app.launch()
+        let pill = app.buttons["offerPill"]
+        XCTAssertTrue(pill.waitForExistence(timeout: 15), "Pill missing for a forced flash")
+        let buy = app.buttons["offerBuyButton"]
+        if buy.waitForExistence(timeout: 5) { snapshot("flash-panel"); app.buttons["Close"].tap() }
+        snapshot("flash-running")
+        XCTAssertTrue(pill.waitForNonExistence(timeout: 40), "Pill still visible after the flash ended")
+        XCTAssertTrue(app.buttons["proCapsule"].waitForExistence(timeout: 5), "PRO capsule not back after the flash")
+        snapshot("flash-expired")
+    }
+
+    func testProOwnerNeverSeesOffers() throws {
+        app.launchArguments += ["-onboarding_done_v1", "YES"]
+        app.launchEnvironment["CUTSENSE_FORCE_PRO"] = "1"
+        app.launchEnvironment["CUTSENSE_FORCE_FLASH_OFFER"] = "1"
+        app.launch()
+        XCTAssertTrue(app.buttons["chooseVideoButton"].waitForExistence(timeout: 15))
+        sleep(3)
+        snapshot("pro-owner-home")
+        XCTAssertFalse(app.buttons["offerPill"].exists, "Pill shown to a Pro owner")
+        XCTAssertFalse(app.buttons["offerBuyButton"].exists, "Offer opened for a Pro owner")
+        XCTAssertFalse(app.buttons["proCapsule"].exists, "PRO capsule shown to a Pro owner")
+    }
+
     private func snapshot(_ name: String) {
         let attachment = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
         attachment.name = name

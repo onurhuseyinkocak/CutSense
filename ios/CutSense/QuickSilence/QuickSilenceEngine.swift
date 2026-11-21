@@ -178,6 +178,20 @@ enum QuickSilenceEngine {
             return Int(((duration - outputDuration) / duration * 100).rounded())
         }
 
+        /// Replan keeps the user's "keep" choices: a new cut overlapping an old kept range stays kept.
+        func carryingRestored(from old: CutPlan) -> CutPlan {
+            let kept = old.cuts.filter(\.isRestored).map(\.range)
+            guard !kept.isEmpty else { return self }
+            var copy = self
+            for i in copy.cuts.indices {
+                let r = copy.cuts[i].range
+                if kept.contains(where: { min($0.upperBound, r.upperBound) > max($0.lowerBound, r.lowerBound) }) {
+                    copy.cuts[i].isRestored = true
+                }
+            }
+            return copy
+        }
+
         /// Where original time `t` lands in the cut output; a time inside a removed cut maps to the jump point.
         func outputTime(forOriginal t: Double) -> Double {
             let removedBefore = activeCuts.reduce(0) { sum, cut in

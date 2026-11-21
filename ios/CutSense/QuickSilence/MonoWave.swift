@@ -30,38 +30,40 @@ struct WaveformTimeline: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var grown = false
 
-    /// A slot is cut if an active cut covers >= 40% of its window or contains a cut's midpoint.
-    nonisolated static func cutMask(count: Int, plan: QuickSilenceEngine.CutPlan) -> [Bool] {
-        guard count > 0, plan.duration > 0 else { return Array(repeating: false, count: max(count, 0)) }
+    /// Share (0...1) of each slot's window removed by active cuts. Drives dimming and compaction,
+    /// so a 0.4 s cut in a 7 s slot (10-min video) barely changes it, while a short video's slots go fully dim.
+    nonisolated static func coverage(count: Int, plan: QuickSilenceEngine.CutPlan) -> [Double] {
+        guard count > 0, plan.duration > 0 else { return Array(repeating: 0, count: max(count, 0)) }
         let active = plan.cuts.filter { !$0.isRestored }.map(\.range)
         let window = plan.duration / Double(count)
         return (0..<count).map { i in
             let lo = Double(i) * window, hi = lo + window
-            return active.contains { cut in
-                let overlap = min(hi, cut.upperBound) - max(lo, cut.lowerBound)
-                let mid = (cut.lowerBound + cut.upperBound) / 2
-                return overlap >= window * 0.4 || (mid >= lo && mid < hi)
-            }
+            let removed = active.reduce(0) { $0 + max(0, min(hi, $1.upperBound) - max(lo, $1.lowerBound)) }
+            return min(removed / window, 1)
         }
     }
 
     var body: some View {
-        let mask = Self.cutMask(count: bars.count, plan: plan)
+        let cover = Self.coverage(count: bars.count, plan: plan)
         GeometryReader { geo in
             let h = geo.size.height
             let slot = bars.isEmpty ? 0 : geo.size.width / CGFloat(bars.count)
             HStack(spacing: 0) {
                 ForEach(bars.indices, id: \.self) { i in
-                    let cut = mask[i]
+                    let c = CGFloat(cover[i])
                     let full = CGFloat(bars[i]) * h
-                    let height = cut ? max(3, full * 0.35) : full
+                    let height = max(3, full * (1 - 0.65 * c))
+                    // Compacted: each slot keeps only its kept share, so the strip shrinks by the real cut ratio.
+                    let width = compacted ? slot * (1 - c) : slot
+                    // Colour blends by the removed share too: white fades toward `waveCut`.
                     Capsule()
-                        .fill(cut ? Mono.C.waveCut : Mono.C.text)
-                        .frame(width: compacted && cut ? 0 : slot * 0.6, height: grown ? height : 0)
-                        .frame(width: compacted && cut ? 0 : slot, height: h)
+                        .fill(Mono.C.waveCut)
+                        .overlay(Capsule().fill(Mono.C.text).opacity(1 - c))
+                        .frame(width: width * 0.6, height: grown ? height : 0)
+                        .frame(width: width, height: h)
                         .animation(
                             reduceMotion ? Mono.Motion.fade : Mono.Motion.smooth.delay(Double(i) * 0.004),
-                            value: [cut, compacted, grown]
+                            value: [c, compacted ? 1 : 0, grown ? 1 : 0]
                         )
                 }
             }

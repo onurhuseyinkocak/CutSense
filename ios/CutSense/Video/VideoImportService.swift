@@ -109,6 +109,9 @@ final class VideoImportService {
 
     private func loadMovie(_ item: PhotosPickerItem) async throws -> VideoTransferable {
         let box = ProgressBox()
+        // The poller must end with the load: a failed load's Progress may never report finished,
+        // and a stale poller would overwrite the retry's (or next import's) downloadProgress.
+        defer { box.poller?.cancel() }
         let movie: VideoTransferable? = try await withTaskCancellationHandler {
             try await withCheckedThrowingContinuation { continuation in
                 let progress = item.loadTransferable(type: VideoTransferable.self) { result in
@@ -116,8 +119,8 @@ final class VideoImportService {
                 }
                 box.progress = progress
                 loadProgress = progress
-                Task { @MainActor [weak self] in
-                    while !progress.isFinished && !progress.isCancelled {
+                box.poller = Task { @MainActor [weak self] in
+                    while !Task.isCancelled && !progress.isFinished && !progress.isCancelled {
                         self?.downloadProgress = progress.fractionCompleted
                         try? await Task.sleep(for: .milliseconds(250))
                     }
@@ -133,6 +136,7 @@ final class VideoImportService {
 
 private final class ProgressBox: @unchecked Sendable {
     var progress: Progress?
+    var poller: Task<Void, Never>?
 }
 
 struct VideoTransferable: Transferable, Sendable {

@@ -73,4 +73,30 @@ final class QuickSilencePlanTests: XCTestCase {
         let duration = try await item.asset.load(.duration).seconds
         XCTAssertEqual(duration, plan.outputDuration, accuracy: 0.05)
     }
+
+    func testReplanCarriesKeptPausesOver() {
+        var old = QuickSilenceEngine.CutPlan(duration: 30, cuts: [
+            .init(id: 0, range: 2...4, isRestored: false),
+            .init(id: 1, range: 10...13, isRestored: false),
+        ])
+        old.cuts[1].isRestored = true
+        // Tighter level: same pauses grow, ids shift because a new pause appears first.
+        let fresh = QuickSilenceEngine.CutPlan(duration: 30, cuts: [
+            .init(id: 0, range: 0.5...1, isRestored: false),
+            .init(id: 1, range: 1.8...4.2, isRestored: false),
+            .init(id: 2, range: 9.8...13.2, isRestored: false),
+            .init(id: 3, range: 13.2...14, isRestored: false),
+        ])
+        let carried = fresh.carryingRestored(from: old)
+        XCTAssertEqual(carried.cuts.map(\.isRestored), [false, false, true, false], "touching edge (13.2) is not overlap")
+        XCTAssertEqual(fresh.carryingRestored(from: fresh), fresh, "nothing kept, nothing changes")
+    }
+
+    func testThumbnailKeyFollowsTimeNotIndex() {
+        let a = QuickSilenceEngine.Cut(id: 0, range: 2...4, isRestored: false)
+        let b = QuickSilenceEngine.Cut(id: 0, range: 7.3...8, isRestored: false)
+        XCTAssertNotEqual(CutAuditioner.thumbnailKey(for: a), CutAuditioner.thumbnailKey(for: b),
+                          "a replan reusing id 0 for another pause must not reuse its frame")
+        XCTAssertEqual(CutAuditioner.thumbnailKey(for: a), CutAuditioner.thumbnailKey(for: .init(id: 5, range: 2...6, isRestored: true)))
+    }
 }

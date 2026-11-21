@@ -55,7 +55,8 @@ struct OnboardingView: View {
                 copy
                     .padding(.top, 28)
                 Spacer(minLength: 0)
-                if isLast {
+                // A 1.0.x Pro owner upgrading sees onboarding too; the ads line isn't true for them.
+                if isLast && !ProStore.shared.isPro {
                     Text(t("Reklamlı ve ücretsiz. Tek seferlik Pro reklamları kaldırır.", "Free with ads. One-time Pro removes them."))
                         .monoText(.caption)
                         .foregroundStyle(Mono.C.text3)
@@ -80,6 +81,8 @@ struct OnboardingView: View {
         .gesture(swipe)
         .sensoryFeedback(.impact(flexibility: .soft), trigger: page)
         .transaction { if freeze != nil { $0.disablesAnimations = true; $0.animation = nil } }
+        // The title's 96 pt box and the fixed stage clip at accessibility sizes.
+        .dynamicTypeSize(...DynamicTypeSize.xxLarge)
         .preferredColorScheme(.dark)
     }
 
