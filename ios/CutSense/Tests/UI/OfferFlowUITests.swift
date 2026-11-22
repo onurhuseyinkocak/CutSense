@@ -39,7 +39,8 @@ final class OfferFlowUITests: XCTestCase {
         snapshot("onboarding-1")
         next.tap(); sleep(1); snapshot("onboarding-2")
         next.tap(); next.tap() // double tap on page 2 must not skip past page 3's CTA into a broken state
-        XCTAssertTrue(app.buttons["chooseVideoButton"].waitForExistence(timeout: 10) || next.exists)
+        // A fast double tap may also hit page 3's CTA and open the welcome offer: valid, not broken.
+        XCTAssertTrue(app.buttons["chooseVideoButton"].waitForExistence(timeout: 10) || next.exists || app.buttons["offerNotNow"].exists)
         if next.exists { snapshot("onboarding-3"); next.tap() }
         // Welcome offer step (when the welcome SKU loads): Not now finishes onboarding.
         let notNow = app.buttons["offerNotNow"]
@@ -82,6 +83,7 @@ final class OfferFlowUITests: XCTestCase {
 
         // Restore with nothing bought.
         app.buttons["Restore Purchases"].tap()
+        answerStoreKitSignIn()
         let restoredNothing = app.staticTexts["No purchase found to restore."].waitForExistence(timeout: 40)
         snapshot("restore-empty")
         XCTAssertTrue(restoredNothing, "No message for empty restore")
@@ -109,6 +111,7 @@ final class OfferFlowUITests: XCTestCase {
         let restore = app.buttons["Restore Purchases"]
         XCTAssertTrue(restore.waitForExistence(timeout: 10))
         restore.tap()
+        answerStoreKitSignIn()
         sleep(3)
         snapshot("restored")
         XCTAssertFalse(app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Unlock'")).firstMatch.exists, "Unlock offered to an owner")
@@ -138,9 +141,30 @@ final class OfferFlowUITests: XCTestCase {
         app.launchEnvironment = ["CUTSENSE_OFFER_SECONDS": "90"]
         app.launchArguments += ["-onboarding_done_v1", "YES"]
         app.launch()
-        XCTAssertTrue(pill.waitForExistence(timeout: 15), "Pill lost after relaunch")
+        let pillBack = pill.waitForExistence(timeout: 15)
+        snapshot("flash-relaunch")
+        XCTAssertTrue(pillBack, "Pill lost after relaunch")
         sleep(2)
         XCTAssertFalse(buy.exists, "Flash opened automatically a second time")
+    }
+
+    /// Bug-hunt #9: the flash starts while the app is closed; a cold launch auto-opens it once prices load.
+    func testFlashAutoOpensOnColdStart() throws {
+        app.launchEnvironment["CUTSENSE_RESET_ONBOARDING"] = "1"
+        app.launchEnvironment["CUTSENSE_FLASH_DELAY_SECONDS"] = "10"
+        app.launchEnvironment["CUTSENSE_OFFER_SECONDS"] = "120"
+        app.launch()
+        let skip = app.buttons["onboardingSkip"]
+        XCTAssertTrue(skip.waitForExistence(timeout: 15))
+        skip.tap()
+        XCTAssertTrue(app.buttons["chooseVideoButton"].waitForExistence(timeout: 10))
+        app.terminate()
+        sleep(14)
+        app.launchEnvironment = ["CUTSENSE_OFFER_SECONDS": "120"]
+        app.launchArguments += ["-onboarding_done_v1", "YES"]
+        app.launch()
+        XCTAssertTrue(app.buttons["offerBuyButton"].waitForExistence(timeout: 20), "Flash did not auto-open on a cold start")
+        snapshot("flash-cold-start")
     }
 
     func testFlashExpiryRestoresRegularEntry() throws {
@@ -170,6 +194,14 @@ final class OfferFlowUITests: XCTestCase {
         XCTAssertFalse(app.buttons["offerPill"].exists, "Pill shown to a Pro owner")
         XCTAssertFalse(app.buttons["offerBuyButton"].exists, "Offer opened for a Pro owner")
         XCTAssertFalse(app.buttons["proCapsule"].exists, "PRO capsule shown to a Pro owner")
+    }
+
+    /// AppStore.sync() in the Xcode StoreKit environment asks to "sign in"; waits don't trigger interruption monitors.
+    private func answerStoreKitSignIn() {
+        for source in [app!, springboard] {
+            let ok = source.alerts.buttons["OK"]
+            if ok.waitForExistence(timeout: 4) { ok.tap(); return }
+        }
     }
 
     private func snapshot(_ name: String) {

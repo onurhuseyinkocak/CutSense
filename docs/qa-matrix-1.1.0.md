@@ -136,3 +136,32 @@ Entitlement state in r1: leftover local Pro (no ads, no ad break) for EdgeCase t
 | Onboarding badge truncation (de/es) | FIXED | sim screenshots |
 | Offer pill/panel/expiry/Pro-owner | PASS (sim, old policy) | needs re-run under new owner policy |
 | Cut audition + Before/After | IMPLEMENTED, device screenshots pending | r2/r3 blocked: device locked |
+
+## Status — round 4 (2026-11-22, device runs e4/e5/e6; evidence in scratchpad/qa/e4|e5.xcresult, att-e4, att-e5)
+
+Free user (ads on, banner pass until Nov 24) for EdgeCase. Developer certificate trusted (runner launches).
+
+| # | Status | Evidence / note |
+|---|--------|-----------------|
+| A1–A5, A7–A17 (engine) | PASS | e4 + e5 rerun (05/11/14 had failed from test helper; green in e5) |
+| A6 / C10 / C11 / C12 / C15 | PASS | e4 long-video tests |
+| B1–B4, C6, C9 | PASS | e4 testIntensityKeepAllCutAllAndDoubleTaps |
+| B7 share open/cancel | PASS | e5 testDoubleTapShareThenCancel |
+| C2/C4 triple Save + Share during export | test fixed, re-run pending | probe matched the "36%" removed stat; now uses the overlay's "Creating video" label |
+| C13 Photos denied → Open Settings | PASS | e5 |
+| E1 language switch, E2 AX-XXXL, E3 a11y audit | PASS | e4 |
+| Bug #1 kept pause survives Tight | PASS | e4 tight-after-keep screenshot (0:03–0:05 Keep) |
+| Bug #4 Share → Save busy → saved | PASS | e4 testShareThenSaveShowsBusyThenSaved |
+| Bug #6 background expiry message | UNVERIFIED | 20-min export finished inside iOS grace period (Saved after 70 s away); message path not triggered on device |
+| Bug #9 cold-start flash auto-present | PASS | e5 testFlashAutoOpensOnColdStart (new) |
+| Cut audition Before/After, hold-to-compare | PASS | e5 testCutAuditionBeforeAfter, e4 testHoldToCompare |
+| Flash pill red countdown + auto-open once (in session) | PASS | e5 flash-pill / flash-auto screenshots |
+| Flash pill after relaunch | FAIL → under investigation | e5: after relaunch neither pill nor PRO capsule (products not loaded?); snapshot added |
+| Flash expiry → PRO capsule back | PASS | e5 |
+| Pro owner sees nothing | PASS | e5 |
+| Onboarding skip/swipe | PASS | e5 |
+| Welcome $5.99 + Not now | test fixed, re-run pending | double tap on page 2 reached the welcome offer (valid) |
+| D3/D5 restore empty | test fixed, re-run pending | AppStore.sync shows Xcode "Sign in" alert; test now answers OK |
+| Crash: CheckedContinuation double resume in VideoImportService.loadMovie (build 32) | FIXED (code, compiled) | once-guard in ProgressBox.claimResume |
+| Crash: Binding force-unwrap (build 31) | already FIXED | QuickSilenceView no longer uses Binding($plan) |
+| DeviceFlow owner 4:34 clip via picker, seeded fixtures | not run | device locked at 10:00 |

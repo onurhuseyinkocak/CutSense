@@ -143,6 +143,8 @@ final class DeviceFlowUITests: XCTestCase {
         let lengthAfter = newLengthText()
         XCTAssertNotEqual(lengthBefore, lengthAfter, "Restoring a cut did not change the new length")
 
+        if shareAndOpenPhotos { try exploreReview() }
+
         save.tap()
         app.tap() // lets the interruption monitor handle the Photos permission alert
         let saved = app.buttons["Saved to Photos"]
@@ -180,12 +182,50 @@ final class DeviceFlowUITests: XCTestCase {
         XCTAssertTrue(home, "New Video did not return to the home screen")
     }
 
+    /// Owner's clip: kept pause survives Tight (bug-hunt #1), audition Before/After rows, hold-to-compare.
+    private func exploreReview() throws {
+        let tight = app.buttons["Tight"]
+        XCTAssertTrue(tight.waitForExistence(timeout: 5))
+        tight.tap()
+        sleep(2)
+        snapshot("owner-tight")
+        app.buttons["reviewCutsButton"].tap()
+        let row = app.buttons["cutRow_0"]
+        XCTAssertTrue(row.waitForExistence(timeout: 10))
+        sleep(1)
+        snapshot("owner-tight-cuts")
+        let kept = app.switches.allElementsBoundByIndex.filter { ($0.value as? String) == "0" }
+        XCTAssertFalse(kept.isEmpty, "Kept pause lost after switching to Tight")
+        row.tap()
+        sleep(1)
+        snapshot("owner-audition-before")
+        app.buttons["auditionAfter"].tap()
+        app.buttons["cutRow_1"].tap()
+        XCTAssertTrue(app.staticTexts["Edited version"].waitForExistence(timeout: 4), "After mode overlay missing")
+        snapshot("owner-audition-after")
+        app.buttons["cutRow_1"].tap()
+        app.swipeDown(velocity: .fast)
+        let hold = app.buttons["holdOriginalButton"]
+        XCTAssertTrue(hold.waitForExistence(timeout: 5), "Hold-to-compare missing")
+        hold.press(forDuration: 2)
+        snapshot("owner-after-hold")
+        XCTAssertTrue(app.buttons["saveButton"].isHittable)
+    }
+
     private func skipAdBreakIfShown() {
         let skip = app.buttons["skipAdButton"]
-        if skip.waitForExistence(timeout: 6) { skip.tap() }
-        // A full-screen ad (if the countdown already elapsed) is closed by its own button.
-        let close = app.buttons.matching(NSPredicate(format: "label CONTAINS[c] 'close'")).firstMatch
-        if close.waitForExistence(timeout: 3) { close.tap() }
+        if skip.waitForExistence(timeout: 6) {
+            _ = XCTWaiter.wait(for: [XCTNSPredicateExpectation(predicate: NSPredicate(format: "isHittable == true"), object: skip)], timeout: 2)
+            skip.tap()
+        }
+        // A full-screen ad (if the countdown already elapsed): its "Close Advertisement" stays disabled until the end card.
+        let save = app.buttons["saveButton"]
+        let close = app.buttons.matching(NSPredicate(format: "(label CONTAINS[c] 'close' OR label CONTAINS[c] 'kapat') AND isEnabled == true"))
+        let deadline = Date().addingTimeInterval(45)
+        while Date() < deadline, !(save.exists && save.isHittable) {
+            if let button = close.allElementsBoundByIndex.first(where: { $0.isHittable }) { snapshot("ad-close"); button.tap() }
+            sleep(1)
+        }
     }
 
     private func dismissRatingPromptIfShown() {

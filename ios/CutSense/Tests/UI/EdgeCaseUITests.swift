@@ -181,20 +181,102 @@ final class EdgeCaseUITests: XCTestCase {
         snapshot("review-after-audition")
     }
 
-    func testDoubleTapSaveThenShare() throws {
+    /// Bug-hunt #1: a restored pause stays kept when the intensity changes.
+    func testKeptPauseSurvivesIntensityChange() throws {
         launch(autorun: "01_talk_1080p30.mp4")
+        try waitForReview(timeout: 120)
+        skipAdBreakIfShown(doubleTap: false)
+        app.buttons["reviewCutsButton"].tap()
+        let toggle = app.switches["cutToggle_0"]
+        XCTAssertTrue(toggle.waitForExistence(timeout: 10))
+        toggle.coordinate(withNormalizedOffset: CGVector(dx: 0.92, dy: 0.5)).tap()
+        sleep(1)
+        app.swipeDown(velocity: .fast)
+        XCTAssertTrue(app.buttons["Tight"].waitForExistence(timeout: 5))
+        app.buttons["Tight"].tap()
+        sleep(2)
+        app.buttons["reviewCutsButton"].tap()
+        sleep(1)
+        snapshot("tight-after-keep")
+        let kept = app.switches.allElementsBoundByIndex.filter { ($0.value as? String) == "0" }
+        XCTAssertFalse(kept.isEmpty, "The kept pause was lost when switching to Tight")
+        app.swipeDown(velocity: .fast)
+    }
+
+    /// Bug-hunt #4: Save right after Share reuses the export and shows a busy state, never a dead button.
+    func testShareThenSaveShowsBusyThenSaved() throws {
+        launch(autorun: "01_talk_1080p30.mp4")
+        try waitForReview(timeout: 120)
+        skipAdBreakIfShown(doubleTap: false)
+        app.buttons["Share"].tap()
+        let sheet = app.otherElements["ActivityListView"]
+        XCTAssertTrue(sheet.waitForExistence(timeout: 60))
+        sheet.swipeDown(velocity: .fast)
+        XCTAssertTrue(sheet.waitForNonExistence(timeout: 10))
+        app.buttons["saveButton"].tap()
+        snapshot("save-after-share-0s")
+        app.tap()
+        XCTAssertTrue(app.buttons["Saved to Photos"].waitForExistence(timeout: 60), "Save after Share did not finish")
+        snapshot("save-after-share-done")
+        dismissRatingPromptIfShown()
+    }
+
+    /// Bug-hunt #6: leave the app long enough for iOS to end the background grace period mid-export.
+    func testBackgroundExportExpiryMessage() throws {
+        launch(autorun: "06_long_20min.mp4")
+        try waitForReview(timeout: 600)
+        skipAdBreakIfShown(doubleTap: false)
+        app.buttons["saveButton"].tap()
+        sleep(2)
+        app.tap()
+        sleep(2)
+        XCUIDevice.shared.press(.home)
+        sleep(70)
+        app.activate()
+        sleep(3)
+        snapshot("export-after-long-background")
+        let saved = app.buttons["Saved to Photos"].exists
+        let stopped = app.staticTexts.matching(NSPredicate(format: "label CONTAINS 'in the background'")).firstMatch.exists
+        XCTAssertTrue(saved || stopped || isExportOverlayShown, "No outcome after a long background")
+        if !saved, !stopped {
+            XCTAssertTrue(app.buttons["Saved to Photos"].waitForExistence(timeout: 300), "Export never finished after returning")
+        }
+    }
+
+    func testHoldToCompare() throws {
+        launch(autorun: "01_talk_1080p30.mp4")
+        try waitForReview(timeout: 120)
+        skipAdBreakIfShown(doubleTap: false)
+        let hold = app.buttons["holdOriginalButton"]
+        XCTAssertTrue(hold.waitForExistence(timeout: 5), "Hold-to-compare control missing")
+        snapshot("compare-before")
+        hold.press(forDuration: 2.5)
+        snapshot("compare-after-release")
+        tapRepeatedly(hold, times: 3)
+        XCTAssertTrue(app.buttons["saveButton"].isHittable)
+    }
+
+    func testDoubleTapSaveThenShare() throws {
+        // 4K HEVC: the 1080p fixture exports and saves in ~1 s on device, before Share can land mid-export.
+        launch(autorun: "02_4k_hevc60.mp4")
         try waitForReview(timeout: 120)
         skipAdBreakIfShown(doubleTap: false)
         let save = app.buttons["saveButton"]
         tapRepeatedly(save, times: 3)
+        app.tap() // first save: lets the interruption monitor answer the Photos prompt
         let share = app.buttons["Share"]
+        let busyAtShare = isExportOverlayShown
         if share.exists { share.tap() } // while exporting: must be ignored
-        app.tap()
         let saved = app.buttons["Saved to Photos"]
         XCTAssertTrue(saved.waitForExistence(timeout: 120), "Save did not finish")
         snapshot("double-save")
         dismissRatingPromptIfShown()
-        XCTAssertFalse(app.otherElements["ActivityListView"].exists, "Share sheet opened during save")
+        let sheet = app.otherElements["ActivityListView"]
+        if busyAtShare {
+            XCTAssertFalse(sheet.exists, "Share sheet opened during save")
+        } else if sheet.exists {
+            sheet.swipeDown(velocity: .fast) // Share after a finished save is allowed
+        }
     }
 
     func testDoubleTapShareThenCancel() throws {
@@ -251,7 +333,9 @@ final class EdgeCaseUITests: XCTestCase {
         sleep(3)
         app.tap()
         let openSettings = app.buttons["Open Settings"]
-        XCTAssertTrue(openSettings.waitForExistence(timeout: 60), "No Open Settings notice after denying Photos")
+        let shown = openSettings.waitForExistence(timeout: 30)
+        snapshot("photos-denied-state")
+        XCTAssertTrue(shown, "No Open Settings notice after denying Photos")
         snapshot("photos-denied")
         app.resetAuthorizationStatus(for: .photos)
     }
@@ -308,7 +392,9 @@ final class EdgeCaseUITests: XCTestCase {
 
     /// User-style repeated taps on one spot; later taps hit whatever replaced the element.
     private func tapRepeatedly(_ element: XCUIElement, times: Int) {
-        let point = element.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5))
+        // Screen-absolute point: an element-relative coordinate re-resolves (and fails) once the element is gone.
+        let frame = element.frame
+        let point = app.coordinate(withNormalizedOffset: .zero).withOffset(CGVector(dx: frame.midX, dy: frame.midY))
         for _ in 0..<times { point.tap() }
     }
 
@@ -394,7 +480,7 @@ final class EdgeCaseUITests: XCTestCase {
     }
 
     private var isExportOverlayShown: Bool {
-        app.staticTexts.matching(NSPredicate(format: "label MATCHES '^[0-9]{1,3}%$'")).firstMatch.exists
+        app.descendants(matching: .any).matching(NSPredicate(format: "label == 'Creating video'")).firstMatch.exists
     }
 
     private func assertStorageZero() throws {
@@ -410,11 +496,22 @@ final class EdgeCaseUITests: XCTestCase {
     private func skipAdBreakIfShown(doubleTap: Bool) {
         let skip = app.buttons["skipAdButton"]
         if skip.waitForExistence(timeout: 5) {
+            // The card slides in from the top; a tap during the transition resolves to {-1,-1} and is lost.
+            _ = XCTWaiter.wait(for: [XCTNSPredicateExpectation(predicate: NSPredicate(format: "isHittable == true"), object: skip)], timeout: 2)
             skip.tap()
             if doubleTap, skip.exists { skip.tap() }
         }
-        let close = app.buttons.matching(NSPredicate(format: "label CONTAINS[c] 'close'")).firstMatch
-        if close.waitForExistence(timeout: 2) { close.tap() }
+        // A Skip tap that lands as the 3-2-1 countdown ends is too late: the full-screen ad opens (by design).
+        // The test ad's "Close Advertisement" stays disabled until its end card, which has its own enabled Close.
+        let save = app.buttons["saveButton"]
+        let close = app.buttons.matching(NSPredicate(format: "(label CONTAINS[c] 'close' OR label CONTAINS[c] 'kapat') AND isEnabled == true"))
+        let deadline = Date().addingTimeInterval(45)
+        var shot = false
+        while Date() < deadline, !(save.exists && save.isHittable) {
+            if !shot, close.firstMatch.exists { snapshot("ad-presented"); shot = true }
+            if let button = close.allElementsBoundByIndex.first(where: { $0.isHittable }) { button.tap() }
+            sleep(1)
+        }
     }
 
     private func dismissRatingPromptIfShown() {

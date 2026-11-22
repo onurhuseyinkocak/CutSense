@@ -115,7 +115,8 @@ final class VideoImportService {
         let movie: VideoTransferable? = try await withTaskCancellationHandler {
             try await withCheckedThrowingContinuation { continuation in
                 let progress = item.loadTransferable(type: VideoTransferable.self) { result in
-                    continuation.resume(with: result)
+                    // PhotosUI can call back twice (an error after a cancel); a second resume traps (crash 2026-11-21-203348).
+                    if box.claimResume() { continuation.resume(with: result) }
                 }
                 box.progress = progress
                 loadProgress = progress
@@ -137,6 +138,16 @@ final class VideoImportService {
 private final class ProgressBox: @unchecked Sendable {
     var progress: Progress?
     var poller: Task<Void, Never>?
+    private let lock = NSLock()
+    private var resumed = false
+
+    /// True exactly once per load.
+    func claimResume() -> Bool {
+        lock.withLock {
+            defer { resumed = true }
+            return !resumed
+        }
+    }
 }
 
 struct VideoTransferable: Transferable, Sendable {
