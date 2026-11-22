@@ -47,7 +47,7 @@ struct PaywallView: View {
                         .fixedSize(horizontal: false, vertical: true)
                         .padding(.top, Mono.Space.s)
                         .monoEntrance(1)
-                    Text(t("İnce ayar: en kısa duraklama ve nefes payı", "Fine-tune: minimum pause and breathing room"))
+                    Text(t("İstediğin kadar duraklamayı tut, gerisine ince ayar yap.", "Keep as many pauses as you want, and fine-tune the rest."))
                         .monoText(.body)
                         .foregroundStyle(Mono.C.text2)
                         .padding(.top, Mono.Space.s)
@@ -111,7 +111,8 @@ struct PaywallView: View {
             compareRow(1, t("Her kesimi incele", "Review every cut"), free: true)
             compareRow(2, t("Filigran yok", "No watermark"), free: true)
             compareRow(3, t("Reklamsız", "Ad-free"), free: false)
-            compareRow(4, t("İnce ayar", "Fine-tune"), free: false)
+            compareRow(4, t("Video başına tutulan duraklama", "Kept pauses per video"), free: false, freeText: "3", proSymbol: "infinity")
+            compareRow(5, t("İnce ayar", "Fine-tune"), free: false)
         }
         .background(alignment: .trailing) {
             RoundedRectangle(cornerRadius: 20, style: .continuous)
@@ -127,7 +128,7 @@ struct PaywallView: View {
         }
     }
 
-    private func compareRow(_ index: Int, _ title: String, free: Bool) -> some View {
+    private func compareRow(_ index: Int, _ title: String, free: Bool, freeText: String? = nil, proSymbol: String = "checkmark") -> some View {
         HStack(spacing: 0) {
             Text(title)
                 .monoText(.body)
@@ -135,11 +136,19 @@ struct PaywallView: View {
                 .lineLimit(2)
                 .minimumScaleFactor(0.85)
             Spacer(minLength: 8)
-            Image(systemName: free ? "checkmark" : "minus")
-                .font(.system(size: 14, weight: .semibold))
-                .foregroundStyle(free ? Mono.C.text2 : Mono.C.disabled)
-                .frame(width: Self.freeWidth)
-            Image(systemName: "checkmark")
+            Group {
+                if let freeText {
+                    Text(freeText)
+                        .monoText(.label)
+                        .foregroundStyle(Mono.C.text2)
+                } else {
+                    Image(systemName: free ? "checkmark" : "minus")
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundStyle(free ? Mono.C.text2 : Mono.C.disabled)
+                }
+            }
+            .frame(width: Self.freeWidth)
+            Image(systemName: proSymbol)
                 .font(.system(size: 15, weight: .bold))
                 .foregroundStyle(.black)
                 .frame(width: Self.proWidth)
@@ -150,7 +159,8 @@ struct PaywallView: View {
         }
         .monoEntrance(index + 3)
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel("\(title): \(free ? t("Ücretsiz", "Free") : "Pro")")
+        .accessibilityLabel(freeText.map { "\(title): \(t("Ücretsiz", "Free")) \($0), Pro \(t("sınırsız", "unlimited"))" }
+            ?? "\(title): \(free ? t("Ücretsiz", "Free") : "Pro")")
     }
 
     // MARK: - Footer

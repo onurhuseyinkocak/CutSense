@@ -352,6 +352,89 @@ final class OfferFlowUITests: XCTestCase {
         XCTAssertEqual(again, custom, "Custom fine-tune not kept after relaunch")
     }
 
+    /// Free: three keeps, the 4th toggle and Keep all open the paywall after the list closes and change nothing.
+    /// Buying in the same session lifts the limit at once.
+    func testFreeKeepLimitOpensPaywallAndProUnlocks() throws {
+        app.launchArguments += ["-onboarding_done_v1", "YES", "-ad_free_until", "\(Date.now.addingTimeInterval(3600).timeIntervalSince1970)"]
+        app.launchEnvironment["CUTSENSE_AUTORUN_VIDEO_URL"] = "qa-run/01_talk_1080p30.mp4"
+        app.launch()
+        let save = app.buttons["saveButton"]
+        XCTAssertTrue(save.waitForExistence(timeout: 300), "Review never appeared")
+        skipAdBreak()
+        let review = app.buttons["reviewCutsButton"]
+        func cutCount() -> Int { Int(review.label.filter(\.isNumber)) ?? 0 }
+        if cutCount() < 4 {
+            app.buttons["Tight"].tap()
+            sleep(2)
+        }
+        XCTAssertGreaterThanOrEqual(cutCount(), 4, "Fixture needs 4+ cuts: \(review.label)")
+
+        review.tap()
+        let counter = app.buttons["keepLimitButton"]
+        XCTAssertTrue(counter.waitForExistence(timeout: 10), "Keep counter missing for a free user")
+        for i in 0..<3 {
+            tapToggle(i)
+            sleep(1)
+        }
+        XCTAssertTrue(counter.label.hasPrefix("Kept 3 of 3"), "Counter: \(counter.label)")
+        snapshot("free-keep-3-of-3")
+        let removingBefore = removingLabel()
+
+        tapToggle(3)
+        let unlock = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Unlock for'")).firstMatch
+        XCTAssertTrue(unlock.waitForExistence(timeout: 15), "4th keep did not open the paywall")
+        XCTAssertFalse(counter.exists, "Paywall stacked on the cut list")
+        snapshot("free-keep-limit-paywall")
+        app.buttons["Close"].firstMatch.tap()
+        XCTAssertTrue(unlock.waitForNonExistence(timeout: 10))
+
+        // Reopen: the three keeps stayed, the 4th is still cut; Keep all is locked too.
+        review.tap()
+        XCTAssertTrue(counter.waitForExistence(timeout: 10))
+        XCTAssertTrue(counter.label.hasPrefix("Kept 3 of 3"), "Keeps lost after the paywall: \(counter.label)")
+        XCTAssertEqual(removingLabel(), removingBefore, "Refused keep changed the plan")
+        XCTAssertEqual(keepToggle(3).value as? String, "Cut", "4th cut was kept after the refusal")
+        app.buttons["keepAllCutsButton"].tap()
+        XCTAssertTrue(unlock.waitForExistence(timeout: 15), "Locked Keep all did not open the paywall")
+        buyThroughSheet(unlock)
+        XCTAssertTrue(unlock.waitForNonExistence(timeout: 20), "Paywall still open after buying")
+        sleep(2)
+
+        review.tap()
+        XCTAssertTrue(keepToggle(3).waitForExistence(timeout: 10))
+        XCTAssertFalse(counter.exists, "Keep counter shown to a Pro owner")
+        tapToggle(3)
+        sleep(1)
+        XCTAssertEqual(keepToggle(3).value as? String, "Keep", "Pro could not keep a 4th pause")
+        app.buttons["keepAllCutsButton"].tap()
+        sleep(1)
+        XCTAssertFalse(app.buttons["keepAllCutsButton"].isEnabled, "Keep all did not keep every cut for Pro")
+        snapshot("pro-keep-all")
+    }
+
+    private func keepToggle(_ i: Int) -> XCUIElement { app.switches["cutToggle_\(i)"] }
+
+    /// Taps the switch itself; the row's centre is the audition button.
+    private func tapToggle(_ i: Int) { keepToggle(i).coordinate(withNormalizedOffset: CGVector(dx: 0.92, dy: 0.5)).tap() }
+
+    private func removingLabel() -> String {
+        app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH 'Removing'")).firstMatch.label
+    }
+
+    private func skipAdBreak() {
+        let skip = app.buttons["skipAdButton"]
+        if skip.waitForExistence(timeout: 6) {
+            _ = XCTWaiter.wait(for: [XCTNSPredicateExpectation(predicate: NSPredicate(format: "isHittable == true"), object: skip)], timeout: 2)
+            if skip.exists && skip.isHittable { skip.tap() }  // the break may end on its own meanwhile
+        }
+        let close = app.buttons.matching(NSPredicate(format: "label CONTAINS[c] 'close' AND isEnabled == true"))
+        let deadline = Date().addingTimeInterval(45)
+        while Date() < deadline, app.buttons["Close Advertisement"].exists {
+            close.allElementsBoundByIndex.first { $0.isHittable }?.tap()
+            sleep(1)
+        }
+    }
+
     /// Welcome $5.99 at the end of onboarding grants the same Pro.
     func testWelcomePurchaseGrantsPro() throws {
         app.launchEnvironment["CUTSENSE_RESET_ONBOARDING"] = "1"

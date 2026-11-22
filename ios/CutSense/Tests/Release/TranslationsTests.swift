@@ -27,6 +27,21 @@ final class TranslationsTests: XCTestCase {
         }
     }
 
+    /// A missing key silently falls back to English, so the Pro keep-limit copy is pinned explicitly.
+    func testKeepLimitCopyIsTranslated() {
+        for key in [
+            "Kept %d of %d. Unlimited with Pro.",
+            "Keep as many pauses as you want, and fine-tune the rest.",
+            "Kept pauses per video",
+            "Unlimited keeps and Fine-tune",
+            "unlimited",
+        ] {
+            XCTAssertNotNil(Translations.table[key], "missing translation row for \"\(key)\"")
+        }
+        XCTAssertEqual(String(format: appText(.de, "%d/%d tutuldu. Pro ile sınırsız.", "Kept %d of %d. Unlimited with Pro."), 2, 3),
+                       "2 von 3 behalten. Unbegrenzt mit Pro.")
+    }
+
     func testAppTextRouting() {
         XCTAssertEqual(appText(.tr, "Paylaş", "Share"), "Paylaş")
         XCTAssertEqual(appText(.en, "Paylaş", "Share"), "Share")

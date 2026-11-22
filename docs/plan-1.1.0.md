@@ -25,8 +25,8 @@
 
 **Gelir modeli (3. madde):**
 - **Ürün:** tek non-consumable, `com.cutsense.app.pro.lifetime`, $7.99 (US taban, diğer bölgeler Apple eşitlemesi). Deneme yok; ücretsiz katman denemenin kendisi.
-- **Ücretsiz:** sınırsız kesim, önizleme, kesim-başına geri alma, 3 ön ayar, filigransız, orijinal çözünürlük, reklamlı (24 saatlik ödül yolu aynen kalır).
-- **Pro:** tüm reklamlar kalıcı kapalı + "Fine-tune" (iki kaydırıcı: en kısa duraklama, nefes payı) + gelecekteki Pro özellikleri.
+- **Ücretsiz:** sınırsız kesim, önizleme, kesim-başına geri alma (video başına en fazla 3 tutma), 3 ön ayar, filigransız, orijinal çözünürlük, reklamlı (24 saatlik ödül yolu aynen kalır).
+- **Pro:** no ads + unlimited keeps (free: 3 per video) + Fine-tune (iki kaydırıcı: en kısa duraklama, nefes payı) + gelecekteki Pro özellikleri. Karar: `docs/pro-keep-limit-1.1.0.md`.
 - **Paywall yerleri:** ana ekran toolbar'ında "PRO" kapsülü, reklam-arası kartında "Remove ads forever", kilitli Fine-tune satırı, Ayarlar satırı. Açılışta veya export önünde paywall yok.
 - **Altyapı:** StoreKit 2 doğrudan. RevenueCat reddedildi: bağımlılık ve ağ çağrısı ekler, tek ürün için gereksiz.
 - **Reddedilen tuzak:** haftalık abonelik. Yorumlardaki en yüksek sesli şikâyet abonelik; 3.1.2 inceleme riski ve yasal metin yükü de getirir. "No subscription" mağaza satırı olarak kullanılacak.

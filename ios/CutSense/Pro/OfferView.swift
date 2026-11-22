@@ -107,7 +107,7 @@ struct OfferPanel: View {
                         .monoEntrance(2)
                     VStack(spacing: 0) {
                         benefit(0, t("Hiç reklam yok", "No ads, ever"))
-                        benefit(1, t("İnce ayar: en kısa duraklama ve nefes payı", "Fine-tune: minimum pause and breathing room"))
+                        benefit(1, t("Sınırsız tutma ve İnce ayar", "Unlimited keeps and Fine-tune"))
                         benefit(2, t("Tek seferlik satın alma. Abonelik yok.", "One-time purchase. No subscription."))
                     }
                     .padding(.top, Mono.Space.l)

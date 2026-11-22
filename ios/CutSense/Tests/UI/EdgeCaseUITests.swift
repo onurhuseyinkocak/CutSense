@@ -123,6 +123,7 @@ final class EdgeCaseUITests: XCTestCase {
     // MARK: - Review actions and user errors (fixture 01)
 
     func testIntensityKeepAllCutAllAndDoubleTaps() throws {
+        app.launchEnvironment["CUTSENSE_FORCE_PRO"] = "1"  // Keep all is Pro; free users get the 3-keep limit
         launch(autorun: "01_talk_1080p30.mp4")
         try waitForReview(timeout: 120)
         skipAdBreakIfShown(doubleTap: true)

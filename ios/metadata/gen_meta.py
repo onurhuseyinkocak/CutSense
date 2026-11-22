@@ -12,7 +12,7 @@ HOW IT WORKS
 5. Save to Photos or share.
 
 REVIEW EVERY CUT
-Every removed pause is listed. Keep the ones that matter, like a beat before a punchline or a breath between two ideas, and cut the rest. Change cuts one by one, or use Keep all and Cut all. Nothing is final until you save.
+Every removed pause is listed. Keep the ones that matter, like a beat before a punchline or a breath between two ideas, and cut the rest. Change cuts one by one. The free version keeps up to 3 pauses per video. Pro keeps as many as you want and adds Keep all. Nothing is final until you save.
 
 WHY CREATORS USE IT
 - Tighter Reels and Shorts without trimming by hand
@@ -25,7 +25,7 @@ PRIVATE BY DESIGN
 Your video is processed on your device and is never uploaded. Your original stays untouched. CutSense saves the result as a new MP4 that you can keep in Photos or share.
 
 CUTSENSE PRO
-An optional one-time purchase. No subscription. Pro removes all ads for good and unlocks Fine-tune, where you set the minimum pause length and how much breathing room stays around your words.
+An optional one-time purchase. No subscription. Pro removes all ads for good, lets you keep as many pauses as you want, and unlocks Fine-tune, where you set the minimum pause length and how much breathing room stays around your words.
 
 GOOD TO KNOW
 - CutSense removes silence. It does not remove filler words like "um", and it does not pick your best takes.
@@ -40,7 +40,7 @@ EN_NEW = """What's new in 1.1.0
 - Review every cut and keep any pause you want.
 - Balanced is the new default, so your videos don't get over-cut.
 - A warning when a video has little speech.
-- CutSense Pro: a one-time purchase with no subscription. It removes ads and unlocks Fine-tune.
+- CutSense Pro: a one-time purchase with no subscription. It removes ads, keeps unlimited pauses and unlocks Fine-tune.
 - CutSense is now available in 9 languages.
 - Temporary files are cleaned up automatically, and Settings shows the storage used.
 - Stability fixes."""
@@ -68,7 +68,7 @@ NASIL ÇALIŞIR
 5. Fotoğraflar'a kaydet ya da paylaş.
 
 HER KESİMİ İNCELE
-Kesilen her duraklama tek tek listelenir. Bir espriden önceki kısa bekleyiş ya da iki fikir arasındaki nefes gibi önemli olanları tut, gerisini kes. Kesimleri tek tek değiştir ya da "Tümünü tut" ve "Tümünü kes" ile hepsini birden ayarla. Kaydedene kadar hiçbir şey kesinleşmez.
+Kesilen her duraklama tek tek listelenir. Bir espriden önceki kısa bekleyiş ya da iki fikir arasındaki nefes gibi önemli olanları tut, gerisini kes. Kesimleri tek tek değiştir. Ücretsiz sürüm video başına 3 duraklamaya kadar tutar. Pro'da istediğin kadarını tutarsın, ayrıca "Tümünü tut" açılır. Kaydedene kadar hiçbir şey kesinleşmez.
 
 İÇERİK ÜRETİCİLERİ NEDEN KULLANIYOR
 - Elle kırpmadan daha akıcı Reels ve Shorts
@@ -81,7 +81,7 @@ GİZLİLİK ÖNCELİKLİ
 Videon cihazında işlenir ve hiçbir yere yüklenmez. Orijinal dosyan olduğu gibi kalır. CutSense sonucu yeni bir MP4 olarak oluşturur; Fotoğraflar'a kaydedebilir ya da paylaşabilirsin.
 
 CUTSENSE PRO
-İsteğe bağlı, tek seferlik satın alma. Abonelik yok. Pro tüm reklamları kalıcı olarak kaldırır ve İnce ayar'ı açar: en kısa duraklama süresini ve konuşmanın etrafında kalacak nefes payını sen belirlersin.
+İsteğe bağlı, tek seferlik satın alma. Abonelik yok. Pro tüm reklamları kalıcı olarak kaldırır, istediğin kadar duraklamayı tutmanı sağlar ve İnce ayar'ı açar: en kısa duraklama süresini ve konuşmanın etrafında kalacak nefes payını sen belirlersin.
 
 BİLMENDE FAYDA VAR
 - CutSense sessizlikleri siler. "Eee", "ııı" gibi dolgu sözcüklerini silmez, en iyi çekimini de senin yerine seçmez.
@@ -94,7 +94,7 @@ CutSense ücretsizdir ve reklamlarla desteklenir. İstersen kısa bir reklam izl
 - Her kesimi incele, istediğin duraklamayı geri al.
 - Varsayılan artık Dengeli; videoların gereğinden fazla kesilmez.
 - Az konuşma olan videolar için uyarı.
-- CutSense Pro: abonelik yok, tek seferlik satın alma. Reklamları kaldırır ve İnce ayar'ı açar.
+- CutSense Pro: abonelik yok, tek seferlik satın alma. Reklamları kaldırır, sınırsız duraklama tutar ve İnce ayar'ı açar.
 - Uygulama artık 9 dilde.
 - Geçici dosyalar otomatik temizlenir; Ayarlar kullanılan depolama alanını gösterir.
 - Kararlılık düzeltmeleri.""",
@@ -112,7 +112,7 @@ CÓMO FUNCIONA
 5. Guarda en Fotos o comparte.
 
 REVISA CADA CORTE
-Cada pausa eliminada aparece en una lista. Conserva las que importan, como un silencio antes del remate o una respiración entre dos ideas, y corta el resto. Cambia los cortes uno a uno o usa Mantener todo y Cortar todo. Nada es definitivo hasta que guardas.
+Cada pausa eliminada aparece en una lista. Conserva las que importan, como un silencio antes del remate o una respiración entre dos ideas, y corta el resto. Cambia los cortes uno a uno. La versión gratuita conserva hasta 3 pausas por vídeo. Pro conserva todas las que quieras y añade Mantener todo. Nada es definitivo hasta que guardas.
 
 POR QUÉ LO USAN LOS CREADORES
 - Reels y Shorts más dinámicos sin recortar a mano
@@ -125,7 +125,7 @@ PRIVADO DE SERIE
 Tu vídeo se procesa en tu dispositivo y nunca se sube. El original queda intacto. CutSense guarda el resultado como un MP4 nuevo que puedes guardar en Fotos o compartir.
 
 CUTSENSE PRO
-Una compra única y opcional. Sin suscripción. Pro elimina todos los anuncios para siempre y desbloquea Ajuste fino, donde eliges la duración mínima de pausa y el margen que queda alrededor de tus palabras.
+Una compra única y opcional. Sin suscripción. Pro elimina todos los anuncios para siempre, te deja conservar todas las pausas que quieras y desbloquea Ajuste fino, donde eliges la duración mínima de pausa y el margen que queda alrededor de tus palabras.
 
 BUENO SABERLO
 - CutSense elimina silencios. No quita muletillas como "eh" ni elige tus mejores tomas.
@@ -138,7 +138,7 @@ CutSense es gratis y se financia con anuncios. Si quieres, mira un anuncio breve
 - Revisa cada corte y conserva las pausas que quieras.
 - Equilibrado es el nuevo estilo por defecto, para no cortar de más.
 - Aviso cuando un vídeo tiene poca voz.
-- CutSense Pro: compra única, sin suscripción. Elimina los anuncios y desbloquea Ajuste fino.
+- CutSense Pro: compra única, sin suscripción. Elimina los anuncios, conserva pausas sin límite y desbloquea Ajuste fino.
 - La app ya está en 9 idiomas.
 - Los archivos temporales se borran solos y Ajustes muestra el espacio usado.
 - Mejoras de estabilidad.""",
@@ -156,7 +156,7 @@ CÓMO FUNCIONA
 5. Guarda en Fotos o comparte.
 
 REVISA CADA CORTE
-Cada pausa eliminada aparece en una lista. Conserva las que importan, como un silencio antes del chiste o una respiración entre dos ideas, y corta el resto. Cambia los cortes uno por uno o usa Mantener todo y Cortar todo. Nada es definitivo hasta que guardas.
+Cada pausa eliminada aparece en una lista. Conserva las que importan, como un silencio antes del chiste o una respiración entre dos ideas, y corta el resto. Cambia los cortes uno por uno. La versión gratuita conserva hasta 3 pausas por video. Pro conserva todas las que quieras y agrega Mantener todo. Nada es definitivo hasta que guardas.
 
 POR QUÉ LO USAN LOS CREADORES
 - Reels y Shorts más ágiles sin recortar a mano
@@ -169,7 +169,7 @@ PRIVADO DESDE EL DISEÑO
 Tu video se procesa en tu dispositivo y nunca se sube. El original queda intacto. CutSense guarda el resultado como un MP4 nuevo que puedes guardar en Fotos o compartir.
 
 CUTSENSE PRO
-Una compra única y opcional. Sin suscripción. Pro quita todos los anuncios para siempre y desbloquea Ajuste fino, donde eliges la duración mínima de pausa y el margen que queda alrededor de tus palabras.
+Una compra única y opcional. Sin suscripción. Pro quita todos los anuncios para siempre, te deja conservar todas las pausas que quieras y desbloquea Ajuste fino, donde eliges la duración mínima de pausa y el margen que queda alrededor de tus palabras.
 
 QUÉ DEBES SABER
 - CutSense quita silencios. No elimina muletillas como "este" o "eh" ni elige tus mejores tomas.
@@ -182,7 +182,7 @@ CutSense es gratis y se mantiene con anuncios. Si quieres, ve un anuncio corto y
 - Revisa cada corte y conserva las pausas que quieras.
 - Equilibrado es el nuevo estilo predeterminado, para no cortar de más.
 - Aviso cuando un video tiene poca voz.
-- CutSense Pro: compra única, sin suscripción. Quita los anuncios y desbloquea Ajuste fino.
+- CutSense Pro: compra única, sin suscripción. Quita los anuncios, conserva pausas sin límite y desbloquea Ajuste fino.
 - La app ya está en 9 idiomas.
 - Los archivos temporales se borran solos y Ajustes muestra el espacio usado.
 - Mejoras de estabilidad.""",
@@ -200,7 +200,7 @@ COMO FUNCIONA
 5. Salve em Fotos ou compartilhe.
 
 REVISE CADA CORTE
-Cada pausa removida aparece em uma lista. Mantenha as que importam, como uma pausa antes da piada ou um respiro entre duas ideias, e corte o resto. Altere os cortes um a um ou use Manter tudo e Cortar tudo. Nada é definitivo até você salvar.
+Cada pausa removida aparece em uma lista. Mantenha as que importam, como uma pausa antes da piada ou um respiro entre duas ideias, e corte o resto. Altere os cortes um a um. A versão gratuita mantém até 3 pausas por vídeo. O Pro mantém quantas você quiser e libera o Manter tudo. Nada é definitivo até você salvar.
 
 POR QUE CRIADORES USAM
 - Reels e Shorts mais dinâmicos sem aparar na mão
@@ -213,7 +213,7 @@ PRIVADO POR PADRÃO
 Seu vídeo é processado no seu aparelho e nunca é enviado. O original fica intacto. O CutSense salva o resultado como um novo MP4 que você pode guardar em Fotos ou compartilhar.
 
 CUTSENSE PRO
-Uma compra única e opcional. Sem assinatura. O Pro remove todos os anúncios para sempre e libera o Ajuste fino, onde você define a duração mínima da pausa e o respiro que fica em volta da sua fala.
+Uma compra única e opcional. Sem assinatura. O Pro remove todos os anúncios para sempre, deixa você manter quantas pausas quiser e libera o Ajuste fino, onde você define a duração mínima da pausa e o respiro que fica em volta da sua fala.
 
 BOM SABER
 - O CutSense remove silêncio. Ele não remove vícios de linguagem como "é..." ou "tipo" e não escolhe suas melhores tomadas.
@@ -226,7 +226,7 @@ O CutSense é gratuito e mantido por anúncios. Se quiser, assista a um anúncio
 - Revise cada corte e mantenha as pausas que quiser.
 - Equilibrado é o novo padrão, para não cortar demais.
 - Aviso quando um vídeo tem pouca fala.
-- CutSense Pro: compra única, sem assinatura. Remove os anúncios e libera o Ajuste fino.
+- CutSense Pro: compra única, sem assinatura. Remove os anúncios, mantém pausas sem limite e libera o Ajuste fino.
 - O app agora está em 9 idiomas.
 - Arquivos temporários são apagados automaticamente e os Ajustes mostram o espaço usado.
 - Correções de estabilidade.""",
@@ -244,7 +244,7 @@ SO FUNKTIONIERT'S
 5. In Fotos sichern oder teilen.
 
 JEDEN SCHNITT PRÜFEN
-Jede entfernte Pause wird aufgelistet. Behalte die wichtigen, etwa einen Moment vor der Pointe oder ein Atemholen zwischen zwei Gedanken, und schneide den Rest. Ändere Schnitte einzeln oder nutze Alle behalten und Alle schneiden. Erst beim Sichern wird etwas endgültig.
+Jede entfernte Pause wird aufgelistet. Behalte die wichtigen, etwa einen Moment vor der Pointe oder ein Atemholen zwischen zwei Gedanken, und schneide den Rest. Ändere Schnitte einzeln. Die kostenlose Version behält bis zu 3 Pausen pro Video. Mit Pro behältst du so viele, wie du willst, und bekommst Alle behalten dazu. Erst beim Sichern wird etwas endgültig.
 
 WARUM CREATOR ES NUTZEN
 - Knackigere Reels und Shorts ohne Handarbeit beim Trimmen
@@ -257,7 +257,7 @@ PRIVAT VON ANFANG AN
 Dein Video wird auf deinem Gerät verarbeitet und nie hochgeladen. Das Original bleibt unverändert. CutSense speichert das Ergebnis als neue MP4, die du in Fotos sichern oder teilen kannst.
 
 CUTSENSE PRO
-Ein optionaler Einmalkauf. Kein Abo. Pro entfernt alle Werbung dauerhaft und schaltet Feinschliff frei: Dort legst du die minimale Pausenlänge und den Puffer um deine Worte fest.
+Ein optionaler Einmalkauf. Kein Abo. Pro entfernt alle Werbung dauerhaft, lässt dich so viele Pausen behalten, wie du willst, und schaltet Feinschliff frei: Dort legst du die minimale Pausenlänge und den Puffer um deine Worte fest.
 
 GUT ZU WISSEN
 - CutSense entfernt Stille. Füllwörter wie "äh" entfernt es nicht, und es wählt nicht deine besten Takes aus.
@@ -270,7 +270,7 @@ CutSense ist kostenlos und wird durch Werbung finanziert. Wenn du möchtest, sie
 - Prüfe jeden Schnitt und behalte jede Pause, die du willst.
 - Ausgewogen ist der neue Standard, damit nicht zu viel geschnitten wird.
 - Warnung, wenn ein Video wenig Sprache enthält.
-- CutSense Pro: Einmalkauf, kein Abo. Entfernt die Werbung und schaltet Feinschliff frei.
+- CutSense Pro: Einmalkauf, kein Abo. Entfernt die Werbung, behält unbegrenzt Pausen und schaltet Feinschliff frei.
 - Die App gibt es jetzt in 9 Sprachen.
 - Temporäre Dateien werden automatisch gelöscht, und die Einstellungen zeigen den belegten Speicher.
 - Stabilitätsverbesserungen.""",
@@ -288,7 +288,7 @@ COMMENT ÇA MARCHE
 5. Enregistrez dans Photos ou partagez.
 
 VÉRIFIEZ CHAQUE COUPE
-Chaque pause retirée apparaît dans une liste. Gardez celles qui comptent, comme un temps avant la chute ou une respiration entre deux idées, et coupez le reste. Modifiez les coupes une par une, ou utilisez Tout garder et Tout couper. Rien n'est définitif avant l'enregistrement.
+Chaque pause retirée apparaît dans une liste. Gardez celles qui comptent, comme un temps avant la chute ou une respiration entre deux idées, et coupez le reste. Modifiez les coupes une par une. La version gratuite garde jusqu'à 3 pauses par vidéo. Pro en garde autant que vous voulez et ajoute Tout garder. Rien n'est définitif avant l'enregistrement.
 
 POURQUOI LES CRÉATEURS L'UTILISENT
 - Des Reels et des Shorts plus rythmés, sans découper à la main
@@ -301,7 +301,7 @@ CONFIDENTIEL PAR NATURE
 Votre vidéo est traitée sur votre appareil et n'est jamais envoyée en ligne. L'original reste intact. CutSense enregistre le résultat dans un nouveau fichier MP4, à garder dans Photos ou à partager.
 
 CUTSENSE PRO
-Un achat unique et facultatif. Sans abonnement. Pro supprime toutes les publicités pour de bon et débloque Ajuster : vous réglez la durée minimale des pauses et la marge laissée autour de vos paroles.
+Un achat unique et facultatif. Sans abonnement. Pro supprime toutes les publicités pour de bon, vous laisse garder autant de pauses que vous voulez et débloque Ajuster : vous réglez la durée minimale des pauses et la marge laissée autour de vos paroles.
 
 BON À SAVOIR
 - CutSense supprime les silences. Il ne retire pas les mots de remplissage comme « euh » et ne choisit pas vos meilleures prises.
@@ -314,7 +314,7 @@ CutSense est gratuit et financé par la publicité. Si vous le souhaitez, regard
 - Vérifiez chaque coupe et gardez les pauses de votre choix.
 - Équilibré devient le style par défaut, pour éviter de trop couper.
 - Un avertissement quand une vidéo contient peu de parole.
-- CutSense Pro : achat unique, sans abonnement. Supprime les publicités et débloque Ajuster.
+- CutSense Pro : achat unique, sans abonnement. Supprime les publicités, garde les pauses sans limite et débloque Ajuster.
 - L'app est désormais disponible en 9 langues.
 - Les fichiers temporaires sont nettoyés automatiquement et les Réglages affichent l'espace utilisé.
 - Améliorations de la stabilité.""",
@@ -332,7 +332,7 @@ COME FUNZIONA
 5. Salva in Foto o condividi.
 
 CONTROLLA OGNI TAGLIO
-Ogni pausa rimossa compare in un elenco. Tieni quelle che contano, come un attimo prima della battuta o un respiro tra due idee, e taglia il resto. Modifica i tagli uno per uno o usa Tieni tutto e Taglia tutto. Niente è definitivo finché non salvi.
+Ogni pausa rimossa compare in un elenco. Tieni quelle che contano, come un attimo prima della battuta o un respiro tra due idee, e taglia il resto. Modifica i tagli uno per uno. La versione gratuita tiene fino a 3 pause per video. Pro ne tiene quante vuoi e aggiunge Tieni tutto. Niente è definitivo finché non salvi.
 
 PERCHÉ I CREATOR LO USANO
 - Reels e Shorts più incisivi senza tagliare a mano
@@ -345,7 +345,7 @@ PRIVATO PER SCELTA
 Il tuo video viene elaborato sul dispositivo e non viene mai caricato. L'originale resta intatto. CutSense salva il risultato come nuovo MP4, da tenere in Foto o condividere.
 
 CUTSENSE PRO
-Un acquisto unico e facoltativo. Nessun abbonamento. Pro rimuove per sempre tutta la pubblicità e sblocca Regola, dove imposti la durata minima delle pause e il margine lasciato intorno alle tue parole.
+Un acquisto unico e facoltativo. Nessun abbonamento. Pro rimuove per sempre tutta la pubblicità, ti lascia tenere tutte le pause che vuoi e sblocca Regola, dove imposti la durata minima delle pause e il margine lasciato intorno alle tue parole.
 
 BUONO A SAPERSI
 - CutSense elimina i silenzi. Non rimuove gli intercalari come "ehm" e non sceglie le tue riprese migliori.
@@ -358,7 +358,7 @@ CutSense è gratuito e supportato dalla pubblicità. Se vuoi, guarda un breve an
 - Controlla ogni taglio e tieni le pause che vuoi.
 - Bilanciato è il nuovo stile predefinito, per non tagliare troppo.
 - Un avviso quando un video contiene poco parlato.
-- CutSense Pro: acquisto unico, nessun abbonamento. Rimuove la pubblicità e sblocca Regola.
+- CutSense Pro: acquisto unico, nessun abbonamento. Rimuove la pubblicità, tiene pause senza limiti e sblocca Regola.
 - L'app ora è disponibile in 9 lingue.
 - I file temporanei vengono eliminati automaticamente e Impostazioni mostra lo spazio usato.
 - Correzioni di stabilità.""",
@@ -376,7 +376,7 @@ data["ja"] = {
 5. 写真に保存、または共有します。
 
 すべてのカットを確認
-取り除いた間はすべて一覧で表示されます。オチの前のひと呼吸や、話の区切りの間など、大事なものは残して、あとはカット。1つずつ切り替えることも、「すべて残す」「すべてカット」でまとめて変えることもできます。保存するまでは何も確定しません。
+取り除いた間はすべて一覧で表示されます。オチの前のひと呼吸や、話の区切りの間など、大事なものは残して、あとはカット。1つずつ切り替えられます。無料版では動画ごとに3つまで間を残せます。Pro なら好きなだけ残せて、「すべて残す」も使えます。保存するまでは何も確定しません。
 
 クリエイターに選ばれる理由
 - 手作業でトリミングしなくても、リールやショートがテンポよく
@@ -389,7 +389,7 @@ data["ja"] = {
 動画はデバイス上で処理され、アップロードされることはありません。元の動画はそのまま残ります。結果は新しい MP4 として作成され、写真に保存したり共有したりできます。
 
 CUTSENSE PRO
-任意の買い切り購入です。サブスクリプションはありません。Pro にするとすべての広告がずっと非表示になり、「微調整」が使えるようになります。最短の間の長さと、言葉の前後に残す余白を自分で設定できます。
+任意の買い切り購入です。サブスクリプションはありません。Pro にするとすべての広告がずっと非表示になり、間を好きなだけ残せて、「微調整」が使えるようになります。最短の間の長さと、言葉の前後に残す余白を自分で設定できます。
 
 ご注意
 - CutSense が取り除くのは無音部分です。「えー」「あの」などのつなぎ言葉は取り除かず、ベストテイクを選ぶ機能もありません。
@@ -402,7 +402,7 @@ CutSense は無料で、広告によって提供されています。短い広�
 - すべてのカットを確認して、残したい間を残せます。
 - 標準設定が「バランス」になり、切りすぎを防ぎます。
 - 話し声の少ない動画では警告が出ます。
-- CutSense Pro：サブスクなしの買い切り。広告を非表示にし、「微調整」が使えます。
+- CutSense Pro：サブスクなしの買い切り。広告を非表示にし、間を無制限に残せて、「微調整」が使えます。
 - アプリが9言語に対応しました。
 - 一時ファイルは自動で削除され、設定で使用中のストレージを確認できます。
 - 安定性を改善しました。""",
@@ -420,7 +420,7 @@ data["ko"] = {
 5. 사진에 저장하거나 공유합니다.
 
 모든 컷을 직접 확인
-잘라 낸 멈춤은 모두 목록으로 보여 줍니다. 펀치라인 직전의 짧은 틈이나 생각 사이의 숨 고르기처럼 중요한 부분은 남기고 나머지는 자르세요. 컷을 하나씩 바꾸거나 '모두 유지', '모두 자르기'로 한 번에 바꿀 수 있습니다. 저장하기 전까지는 아무것도 확정되지 않습니다.
+잘라 낸 멈춤은 모두 목록으로 보여 줍니다. 펀치라인 직전의 짧은 틈이나 생각 사이의 숨 고르기처럼 중요한 부분은 남기고 나머지는 자르세요. 컷을 하나씩 바꿀 수 있습니다. 무료 버전은 영상당 최대 3개의 멈춤을 유지합니다. Pro에서는 원하는 만큼 유지할 수 있고 '모두 유지'도 열립니다. 저장하기 전까지는 아무것도 확정되지 않습니다.
 
 크리에이터가 쓰는 이유
 - 손으로 다듬지 않아도 더 짜임새 있는 릴스와 쇼츠
@@ -433,7 +433,7 @@ data["ko"] = {
 영상은 기기에서 처리되며 업로드되지 않습니다. 원본은 그대로 남습니다. 결과는 새 MP4 파일로 만들어지며, 사진에 저장하거나 공유할 수 있습니다.
 
 CUTSENSE PRO
-선택 사항인 1회 구매입니다. 구독이 아닙니다. Pro는 모든 광고를 영구히 없애고 '세부 조정'을 열어 줍니다. 최소 멈춤 길이와 말 앞뒤에 남길 여유를 직접 정할 수 있습니다.
+선택 사항인 1회 구매입니다. 구독이 아닙니다. Pro는 모든 광고를 영구히 없애고, 멈춤을 원하는 만큼 유지하게 해 주며, '세부 조정'을 열어 줍니다. 최소 멈춤 길이와 말 앞뒤에 남길 여유를 직접 정할 수 있습니다.
 
 알아 두세요
 - CutSense는 무음 구간을 없앱니다. '음', '어' 같은 군말은 지우지 않으며, 가장 좋은 테이크를 골라 주지도 않습니다.
@@ -446,11 +446,11 @@ CutSense는 무료이며 광고로 운영됩니다. 원하면 짧은 광고를 �
 - 모든 컷을 확인하고 원하는 멈춤은 남길 수 있습니다.
 - 기본값이 '균형'으로 바뀌어 과하게 잘리지 않습니다.
 - 말소리가 적은 영상에는 경고가 표시됩니다.
-- CutSense Pro: 구독 없는 1회 구매. 광고를 없애고 '세부 조정'을 열어 줍니다.
+- CutSense Pro: 구독 없는 1회 구매. 광고를 없애고, 멈춤을 무제한 유지하며, '세부 조정'을 열어 줍니다.
 - 앱이 이제 9개 언어를 지원합니다.
 - 임시 파일은 자동으로 정리되며, 설정에서 사용 중인 저장 공간을 볼 수 있습니다.
 - 안정성 개선.""",
-    "keywords": "영상편집,동영상,자르기,트리밍,공백,편집기,브이로그,릴스,쇼츠,강의,인터뷰,튜토리얼,토크,말하기,세로영상,말소리,발표,UGC,클립,줄이기,빈시간",
+    "keywords": "영상편집,동영상,자르기,트리밍,편집기,브이로그,릴스,쇼츠,강의,인터뷰,튜토리얼,토크,말하기,세로영상,말소리,발표,UGC,클립,줄이기,빈시간",
 }
 
 with open(OUT, "w", encoding="utf-8") as f:

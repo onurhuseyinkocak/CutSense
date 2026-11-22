@@ -389,6 +389,9 @@ struct ReviewScreen: View {
     let onCancelExport: () -> Void
     let onFineTune: () -> Void
     let onOpenSettings: () -> Void
+    /// Free users keep at most `KeepGate.freeLimit` pauses per video; Keep all is Pro.
+    var keepsLimited: Bool = false
+    var onUpgrade: () -> Void = {}
 
     enum FineTuneAccess { case hidden, locked, unlocked }
 
@@ -403,6 +406,8 @@ struct ReviewScreen: View {
     @State private var holdingOriginal = false
     @State private var compares = 0
     @State private var confirmsNewVideo = false
+    /// The paywall opens from the root after the cut list closes, never stacked on it.
+    @State private var upgradeAfterCuts = false
 
     private var isExporting: Bool { exportProgress != nil }
 
@@ -531,8 +536,10 @@ struct ReviewScreen: View {
         }
         .sheet(isPresented: $showsCuts, onDismiss: {
             auditioner.stop(preview: preview)
+            if upgradeAfterCuts { upgradeAfterCuts = false; onUpgrade() }
         }) {
-            CutListSheet(plan: $plan, bars: bars, language: language, auditioner: auditioner, preview: preview) { cut in
+            CutListSheet(plan: $plan, bars: bars, language: language, auditioner: auditioner, preview: preview,
+                         keepsLimited: keepsLimited, onLocked: { upgradeAfterCuts = true; showsCuts = false }) { cut in
                 pendingSeek = cut.range.lowerBound
                 // The edited preview is about to be rebuilt; an After audition on it would jump.
                 if auditioner.mode == .after { auditioner.stop(preview: preview) }
@@ -781,12 +788,22 @@ func timeString(_ seconds: Double) -> String {
     return String(format: "%d:%02d", s / 60, s % 60)
 }
 
+/// Free keep limit. Always counted from the plan, so it resets per video and follows replans.
+enum KeepGate {
+    static let freeLimit = 3
+    static func canKeepAnother(_ plan: QuickSilenceEngine.CutPlan, limited: Bool) -> Bool {
+        !limited || plan.cuts.filter(\.isRestored).count < freeLimit
+    }
+}
+
 private struct CutListSheet: View {
     @Binding var plan: QuickSilenceEngine.CutPlan
     let bars: [Float]
     let language: AppLanguage
     let auditioner: CutAuditioner
     let preview: PreviewPlayer
+    let keepsLimited: Bool
+    let onLocked: () -> Void
     let onToggle: (QuickSilenceEngine.Cut) -> Void
 
     @State private var toggles = 0
@@ -820,7 +837,19 @@ private struct CutListSheet: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .fixedSize(horizontal: false, vertical: true)
                     .padding(.horizontal, 20)
-                    .padding(.bottom, 12)
+                    .padding(.bottom, keepsLimited ? 0 : 12)
+            }
+
+            if keepsLimited && !plan.cuts.isEmpty {
+                // A replan can carry more than the limit over; the counter never shows past it.
+                let kept = min(plan.cuts.filter(\.isRestored).count, KeepGate.freeLimit)
+                Button(String(format: appText(language, "%d/%d tutuldu. Pro ile sınırsız.", "Kept %d of %d. Unlimited with Pro."),
+                              kept, KeepGate.freeLimit), action: onLocked)
+                    .buttonStyle(MonoTertiaryButtonStyle(color: Mono.C.text))
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.horizontal, 20)
+                    .padding(.bottom, 4)
+                    .accessibilityIdentifier("keepLimitButton")
             }
 
             if !bars.isEmpty {
@@ -845,7 +874,15 @@ private struct CutListSheet: View {
                                        language: language)
                     let allKept = plan.cuts.allSatisfy(\.isRestored)
                     let allCut = !plan.cuts.contains(where: \.isRestored)
-                    Button(appText(language, "Tümünü tut", "Keep all")) { setAll(restored: true) }
+                    Button {
+                        if keepsLimited { onLocked() } else { setAll(restored: true) }
+                    } label: {
+                        if keepsLimited {
+                            Label(appText(language, "Tümünü tut", "Keep all"), systemImage: "lock.fill")
+                        } else {
+                            Text(appText(language, "Tümünü tut", "Keep all"))
+                        }
+                    }
                         .buttonStyle(MonoSecondaryButtonStyle(height: 40))
                         .disabled(allKept)
                         .opacity(allKept ? 0.35 : 1)
@@ -929,7 +966,11 @@ private struct CutListSheet: View {
 
             Toggle(isOn: Binding(
                 get: { !cut.wrappedValue.isRestored },
-                set: { cut.wrappedValue.isRestored = !$0; toggles += 1; onToggle(cut.wrappedValue) }
+                set: {
+                    // A refused keep must not touch `plan`: the root's onChange(of: plan) discards the export.
+                    if !$0 && !KeepGate.canKeepAnother(plan, limited: keepsLimited) { onLocked(); return }
+                    cut.wrappedValue.isRestored = !$0; toggles += 1; onToggle(cut.wrappedValue)
+                }
             )) {
                 Text(state)
                     .monoText(.label)

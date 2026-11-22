@@ -28,6 +28,7 @@
 		64B4BC0BF261374B2E604359 /* OfferCenter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8EB756F45213FFD77A322327 /* OfferCenter.swift */; };
 		65B29FA46422EFA196064CDE /* DebugQASeed.swift in Sources */ = {isa = PBXBuildFile; fileRef = B93A97AA31BA1ED4724922A6 /* DebugQASeed.swift */; };
 		68CCD216F3032ADE3DEDF096 /* ImportRetryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3BF0F5FBBE33042537D8729F /* ImportRetryTests.swift */; };
+		6C1E556F4D63BD1D72C2B182 /* KeepGateTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3D958EF608532F257DA61C83 /* KeepGateTests.swift */; };
 		6F2AFFB3F9B95785EBC560FC /* MonoWaveTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 127D3CEB71E9B92C26E5F83E /* MonoWaveTests.swift */; };
 		7A1D7311FD27448ECE00BB6D /* SettingsScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = 28901B74846173D20088B4D4 /* SettingsScreen.swift */; };
 		888EE52AA670A80854D14A24 /* AppLanguage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2B4C7785DDFE37A3C7288498 /* AppLanguage.swift */; };
@@ -86,6 +87,7 @@
 		2B4C7785DDFE37A3C7288498 /* AppLanguage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppLanguage.swift; sourceTree = "<group>"; };
 		37CA1075A0AAFD9751456F3A /* WorkFiles.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkFiles.swift; sourceTree = "<group>"; };
 		3BF0F5FBBE33042537D8729F /* ImportRetryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImportRetryTests.swift; sourceTree = "<group>"; };
+		3D958EF608532F257DA61C83 /* KeepGateTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeepGateTests.swift; sourceTree = "<group>"; };
 		3E3BFDA791131FEC48D257D4 /* QuickSilenceApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuickSilenceApp.swift; sourceTree = "<group>"; };
 		540A6003B72CEFEAB224B81E /* PaywallView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaywallView.swift; sourceTree = "<group>"; };
 		5B25D226E27756B8668579FF /* NativeAdCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativeAdCard.swift; sourceTree = "<group>"; };
@@ -184,6 +186,7 @@
 				17829E771382537CDA64E889 /* AdRegionTests.swift */,
 				13D33E687FE1E42B0956988F /* HistoryStoreTests.swift */,
 				3BF0F5FBBE33042537D8729F /* ImportRetryTests.swift */,
+				3D958EF608532F257DA61C83 /* KeepGateTests.swift */,
 				127D3CEB71E9B92C26E5F83E /* MonoWaveTests.swift */,
 				C443ADF130ABE96B8345D7BE /* OfferCenterTests.swift */,
 				A29D62925185EF25613EC49B /* ProStoreTests.swift */,
@@ -487,6 +490,7 @@
 				A0251F65E9C2A79CE53FAA69 /* AdRegionTests.swift in Sources */,
 				D4824C4195181129371413AE /* HistoryStoreTests.swift in Sources */,
 				68CCD216F3032ADE3DEDF096 /* ImportRetryTests.swift in Sources */,
+				6C1E556F4D63BD1D72C2B182 /* KeepGateTests.swift in Sources */,
 				6F2AFFB3F9B95785EBC560FC /* MonoWaveTests.swift in Sources */,
 				9F77762EB16A8A1F8930110A /* OfferCenterTests.swift in Sources */,
 				41D3F7BC6A3962213750C9DA /* ProStoreTests.swift in Sources */,

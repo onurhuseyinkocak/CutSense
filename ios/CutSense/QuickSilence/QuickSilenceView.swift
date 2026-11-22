@@ -436,7 +436,10 @@ struct QuickSilenceView: View {
             onNewVideo: reset,
             onCancelExport: cancelExport,
             onFineTune: { if store.isPro { showsFineTune = true } else { showsPaywall = true } },
-            onOpenSettings: openAppSettings
+            onOpenSettings: openAppSettings,
+            // shortcut: no limit while the product is not loaded, revisit if offline abuse shows up
+            keepsLimited: store.canOfferPro,
+            onUpgrade: { showsPaywall = true }
         )
         .onChange(of: plan.wrappedValue) {
             saved = false
