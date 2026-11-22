@@ -741,6 +741,9 @@ struct QuickSilenceView: View {
                 }
                 // Register before any early return so the file can never be orphaned.
                 session.setOutput(result.outputURL)
+                // The engine's last tick can be far below 100 on a fast export: close the ring before the overlay fades.
+                exportProgress = 1
+                try? await Task.sleep(for: .milliseconds(300))
                 guard !Task.isCancelled else {
                     session.discardOutput()
                     if exportExpired { saveError = ViewFailure.backgroundStopped }

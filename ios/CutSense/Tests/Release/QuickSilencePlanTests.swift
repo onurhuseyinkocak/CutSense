@@ -100,3 +100,14 @@ final class QuickSilencePlanTests: XCTestCase {
         XCTAssertEqual(CutAuditioner.thumbnailKey(for: a), CutAuditioner.thumbnailKey(for: .init(id: 5, range: 2...6, isRestored: true)))
     }
 }
+
+
+final class PreviewWatchdogTests: XCTestCase {
+    func testCompositionFailureDecision() {
+        XCTAssertFalse(PreviewPlayer.compositionFailed(itemFailed: false, sawFrame: false, playedSeconds: 0), "paused, not yet drawn: wait")
+        XCTAssertFalse(PreviewPlayer.compositionFailed(itemFailed: false, sawFrame: false, playedSeconds: 1.4))
+        XCTAssertTrue(PreviewPlayer.compositionFailed(itemFailed: false, sawFrame: false, playedSeconds: 1.5), "playing black: fall back")
+        XCTAssertFalse(PreviewPlayer.compositionFailed(itemFailed: false, sawFrame: true, playedSeconds: 30), "drawing fine")
+        XCTAssertTrue(PreviewPlayer.compositionFailed(itemFailed: true, sawFrame: true, playedSeconds: 3), "failed mid-play")
+    }
+}

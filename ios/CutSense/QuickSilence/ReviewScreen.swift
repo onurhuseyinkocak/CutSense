@@ -23,6 +23,10 @@ final class PreviewPlayer {
     private var didAutoplay = false
     /// Autoplay asked for before the first item finished loading (Pro / no-ads path): play on install.
     private var autoplayPending = false
+    /// Watches a freshly installed composition until it shows a frame; see `watchComposition`.
+    @ObservationIgnored private var watchTask: Task<Void, Never>?
+    @ObservationIgnored private var failureObserver: NSObjectProtocol?
+    @ObservationIgnored private var watchedItemFailed = false
 
     init() {
         clockObserver = player.addPeriodicTimeObserver(
@@ -40,16 +44,24 @@ final class PreviewPlayer {
         if !usesFallback && !Self.forceFallback {
             if let item = try? await QuickSilenceEngine.makePreviewItem(url: url, plan: plan) {
                 guard !Task.isCancelled else { return }
+                endWatch()
                 player.replaceCurrentItem(with: item)
                 installedKeepRanges = plan.keepRanges
                 if await Self.becomesReady(item) {
                     if let seekToOriginal { seek(toOriginal: seekToOriginal, leadIn: leadIn) }
                     if autoplayPending { autoplayOnce() }
+                    watchComposition(item, url: url)
                     return
                 }
             }
             guard !Task.isCancelled else { return }
         }
+        installFallback(url: url, seekToOriginal: seekToOriginal, leadIn: leadIn)
+    }
+
+    /// Plays the original file and skips active cuts on the original clock.
+    private func installFallback(url: URL, seekToOriginal: Double?, leadIn: Double) {
+        endWatch()
         usesFallback = true
         if fallbackURL != url {
             let pending = autoplayPending
@@ -65,6 +77,55 @@ final class PreviewPlayer {
         }
         if let seekToOriginal { seek(toOriginal: seekToOriginal, leadIn: leadIn) }
         if autoplayPending { autoplayOnce() }
+    }
+
+    /// A composition can reach readyToPlay and still never draw (4K60 H.264 preview stayed black
+    /// on a 16e) or fail mid-play (VideoCompositionProcessor -19230). Either way switch to the original file.
+    private func watchComposition(_ item: AVPlayerItem, url: URL) {
+        watchedItemFailed = false
+        failureObserver = NotificationCenter.default.addObserver(
+            forName: AVPlayerItem.failedToPlayToEndTimeNotification, object: item, queue: .main
+        ) { [weak self] _ in MainActor.assumeIsolated { self?.watchedItemFailed = true } }
+        // Temporary: removed after the first frame so a working preview pays nothing.
+        let output = AVPlayerItemVideoOutput(pixelBufferAttributes: nil)
+        item.add(output)
+        watchTask = Task { [weak self] in
+            var sawFrame = false
+            var played = 0.0
+            var last = item.currentTime().seconds
+            // A failing item drops rate to 0 before the notification lands: remember the last real state.
+            var wasPlaying = self?.player.rate != 0
+            while !Task.isCancelled, let self, self.player.currentItem === item {
+                let now = item.currentTime().seconds
+                if self.player.rate != 0, now.isFinite, last.isFinite, now > last { played += now - last }
+                last = now
+                if !self.watchedItemFailed { wasPlaying = self.player.rate != 0 }
+                if !sawFrame, output.hasNewPixelBuffer(forItemTime: item.currentTime()) {
+                    sawFrame = true
+                    item.remove(output)
+                }
+                if Self.compositionFailed(itemFailed: self.watchedItemFailed || item.status == .failed, sawFrame: sawFrame, playedSeconds: played) {
+                    let resume = wasPlaying || self.player.rate != 0
+                    let time = self.originalTime
+                    self.installFallback(url: url, seekToOriginal: time, leadIn: 0)
+                    if resume { self.player.play() }
+                    return
+                }
+                try? await Task.sleep(for: .milliseconds(100))
+            }
+        }
+    }
+
+    /// Failed outright, or ~1.5 s of advancing playhead without a single video frame.
+    nonisolated static func compositionFailed(itemFailed: Bool, sawFrame: Bool, playedSeconds: Double) -> Bool {
+        itemFailed || (!sawFrame && playedSeconds >= 1.5)
+    }
+
+    private func endWatch() {
+        watchTask?.cancel()
+        watchTask = nil
+        if let failureObserver { NotificationCenter.default.removeObserver(failureObserver) }
+        failureObserver = nil
     }
 
     /// Row tap: one second before the cut, in whichever clock the player runs on.
@@ -121,6 +182,7 @@ final class PreviewPlayer {
 
     /// Removes the observer and the item; the next video starts on the composition path again.
     func stop() {
+        endWatch()
         player.pause()
         didAutoplay = false
         autoplayPending = false

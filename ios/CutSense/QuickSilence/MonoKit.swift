@@ -496,7 +496,8 @@ struct MonoProgressRing: View {
                 .trim(from: 0, to: min(max(progress, 0), 1))
                 .stroke(Mono.C.text, style: StrokeStyle(lineWidth: 2, lineCap: .round))
                 .rotationEffect(.degrees(-90))
-                .animation(Mono.Motion.pick(Mono.Motion.smooth, reduce: reduceMotion), value: progress)
+                // The final fill must land inside the 0.3 s the export overlay waits before closing.
+                .animation(Mono.Motion.pick(progress >= 1 ? .easeOut(duration: 0.25) : Mono.Motion.smooth, reduce: reduceMotion), value: progress)
         }
         .frame(width: size, height: size)
         .accessibilityHidden(true)
