@@ -165,3 +165,22 @@ Free user (ads on, banner pass until Nov 24) for EdgeCase. Developer certificate
 | Crash: CheckedContinuation double resume in VideoImportService.loadMovie (build 32) | FIXED (code, compiled) | once-guard in ProgressBox.claimResume |
 | Crash: Binding force-unwrap (build 31) | already FIXED | QuickSilenceView no longer uses Binding($plan) |
 | DeviceFlow owner 4:34 clip via picker, seeded fixtures | not run | device locked at 10:00 |
+
+## Status — round 5 (2026-11-22 10:15–11:38, HEAD 53488bf + working tree; evidence in scratchpad/qa, real-out, pro)
+
+| # | Status | Evidence / note |
+|---|--------|-----------------|
+| OfferFlow 7/7 (welcome $5.99 + Not now, empty restore, cancel/buy/restore, flash auto-open, cold start, relaunch pill, expiry, Pro owner) | PASS | qa/e12.xcresult |
+| Flash pill missing after relaunch | FIXED | Pro/OfferView.swift OfferPill: empty principal toolbar item was dropped; 1 pt placeholder keeps it laid out |
+| C2/C4 triple Save + Share during export | PASS | qa/e7 |
+| Owner 4:34 clip via picker: review, keep → Tight (88 → 127 cuts, kept 0:00–0:02 survives), audition Before/After, hold, save, share, Open Photos, New Video | PASS | qa/e13.xcresult |
+| Bug #1 on fixture 01 (now asserts Tight applied) | PASS | qa/e13 |
+| Test infra: `-cut_intensity` launch arg pinned the value in the argument domain; level taps bounced | FIXED (tests) | removed from DeviceFlow/EdgeCase setUp |
+| Real videos 01–10 autorun: analyze 3–7 s, export+save 1–4 s, codec/res/fps/rotation kept, portrait stays portrait | PASS | real-out/summary.txt |
+| Real videos via picker (01 portrait rot, 03 outdoor, 10 4K60) | PASS | real-out/pick2-*.xcresult (creation_time stamped so the seeded item sorts first) |
+| Clipped words (whisper diff + envelope match) | PASS except 04_music | 04: off-mic line at −44.7 dB (24 dB under clip mean) cut as silence |
+| 10_4k60 H.264 3840x2160@59.94 preview | FAIL (UX) | preview black on composition AND plain-file fallback; export/thumbnail fine; level 5.2 re-signal no change |
+| History thumbnails orientation | PASS | real-out/hist-contact.png |
+| Pro: welcome $5.99 / flash $3.99 each grant Pro; revoke → capsule + banner back | PASS | pro/p1.xcresult |
+| Pro: buy in paywall same session, fine-tune extremes/reset/persist, relaunch no ads | NOT VERIFIED | stopped: owner using the phone (Instagram foreground at 11:38) |
+| Pro: restore after delete + reinstall | NOT RUN | needs owner OK (uninstall wipes app data) and an idle phone |

@@ -106,7 +106,7 @@ struct HistoryView: View {
                         .minimumScaleFactor(0.8) // DE on 16e: keeps the resolution visible
                 }
                 Spacer(minLength: 0)
-                MonoBadge("−" + percentText(entry.removedPercent))
+                MonoBadge((entry.removedPercent > 0 ? "−" : "") + percentText(entry.removedPercent))
             }
             .frame(minHeight: 72)
             .contentShape(Rectangle())

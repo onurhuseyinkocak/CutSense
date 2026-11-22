@@ -15,8 +15,10 @@ final class EdgeCaseUITests: XCTestCase {
         // No SKTestSession here: on device it terminated the freshly launched app ~4 s in (r2).
         // Entitlement state = whatever OfferFlowUITests.tearDown left (cleared → free user).
         app = XCUIApplication()
+        // No `-cut_intensity`: the argument domain overrides @AppStorage writes, so level taps bounced back.
+        // skipAdBreakIfShown selects Balanced instead.
         app.launchArguments += ["-app_language", "en", "-AppleLanguages", "(en)", "-onboarding_done_v1", "YES",
-                               "-cut_intensity", "balanced", "-finetune_active", "NO"]
+                               "-finetune_active", "NO"]
         addUIInterruptionMonitor(withDescription: "System alerts") { [unowned self] alert in
             for label in alertChoice + ["Not Now"] where alert.buttons[label].exists {
                 alert.buttons[label].tap()
@@ -195,6 +197,7 @@ final class EdgeCaseUITests: XCTestCase {
         XCTAssertTrue(app.buttons["Tight"].waitForExistence(timeout: 5))
         app.buttons["Tight"].tap()
         sleep(2)
+        XCTAssertTrue(app.buttons["Tight"].isSelected, "Tight tap did not apply")
         app.buttons["reviewCutsButton"].tap()
         sleep(1)
         snapshot("tight-after-keep")
@@ -512,6 +515,8 @@ final class EdgeCaseUITests: XCTestCase {
             if let button = close.allElementsBoundByIndex.first(where: { $0.isHittable }) { button.tap() }
             sleep(1)
         }
+        let balanced = app.buttons["Balanced"]
+        if balanced.exists, !balanced.isSelected { balanced.tap(); sleep(1) }
     }
 
     private func dismissRatingPromptIfShown() {

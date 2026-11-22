@@ -10,8 +10,9 @@ final class DeviceFlowUITests: XCTestCase {
     override func setUp() async throws {
         continueAfterFailure = false
         app = XCUIApplication()
+        // No `-cut_intensity` here: the argument domain overrides @AppStorage writes, so level taps bounced back.
         app.launchArguments += ["-app_language", "en", "-AppleLanguages", "(en)", "-onboarding_done_v1", "YES",
-                               "-cut_intensity", "balanced", "-finetune_active", "NO"]
+                               "-finetune_active", "NO"]
         let env = ProcessInfo.processInfo.environment
         for key in ["CUTSENSE_AUTORUN_VIDEO_URL", "CUTSENSE_FORCE_PRO", "CUTSENSE_FORCE_PREVIEW_FALLBACK"] {
             if let value = env[key] { app.launchEnvironment[key] = value }
@@ -84,6 +85,43 @@ final class DeviceFlowUITests: XCTestCase {
         }
     }
 
+    /// Real-video metrics: TEST_RUNNER_CUTSENSE_AUTORUN_VIDEO_URL=qa-run/<file>. Prints one "QA-REAL" line;
+    /// the Balanced export stays in the app's tmp until the next launch so it can be pulled for review.
+    func testRealVideoMetrics() throws {
+        let started = Date()
+        app.launch()
+        let save = app.buttons["saveButton"]
+        let failed = app.staticTexts["This video couldn't be processed"]
+        let deadline = Date().addingTimeInterval(900)
+        while Date() < deadline, !save.exists, !failed.exists { _ = save.waitForExistence(timeout: 1) }
+        var metrics = ["analyze=\(Int(Date().timeIntervalSince(started)))s"]
+        guard save.exists else {
+            snapshot("real-failed")
+            XCTFail("No review: \(app.staticTexts.allElementsBoundByIndex.map(\.label).joined(separator: " / "))")
+            return
+        }
+        skipAdBreakIfShown()
+        let percent = app.staticTexts.matching(NSPredicate(format: "label MATCHES '^[0-9]{1,3}%$'")).firstMatch
+        for level in ["Tight", "Hardcore", "Balanced"] {
+            let segment = app.buttons[level]
+            if !segment.isSelected { segment.tap() }
+            sleep(2)
+            metrics.append("\(level): \(percent.label) \(app.buttons["reviewCutsButton"].label) new=\(segment.value as? String ?? "?")")
+            snapshot("real-\(level)")
+        }
+        save.tap()
+        app.tap() // Photos permission prompt, if any
+        let exportStart = Date()
+        XCTAssertTrue(app.buttons["Saved to Photos"].waitForExistence(timeout: 900), "Save did not finish")
+        metrics.append("export+save=\(Int(Date().timeIntervalSince(exportStart)))s")
+        snapshot("real-saved")
+        dismissRatingPromptIfShown()
+        app.buttons["historyButton"].tap()
+        sleep(2)
+        snapshot("real-history")
+        print("QA-REAL " + metrics.joined(separator: " | "))
+    }
+
     /// Settings shows zero temporary storage after a finished session.
     func testSettingsStorageIsEmptyAfterNewVideo() throws {
         app.launch()
@@ -127,6 +165,8 @@ final class DeviceFlowUITests: XCTestCase {
         let save = app.buttons["saveButton"]
         XCTAssertTrue(save.waitForExistence(timeout: 600), "Review screen never appeared")
         skipAdBreakIfShown()
+        let balanced = app.buttons["Balanced"]
+        if balanced.exists, !balanced.isSelected { balanced.tap(); sleep(2) }
         snapshot("review")
 
         let reviewCuts = app.buttons["reviewCutsButton"]
@@ -186,9 +226,12 @@ final class DeviceFlowUITests: XCTestCase {
     private func exploreReview() throws {
         let tight = app.buttons["Tight"]
         XCTAssertTrue(tight.waitForExistence(timeout: 5))
+        let cutsBefore = app.buttons["reviewCutsButton"].label
         tight.tap()
-        sleep(2)
+        let replanned = XCTWaiter.wait(for: [XCTNSPredicateExpectation(predicate: NSPredicate(format: "label != %@", cutsBefore),
+                                                                        object: app.buttons["reviewCutsButton"])], timeout: 3) == .completed
         snapshot("owner-tight")
+        XCTAssertTrue(replanned, "Tight did not re-plan (still \(cutsBefore))")
         app.buttons["reviewCutsButton"].tap()
         let row = app.buttons["cutRow_0"]
         XCTAssertTrue(row.waitForExistence(timeout: 10))

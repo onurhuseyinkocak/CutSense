@@ -452,6 +452,9 @@ struct OfferPill: View {
     var body: some View {
         // Always-present container so the insertion animation and haptic fire.
         ZStack {
+            // Never empty: an empty principal toolbar item is dropped and not re-laid out when the pill
+            // appears, so after a relaunch into an active flash the pill stayed hidden until a foreground.
+            Color.clear.frame(width: 1, height: 1).accessibilityHidden(true)
             if visible, let active = offers.active, let prices = store.offerPrices {
                 Button(action: action) {
                     label(active, percent: prices.percent)
