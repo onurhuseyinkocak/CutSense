@@ -182,5 +182,12 @@ Free user (ads on, banner pass until Nov 24) for EdgeCase. Developer certificate
 | 10_4k60 H.264 3840x2160@59.94 preview | FAIL (UX) | preview black on composition AND plain-file fallback; export/thumbnail fine; level 5.2 re-signal no change |
 | History thumbnails orientation | PASS | real-out/hist-contact.png |
 | Pro: welcome $5.99 / flash $3.99 each grant Pro; revoke → capsule + banner back | PASS | pro/p1.xcresult |
-| Pro: buy in paywall same session, fine-tune extremes/reset/persist, relaunch no ads | NOT VERIFIED | stopped: owner using the phone (Instagram foreground at 11:38) |
-| Pro: restore after delete + reinstall | NOT RUN | needs owner OK (uninstall wipes app data) and an idle phone |
+| Pro: free banner while analyzing, ad break + Skip, locked fine-tune → paywall $7.99 | PASS | pro/p8.xcresult (banner by design only on home/working, not review) |
+| Pro: buy in same session → banner/capsule/pill gone, fine-tune unlocked, Pro save without ad break | PASS | pro/p8 |
+| Pro: fine-tune 05_turkish — preset 20 cuts 16%, min 42/23%, max 10/10%, Reset → 20/16%, custom 14 cuts persists after relaunch | PASS | pro/p8 |
+| Pro: export duration = shown new length (custom 152.1 s vs 2:32; 20-min 763 s vs 12:43) | PASS | pulled exports |
+| Pro: relaunch — no native, no ad break, no banner, no capsule/pill/consent | PASS | pro/p8 pro-relaunch-review |
+| Native ad card during analysis | UNVERIFIED | never loaded within the ~10 s analysis in 3 runs |
+| "Rewarded ad 1.4 s after launch" | NOT A BUG | test misread: AdMob test banner also has "Test mode"; p4 contact sheet order swapped (Instagram at 4.6 s) |
+| Pro: delete app + reinstall → Pro active at first launch, Restore confirms (Settings "Unlocked"), History empty | PASS | pro/r2.xcresult (owner approved data wipe) |
+| Restore after reinstall asks the real Apple Account password | NOTE | test monitor tapped "Tamam" on it with an empty password once (rejected, cancelled); monitor now ignores Apple Account alerts |

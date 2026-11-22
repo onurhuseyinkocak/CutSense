@@ -17,6 +17,8 @@ final class OfferFlowUITests: XCTestCase {
         app = XCUIApplication()
         app.launchArguments += ["-app_language", "en", "-AppleLanguages", "(en)"]
         addUIInterruptionMonitor(withDescription: "System alerts") { alert in
+            // Never answer an Apple Account sign-in: "OK"/"Tamam" there submits an empty password.
+            if alert.label.contains("Apple") { return false }
             for label in ["Allow Full Access", "Allow Access to All Photos", "Allow", "OK", "Tam Erişime İzin Ver", "Tüm Fotoğraflara Erişim İzni Ver", "İzin Ver", "Tamam", "Not Now"] where alert.buttons[label].exists {
                 alert.buttons[label].tap()
                 return true
@@ -222,33 +224,37 @@ final class OfferFlowUITests: XCTestCase {
         app.launchArguments += ["-onboarding_done_v1", "YES", "-ad_free_until", "0"]
         app.launchEnvironment["CUTSENSE_AUTORUN_VIDEO_URL"] = "qa-run/06_long_20min.mp4"
         app.launch()
-        XCTAssertTrue(app.buttons["Cancel"].waitForExistence(timeout: 30), "No analysis screen")
         let save = app.buttons["saveButton"]
         let skip = app.buttons["skipAdButton"]
-        let adClose = app.buttons.matching(NSPredicate(format: "label CONTAINS[c] 'close' AND isEnabled == true"))
-        var native = false, adBreak = false, fullScreenAd = false
+        let fullScreenAdUp = app.buttons["Close Advertisement"]  // the AdMob full-screen ad; the test banner also says "Test mode"
+        var native = false, bannerWhileWorking = false
         let deadline = Date().addingTimeInterval(600)
-        // One loop: the 20-min analysis can finish (and the 3-2-1 break run out) while waiting for the native card.
-        while Date() < deadline {
+        while Date() < deadline, !save.exists {
             if !native, nativeBadge.exists { native = true; snapshot("free-analyzing-native") }
-            if skip.exists {
-                adBreak = true
-                snapshot("free-ad-break")
-                _ = XCTWaiter.wait(for: [XCTNSPredicateExpectation(predicate: NSPredicate(format: "isHittable == true"), object: skip)], timeout: 2)
-                if skip.exists { skip.tap() }
-            }
-            let adUp = app.staticTexts["Test mode"].exists
-            if adUp, !fullScreenAd { fullScreenAd = true; snapshot("free-fullscreen-ad") }
-            if adUp, let close = adClose.allElementsBoundByIndex.first(where: { $0.isHittable }) { close.tap() }
-            // saveButton reports hittable even under the full-screen ad window, so check the ad itself.
-            if save.exists, !skip.exists, !adUp { break }
+            if !bannerWhileWorking, banner.exists { bannerWhileWorking = true; snapshot("free-analyzing-banner") }
+            _ = save.waitForExistence(timeout: 1)
+        }
+        XCTAssertTrue(save.exists, "Review never appeared")
+        // The 3-2-1 ad break starts ~1-4 s after review; Skip it like a user would.
+        let adBreak = skip.waitForExistence(timeout: 6)
+        if adBreak {
+            snapshot("free-ad-break")
+            _ = XCTWaiter.wait(for: [XCTNSPredicateExpectation(predicate: NSPredicate(format: "isHittable == true"), object: skip)], timeout: 2)
+            if skip.exists { skip.tap() }
+        }
+        var fullScreenAd = false
+        let adDeadline = Date().addingTimeInterval(45)
+        while Date() < adDeadline, fullScreenAdUp.exists {
+            if !fullScreenAd { fullScreenAd = true; snapshot("free-fullscreen-ad") }
+            let close = app.buttons.matching(NSPredicate(format: "label CONTAINS[c] 'close' AND isEnabled == true")).allElementsBoundByIndex.first { $0.isHittable }
+            close?.tap()
             sleep(1)
         }
         XCTAssertTrue(save.exists, "Review never appeared")
         let bannerShown = banner.waitForExistence(timeout: 20)
         snapshot("free-review-banner")
         // The PRO capsule is home-only (isIdle); on review the locked fine-tune is the Pro entry.
-        print("QA-PRO free native=\(native) adBreak=\(adBreak) fullScreenAd=\(fullScreenAd) banner=\(bannerShown)")
+        print("QA-PRO free native=\(native) bannerWhileWorking=\(bannerWhileWorking) adBreak=\(adBreak) fullScreenAd=\(fullScreenAd) banner=\(bannerShown)")
 
         app.buttons["fineTuneButton"].tap()
         let unlock = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Unlock for'")).firstMatch
@@ -294,6 +300,13 @@ final class OfferFlowUITests: XCTestCase {
     private func fineTuneExtremes() throws {
         let cuts = app.buttons["reviewCutsButton"]
         let percent = app.staticTexts.matching(NSPredicate(format: "label MATCHES '^[0-9]{1,3}%$'")).firstMatch
+        // A custom fine-tune from an earlier run persists (by design): start from the preset.
+        app.buttons["fineTuneButton"].tap()
+        let resetButton = app.buttons["fineTuneResetButton"]
+        XCTAssertTrue(resetButton.waitForExistence(timeout: 10))
+        if resetButton.isEnabled { resetButton.tap(); sleep(1) }
+        app.swipeDown(velocity: .fast)
+        sleep(2)
         let baseline = "\(cuts.label) \(percent.label)"
         func setSliders(_ minPause: CGFloat, _ pad: CGFloat, _ shot: String) -> String {
             app.buttons["fineTuneButton"].tap()
@@ -432,6 +445,9 @@ final class OfferFlowUITests: XCTestCase {
         sleep(2)
         print("QA-PRO reinstall proBeforeRestore=\(freshLooksPro) proAfterRestore=\(!app.buttons["proCapsule"].exists)")
         XCTAssertFalse(app.buttons["proCapsule"].exists, "Restore did not bring Pro back")
+        app.buttons["historyButton"].tap()
+        sleep(2)
+        snapshot("reinstall-history")
         session.clearTransactions()
     }
 
