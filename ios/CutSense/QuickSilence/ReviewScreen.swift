@@ -67,9 +67,10 @@ final class PreviewPlayer {
         endWatch()
         usesFallback = true
         if fallbackURL != url {
-            let pending = autoplayPending
+            let pending = autoplayPending, autoplayed = didAutoplay
             stop()
             autoplayPending = pending
+            didAutoplay = autoplayed
             fallbackURL = url
             player.replaceCurrentItem(with: AVPlayerItem(url: url))
             skipObserver = player.addPeriodicTimeObserver(
@@ -116,7 +117,7 @@ final class PreviewPlayer {
                     return
                 }
                 // After the first frame only a mid-play failure matters: poll slowly.
-                try? await Task.sleep(for: .milliseconds(sawFrame ? 1000 : 100))
+                try? await Task.sleep(for: .milliseconds(sawFrame ? 250 : 100))
             }
         }
     }
@@ -428,7 +429,7 @@ struct ReviewScreen: View {
                 .padding(.bottom, 12)
 
             MonoIntensityControl(selection: $intensity, language: language, hint: hint,
-                                 sublabels: presetLengths.mapValues(timeString))
+                                 sublabels: presetLengths.merging([intensity: plan.outputDuration]) { _, live in live }.mapValues(timeString))
                 .disabled(isExporting)
                 .padding(.bottom, 10)
 
@@ -541,7 +542,7 @@ struct ReviewScreen: View {
         }
         // An After audition runs on the edited clock; it would land in the wrong place on the original file.
         .onChange(of: preview.usesFallback) { _, fellBack in
-            if fellBack && auditioner.mode == .after { auditioner.stop(preview: preview) }
+            if fellBack, auditioner.activeID != nil, auditioner.mode == .after { auditioner.stop(preview: preview) }
         }
         .sheet(isPresented: $showsCuts, onDismiss: {
             auditioner.stop(preview: preview)
