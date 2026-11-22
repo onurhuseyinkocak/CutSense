@@ -44,10 +44,13 @@ final class PreviewPlayer {
         if !usesFallback && !Self.forceFallback {
             if let item = try? await QuickSilenceEngine.makePreviewItem(url: url, plan: plan) {
                 guard !Task.isCancelled else { return }
+                // The previous item's watchdog may have switched to the original file while this built.
+                if usesFallback { return installFallback(url: url, seekToOriginal: seekToOriginal, leadIn: leadIn) }
                 endWatch()
                 player.replaceCurrentItem(with: item)
                 installedKeepRanges = plan.keepRanges
                 if await Self.becomesReady(item) {
+                    guard !Task.isCancelled, player.currentItem === item else { return }
                     if let seekToOriginal { seek(toOriginal: seekToOriginal, leadIn: leadIn) }
                     if autoplayPending { autoplayOnce() }
                     watchComposition(item, url: url)
@@ -82,6 +85,7 @@ final class PreviewPlayer {
     /// A composition can reach readyToPlay and still never draw (4K60 H.264 preview stayed black
     /// on a 16e) or fail mid-play (VideoCompositionProcessor -19230). Either way switch to the original file.
     private func watchComposition(_ item: AVPlayerItem, url: URL) {
+        endWatch()
         watchedItemFailed = false
         failureObserver = NotificationCenter.default.addObserver(
             forName: AVPlayerItem.failedToPlayToEndTimeNotification, object: item, queue: .main
@@ -97,7 +101,7 @@ final class PreviewPlayer {
             var wasPlaying = self?.player.rate != 0
             while !Task.isCancelled, let self, self.player.currentItem === item {
                 let now = item.currentTime().seconds
-                if self.player.rate != 0, now.isFinite, last.isFinite, now > last { played += now - last }
+                if self.player.rate != 0, now.isFinite, last.isFinite, now > last { played += min(now - last, 0.25) } // a seek jump is not playback
                 last = now
                 if !self.watchedItemFailed { wasPlaying = self.player.rate != 0 }
                 if !sawFrame, output.hasNewPixelBuffer(forItemTime: item.currentTime()) {
@@ -111,7 +115,8 @@ final class PreviewPlayer {
                     if resume { self.player.play() }
                     return
                 }
-                try? await Task.sleep(for: .milliseconds(100))
+                // After the first frame only a mid-play failure matters: poll slowly.
+                try? await Task.sleep(for: .milliseconds(sawFrame ? 1000 : 100))
             }
         }
     }
@@ -533,6 +538,10 @@ struct ReviewScreen: View {
             let seek = rowSeek ?? (preview.originalTime > 0.5 ? preview.originalTime : nil)
             pendingSeek = nil
             await preview.load(url: inputURL, plan: plan, seekToOriginal: seek, leadIn: rowSeek == nil ? 0 : 1)
+        }
+        // An After audition runs on the edited clock; it would land in the wrong place on the original file.
+        .onChange(of: preview.usesFallback) { _, fellBack in
+            if fellBack && auditioner.mode == .after { auditioner.stop(preview: preview) }
         }
         .sheet(isPresented: $showsCuts, onDismiss: {
             auditioner.stop(preview: preview)
