@@ -26,10 +26,9 @@ private final class AdMobBoolContinuationBox: @unchecked Sendable {
 
 /// KVKK: every ad request from Türkiye is sent as non-personalized.
 enum AdRegion {
-    /// Storefront wins (ISO 3166-1 alpha-3); the device region is only a fallback.
+    /// Either signal is enough: a Turkish storefront (ISO 3166-1 alpha-3) or a TR device region.
     static func isTurkey(storefrontCountryCode: String?, localeRegion: String?) -> Bool {
-        if let storefrontCountryCode { return storefrontCountryCode == "TUR" }
-        return localeRegion == "TR"
+        storefrontCountryCode == "TUR" || localeRegion == "TR"
     }
 }
 
@@ -102,10 +101,18 @@ enum AdMobService {
     private static func configureIfNeeded() {
         guard configureTask == nil else { return }
         configureTask = Task { @MainActor in
-            async let storefrontCountry = Storefront.current?.countryCode
+            let storefrontTask = Task { await Storefront.current?.countryCode }
             await gatherConsent()
+            // Don't let a stuck StoreKit lookup block every ad; fall back to the device region.
+            let storefrontCountry = await withTaskGroup(of: String?.self) { group in
+                group.addTask { await storefrontTask.value }
+                group.addTask { try? await Task.sleep(for: consentTimeout); return nil }
+                let first = await group.next() ?? nil
+                group.cancelAll()
+                return first
+            }
             requestsNonPersonalizedAds = AdRegion.isTurkey(
-                storefrontCountryCode: await storefrontCountry,
+                storefrontCountryCode: storefrontCountry,
                 localeRegion: Locale.current.region?.identifier
             )
             startMobileAdsIfAllowed()

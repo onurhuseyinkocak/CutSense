@@ -6,8 +6,9 @@ final class AdRegionTests: XCTestCase {
         XCTAssertTrue(AdRegion.isTurkey(storefrontCountryCode: "TUR", localeRegion: "US"))
     }
 
-    func testOtherStorefrontWinsOverTurkishLocale() {
-        XCTAssertFalse(AdRegion.isTurkey(storefrontCountryCode: "USA", localeRegion: "TR"))
+    func testTurkishLocaleCountsEvenWithForeignStorefront() {
+        XCTAssertTrue(AdRegion.isTurkey(storefrontCountryCode: "USA", localeRegion: "TR"))
+        XCTAssertFalse(AdRegion.isTurkey(storefrontCountryCode: "USA", localeRegion: "US"))
     }
 
     func testFallsBackToLocaleWithoutStorefront() {

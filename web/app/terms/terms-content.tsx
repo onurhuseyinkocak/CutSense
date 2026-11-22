@@ -41,7 +41,7 @@ export function TermsContent() {
       title: t("Yaş ve ehliyet", "Age and capacity"),
       body: [
         t(
-          "CutSense'i kullanmak için en az 13 yaşında (ülkende dijital rıza yaşı daha yüksekse o yaşta) olmalısın. Reşit değilsen CutSense'i ve satın alımları ebeveyninin veya vasinin izniyle kullanabilirsin.",
+          "CutSense'i kullanmak için en az 13 yaşında (ülkende dijital rıza yaşı daha yüksekse o yaşta) olmalısın. Reşit değilsen CutSense'i ve satın alımları yalnızca ebeveyninin veya vasinin izniyle kullanabilirsin.",
           "You must be at least 13 years old (or the higher digital-consent age in your country) to use CutSense. If you are a minor, you may use CutSense and make purchases only with the consent of your parent or guardian.",
         ),
       ],
