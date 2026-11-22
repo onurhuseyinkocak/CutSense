@@ -4,16 +4,17 @@ import GoogleMobileAds
 import UserMessagingPlatform
 import StoreKit
 
-private final class AdMobBoolContinuationBox: @unchecked Sendable {
+/// Resumes once; later calls are ignored. Lets a callback race a timeout.
+private final class AdMobContinuationBox<Value: Sendable>: @unchecked Sendable {
     private let lock = NSLock()
-    private var continuation: CheckedContinuation<Bool, Never>?
+    private var continuation: CheckedContinuation<Value, Never>?
 
-    init(_ continuation: CheckedContinuation<Bool, Never>) {
+    init(_ continuation: CheckedContinuation<Value, Never>) {
         self.continuation = continuation
     }
 
     @discardableResult
-    func resume(_ value: Bool) -> Bool {
+    func resume(_ value: Value) -> Bool {
         lock.lock()
         let continuation = continuation
         self.continuation = nil
@@ -104,12 +105,11 @@ enum AdMobService {
             let storefrontTask = Task { await Storefront.current?.countryCode }
             await gatherConsent()
             // Don't let a stuck StoreKit lookup block every ad; fall back to the device region.
-            let storefrontCountry = await withTaskGroup(of: String?.self) { group in
-                group.addTask { await storefrontTask.value }
-                group.addTask { try? await Task.sleep(for: consentTimeout); return nil }
-                let first = await group.next() ?? nil
-                group.cancelAll()
-                return first
+            // shortcut: a lookup that never returns leaks storefrontTask; harmless, it holds no resources.
+            let storefrontCountry: String? = await withCheckedContinuation { continuation in
+                let box = AdMobContinuationBox<String?>(continuation)
+                Task { box.resume(await storefrontTask.value) }
+                Task { try? await Task.sleep(for: consentTimeout); box.resume(nil) }
             }
             requestsNonPersonalizedAds = AdRegion.isTurkey(
                 storefrontCountryCode: storefrontCountry,
@@ -135,7 +135,7 @@ enum AdMobService {
 
     private static func requestConsentInfoUpdate(parameters: RequestParameters) async -> Bool {
         await withCheckedContinuation { continuation in
-            let box = AdMobBoolContinuationBox(continuation)
+            let box = AdMobContinuationBox<Bool>(continuation)
             ConsentInformation.shared.requestConsentInfoUpdate(with: parameters) { error in
                 Task { @MainActor in
                     if let error {
@@ -158,7 +158,7 @@ enum AdMobService {
 
     private static func loadAndPresentConsentFormIfRequired() async -> Bool {
         await withCheckedContinuation { continuation in
-            let box = AdMobBoolContinuationBox(continuation)
+            let box = AdMobContinuationBox<Bool>(continuation)
             Task { @MainActor in
                 do {
                     try await ConsentForm.loadAndPresentIfRequired(from: rootViewController)
