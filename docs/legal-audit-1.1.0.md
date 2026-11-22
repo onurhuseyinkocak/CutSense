@@ -114,3 +114,65 @@ Contact address used across the site: `info@vibecodingturkey.com` (kept; no new 
 - Site language: EN + TR only, while the app has 9 languages. Not required, but non-EN/TR users get the English policy.
 - US prices are stated as US prices. Other storefronts use Apple's local tier. If ASC prices change, terms must be updated.
 - Not legal advice; a lawyer should review before relying on this for GDPR/CCPA compliance.
+
+## 10. Hardening pass 2 (2026-11-22, deployed)
+
+Not legal advice. Only the content files under `web/app/{privacy,terms,support}` and this doc were changed. `ios/` was not touched. Nothing was committed.
+
+**Sources checked first**
+- Seller name: public iTunes lookup (`itunes.apple.com/lookup?id=6770024868`) and the App Store page both return `sellerName` = **"Onur Hseyin Kocak"**. The ASC API `apps view` has no seller field. The string is used verbatim and labelled "the seller listed on the App Store". It looks like Apple dropped a character ("Hüseyin"/"Koçak"?). **Owner: fix the legal name in the Apple Developer account, or confirm it, then update the `seller` constant in privacy-content.tsx and terms-content.tsx.**
+- `asc eula view` now returns an empty object, so the stale custom EULA from §7 is gone and Apple's Standard EULA applies. The Terms reference stays accurate.
+- `asc iap pricing summary` (VERIFIED): lifetime US$7.99, welcome US$5.99, offer US$3.99. Welcome and offer are both still `MISSING_METADATA`, so "where offered in the app" wording is kept.
+- Offer rules come from `docs/offer-policy-owner.md` and `OfferCenter.swift` (`flashDelaySeconds` = 600, `flashSeconds` = 900). The old Terms text ("24 h welcome after the first save", "7 days + 3 saves") was **false** and has been replaced.
+- No `tagForChildDirectedTreatment` / under-age tag anywhere in the iOS sources. That matches the new "ad requests are not tagged as child-directed" text.
+- KVKK md. 9 (changed by 7499, in force 1 June 2024), md. 11, 13 (30 days, free) and 14 (Kurul complaint within 30/60 days, application first) were checked against mevzuat.gov.tr and kvkk.gov.tr.
+
+**Privacy (`privacy-content.tsx`)**
+- "Who we are (data controller)": seller name, Türkiye, contact. Google is named as an independent controller and Apple as handling purchases.
+- AdMob paragraph: "personalized ads only with consent" is now limited to the regions where the UMP form appears (EEA/UK/CH). The old "where the law requires it" wording implied consent in Türkiye, where no form is shown.
+- GDPR/UK GDPR section: the legal bases are kept. Added the list of rights, no solely-automated decisions, one-month reply, DPO not required (Art. 37), and the right to complain to a supervisory authority (ICO for the UK).
+- New "Türkiye: KVKK notice" (md. 10): veri sorumlusu; data and purposes; legal grounds md. 5/2-c and 5/2-f, with an explicit statement that **no consent form is shown in Türkiye** (açık rıza is not claimed); Google, with transfer abroad under md. 9, and no specific mechanism claimed; the email provider's servers may be abroad; the md. 11 rights in full; the application route under md. 13/14.
+- US section: no sensitive personal information. Added the iOS Apple Advertising setting as a route and a note that GPC browser signals do not reach the app.
+- Children: under 13, or 16 in EEA/UK (or the local age of digital consent). Ad requests are not tagged as child-directed. Parent/guardian deletion path.
+- Contact names the controller.
+
+**Terms (`terms-content.tsx`)**, complete rewrite, EN+TR:
+- Who we are.
+- Apple EULA precedence, plus Apple's required clauses (agreement is with us, not Apple; Apple as third-party beneficiary).
+- License: "licensed, not sold", non-exclusive, rights reserved.
+- Your content: you must hold all rights and consents, we never receive the videos, plus an indemnity "to the extent the law allows".
+- Prohibited use, expanded: NCII, CSAM, ad fraud, offer manipulation.
+- Trademarks and no affiliation: Meta, Google, ByteDance, Apple.
+- Ads and rewarded ads: 24 h per reward, total cap 72 h, no cash value, removed by deleting the app.
+- Pro: restore instead of re-buying.
+- Limited-time offers: the in-app/App Store price at purchase controls; the regular price is shown struck through; the welcome offer may show once at the end of the intro, has no countdown, and does not show if the intro is skipped; the flash offer (if no purchase) starts 10 min after the intro (even if skipped), lasts 15 min, happens once per install, runs in real time while the app is closed, is not extended, and ends on a clock rollback; offers can't be combined; Pro owners see no offers; no cash value.
+- Payment/refunds via Apple, subject to mandatory consumer law.
+- Output quality depends on the source; keep originals and backups.
+- No warranty.
+- Liability cap, with carve-outs for intent, gross negligence and death/injury, and for mandatory consumer law (TR 6502).
+- Governing law Türkiye, preserving the consumer's home-country mandatory rules and local courts/consumer bodies.
+- Changes, not retroactive for purchases.
+- Severability, no waiver, entire agreement, and TR/EN precedence.
+- Contact.
+
+**Support (`support-content.tsx`)**
+- Refunds now links to https://reportaproblem.apple.com. This needed a small render change: an optional `link` per item, underlined inline.
+- New items: "Questions about offers" and "Privacy requests" (30 days, free).
+
+**Verification**
+- `pnpm lint`, `pnpm typecheck` and `pnpm test` are clean. `STATIC_EXPORT=1 pnpm build` passes.
+- `out/app-ads.txt` and `out/robots.txt` are byte-identical to live.
+- `npx wrangler deploy` succeeded: Version ID `84fa02a8-ba5f-4d8e-872b-8ddc0bfbc1f8`.
+- Live `/privacy`, `/terms` and `/support` return 200. EN strings are in the HTML, and EN+TR strings are in each page's JS chunks: "Onur Hseyin Kocak", "KVKK", "6698", "md. 11", "Kurulu", "veri koruma görevlisi", "ico.org.uk", "Hassas kişisel bilgi", "child-directed", "Ebeveyn veya vasi", "Markalar ve bağımsızlık", "ByteDance", "Flaş teklif", "US$5.99", "72 saati", "6502", "Bölünebilirlik", "third-party beneficiaries", "Teklifler hakkında sorular", "Gizlilik talepleri", "https://reportaproblem.apple.com".
+- `/app-ads.txt` returns 200.
+- `node_modules`, `.next` and `out` were deleted.
+- UNVERIFIED: no browser visual check, per the user's no-browser rule. Only text changed; the support link is the only new markup.
+
+**Owner decisions still open (deliberately not written onto the site)**
+- Seller name spelling (above). No postal address was published. Some EU regulators and KVKK practice expect an address for the controller.
+- GDPR Art. 27 EU/UK representative: none appointed and no statement made. Decide whether the Art. 27(2) exemption (occasional, low-risk processing) applies.
+- VERBİS registration: no statement made. Natural-person controllers below the Board's thresholds are usually exempt. Confirm.
+- Court venue: the Terms say "courts of Türkiye" with no city.
+- Personalized ads in Türkiye run without consent (UMP shows no form there). Consider enabling an AdMob message for TR, or non-personalized ads for TR, if counsel says KVKK açık rıza is needed for cross-context ads.
+- App Store age rating is 4+, while the policy says the app is not directed to under-13s and ads aren't child-directed. These are consistent (rating = content, not audience), but a reviewer may ask.
+- New commitments now live: KVKK 30-day free reply, user indemnity, liability carve-outs, and TR text controlling for users in Türkiye.

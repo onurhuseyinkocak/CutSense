@@ -4,6 +4,8 @@ import { useLanguage } from "../language-context";
 import { SiteFooter, SiteNav } from "../site-chrome";
 
 const contact = "info@vibecodingturkey.com";
+// Seller name exactly as Apple publishes it on the App Store listing.
+const seller = "Onur Hseyin Kocak";
 
 export function PrivacyContent() {
   const { t } = useLanguage();
@@ -23,11 +25,15 @@ export function PrivacyContent() {
       ],
     },
     {
-      title: t("Biz kimiz", "Who we are"),
+      title: t("Biz kimiz (veri sorumlusu)", "Who we are (data controller)"),
       body: [
         t(
-          `CutSense, App Store'da satıcı olarak görünen bağımsız geliştirici tarafından yayınlanır ("biz"). Gizlilikle ilgili tüm sorular ve talepler için: ${contact}.`,
-          `CutSense is published by the independent developer listed as the seller on the App Store ("we", "us"). For any privacy question or request, contact ${contact}.`,
+          `CutSense, App Store'da satıcı olarak görünen ${seller} tarafından Türkiye'den yayınlanan bağımsız bir uygulamadır ("biz"). Bu politikada anlatılan, bizim karar verdiğimiz işlemler için veri sorumlusu ${seller}'tır. Gizlilikle ilgili tüm sorular ve talepler için: ${contact}.`,
+          `CutSense is an independent app published from Türkiye by ${seller}, the seller listed on the App Store ("we", "us"). ${seller} is the data controller for the processing we decide on, as described in this policy. For any privacy question or request, contact ${contact}.`,
+        ),
+        t(
+          "Google, reklam verilerini kendi amaçları için kendi veri sorumluluğunda işler (aşağıya bak). Apple, satın alımları ve App Store hesabını kendi politikasıyla işler.",
+          "Google processes advertising data for its own purposes as an independent controller (see below). Apple processes purchases and your App Store account under its own policy.",
         ),
       ],
     },
@@ -74,8 +80,8 @@ export function PrivacyContent() {
           "The free version uses the Google Mobile Ads SDK (AdMob) to show banner ads, native ads while a video is processing, and optional rewarded ads. According to Google, the SDK may collect: IP address, device identifiers (app- or developer-scoped IDs), advertising data such as ads you have seen, product interactions such as app launches and ad taps, approximate location derived from your IP address, and crash and performance data.",
         ),
         t(
-          "Google bu verileri reklam göstermek ve seçmek, reklam performansını ölçmek, reklam sıklığını sınırlamak, dolandırıcılığı ve kötüye kullanımı önlemek ve hizmetini iyileştirmek için kullanır. Kişiselleştirilmiş reklam yalnızca yasa gerektirdiğinde verdiğin izinle gösterilir. Google bu verileri kendi gizlilik politikasına göre bağımsız olarak işler: policies.google.com/privacy ve policies.google.com/technologies/partner-sites.",
-          "Google uses this data to serve and select ads, measure ad performance, limit how often you see an ad, prevent fraud and abuse, and improve its service. Personalized ads are shown only with your consent where the law requires it. Google processes this data independently under its own privacy policy: policies.google.com/privacy and policies.google.com/technologies/partner-sites.",
+          "Google bu verileri reklam göstermek ve seçmek, reklam performansını ölçmek, reklam sıklığını sınırlamak, dolandırıcılığı ve kötüye kullanımı önlemek ve hizmetini iyileştirmek için kullanır. Google'ın rıza formunun gösterildiği bölgelerde (AEA, Birleşik Krallık, İsviçre) kişiselleştirilmiş reklam yalnızca verdiğin izinle gösterilir. Google bu verileri kendi gizlilik politikasına göre bağımsız olarak işler: policies.google.com/privacy ve policies.google.com/technologies/partner-sites.",
+          "Google uses this data to serve and select ads, measure ad performance, limit how often you see an ad, prevent fraud and abuse, and improve its service. In regions where Google's consent form is shown (EEA, UK, Switzerland), personalized ads are shown only with your consent. Google processes this data independently under its own privacy policy: policies.google.com/privacy and policies.google.com/technologies/partner-sites.",
         ),
         t(
           "Yalnızca bu politikadakilere eşit koruma sağlayan üçüncü taraflarla çalışırız; Google bu veriyi AdMob şartları ve Google'ın AB Kullanıcı Rızası Politikası kapsamında korumakla yükümlüdür. Google dışında hiçbir üçüncü tarafla veri paylaşmıyoruz. Pro sahiplerinde reklam SDK'sı başlatılmaz ve reklam gösterilmez.",
@@ -93,7 +99,7 @@ export function PrivacyContent() {
       ],
     },
     {
-      title: t("AEA, Birleşik Krallık ve İsviçre: rıza ve hukuki dayanak", "EEA, UK, and Switzerland: consent and legal bases"),
+      title: t("AEA, Birleşik Krallık ve İsviçre (GDPR / UK GDPR)", "EEA, UK, and Switzerland (GDPR / UK GDPR)"),
       body: [
         t(
           "Bu bölgelerde CutSense ilk açılışta Google'ın rıza formunu (User Messaging Platform) gösterir. Cihazında bilgi saklanması veya okunması ve kişiselleştirilmiş reklam için hukuki dayanak rızandır (GDPR / UK GDPR md. 6(1)(a)). Rıza vermezsen Google, yasanın izin verdiği ölçüde sınırlı veya kişiselleştirilmemiş reklam gösterebilir; dolandırıcılık önleme ve güvenlik gibi amaçlar için meşru menfaate dayanabilir. Satın alımlar sözleşmenin ifasına, destek yazışmaları meşru menfaatimize dayanır.",
@@ -103,18 +109,55 @@ export function PrivacyContent() {
           "Rızanı istediğin an geri çekebilir veya değiştirebilirsin: uygulamada Ayarlar > Reklam gizliliği > Gizlilik tercihlerini yönet (CutSense 1.1 ve sonrası). Bu satır, bölgende gerekli olduğunda ve reklamlar açıkken görünür. Geri çekmek, önceki işlemenin hukuka uygunluğunu etkilemez.",
           "You can withdraw or change consent at any time in the app: Settings > Ad privacy > Manage privacy choices (CutSense 1.1 and later). This row appears where it is required in your region and while ads are on. Withdrawing does not affect processing that happened before.",
         ),
+        t(
+          "Bu bölgelerdeki hakların: verilerine erişim, düzeltme, silme, işlemenin kısıtlanması, itiraz (meşru menfaate dayanan işlemeye ve doğrudan pazarlamaya), veri taşınabilirliği ve rızayı geri çekme. Yalnızca otomatik işlemeye dayanan ve seni önemli ölçüde etkileyen bir karar almayız. Talebini e-postayla ilet; bir ay içinde yanıt veririz.",
+          "Your rights in these regions: access, correction, deletion, restriction of processing, objection (to processing based on legitimate interests and to direct marketing), data portability, and withdrawal of consent. We make no decisions based solely on automated processing that significantly affect you. Email us with your request and we will reply within one month.",
+        ),
+        t(
+          "Kendi işlememiz destek e-postalarıyla sınırlı olduğu ve büyük ölçekli izleme veya özel nitelikli veri işlemesi içermediği için veri koruma görevlisi (DPO) atamamız gerekmez (GDPR md. 37). Yaşadığın, çalıştığın veya ihlalin gerçekleştiği yerdeki veri koruma otoritesine şikâyet etme hakkın vardır; Birleşik Krallık'ta bu otorite ICO'dur (ico.org.uk). Önce bize yazarsan sorunu birlikte çözmeye çalışırız.",
+          "Because our own processing is limited to support emails and involves no large-scale monitoring or special-category data, we are not required to appoint a data protection officer (GDPR Art. 37). You have the right to complain to the data protection authority where you live, work, or where an infringement happened; in the UK this is the ICO (ico.org.uk). If you contact us first, we will try to resolve it with you.",
+        ),
+      ],
+    },
+    {
+      title: t("Türkiye: KVKK aydınlatma metni", "Türkiye: KVKK notice"),
+      body: [
+        t(
+          `Bu bölüm 6698 sayılı Kişisel Verilerin Korunması Kanunu (KVKK) md. 10 uyarınca hazırlanmıştır. Veri sorumlusu: ${seller}, Türkiye. İletişim: ${contact}.`,
+          `This section is provided under Türkiye's Personal Data Protection Law No. 6698 (KVKK), Art. 10. Data controller: ${seller}, Türkiye. Contact: ${contact}.`,
+        ),
+        t(
+          "İşlenen veriler ve amaçlar: (1) Bize yazarsan e-posta adresin ve mesajın; yalnızca talebini yanıtlamak için. (2) Ücretsiz sürümde Google Mobile Ads SDK'nın topladığı IP adresi, cihaz tanımlayıcıları, reklam ve etkileşim verileri, yaklaşık konum, çökme ve performans verileri; reklam göstermek, ölçmek ve dolandırıcılığı önlemek için. Bu veriler cihazından doğrudan Google'a gider; biz bunları görmeyiz ve saklamayız. Videoların ve Geçmiş kayıtların cihazından çıkmaz ve bize ulaşmaz.",
+          "Data and purposes: (1) If you email us, your email address and message, only to answer your request. (2) In the free version, the IP address, device identifiers, advertising and interaction data, approximate location, and crash and performance data collected by the Google Mobile Ads SDK, to show and measure ads and prevent fraud. This data goes from your device directly to Google; we do not see or store it. Your videos and History entries never leave your device and never reach us.",
+        ),
+        t(
+          "Hukuki sebepler: destek yazışmaları için meşru menfaatimiz (md. 5/2-f); satın alımla ilgili sorular için bir sözleşmenin kurulması veya ifası (md. 5/2-c); ücretsiz sürümün reklamla sunulması için meşru menfaatimiz (md. 5/2-f). Uygulama şu anda Türkiye'de bir reklam rıza formu göstermez. Hedefli reklamı istemiyorsan Google reklam ayarlarını myadcenter.google.com adresinden kapatabilir veya sunulduğu yerde CutSense Pro ile reklamları tamamen kaldırabilirsin.",
+          "Legal grounds: our legitimate interest for support emails (Art. 5/2-f); establishing or performing a contract for purchase questions (Art. 5/2-c); our legitimate interest in offering the free version with ads (Art. 5/2-f). The app does not currently show an ad consent form in Türkiye. If you do not want targeted ads, turn them off in Google's ad settings at myadcenter.google.com, or, where available, remove ads entirely with CutSense Pro.",
+        ),
+        t(
+          "Aktarım ve yurt dışına aktarım: Reklam verileri, kendi veri sorumluluğunda işleyen Google'a (Google LLC ve bağlı şirketleri) aktarılır ve Google tarafından ABD dahil yurt dışında işlenebilir. Bu, KVKK md. 9 kapsamında yurt dışına aktarımdır ve Google'ın kendi veri koruma şartlarına tabidir. Destek e-postaları, kullandığımız e-posta hizmetinin sunucularında (yurt dışında olabilir) saklanır. Verilerini başka hiçbir üçüncü kişiye aktarmayız veya satmayız.",
+          "Transfers, including abroad: Advertising data is transferred to Google (Google LLC and its affiliates), which processes it as an independent controller and may do so outside Türkiye, including in the United States. This is a cross-border transfer under KVKK Art. 9 and is subject to Google's own data protection terms. Support emails are stored on the servers of the email service we use, which may be outside Türkiye. We do not transfer or sell your data to anyone else.",
+        ),
+        t(
+          "KVKK md. 11 uyarınca haklarına göre: kişisel verinin işlenip işlenmediğini öğrenme; işlenmişse bilgi talep etme; işlenme amacını ve amacına uygun kullanılıp kullanılmadığını öğrenme; yurt içinde veya yurt dışında aktarıldığı üçüncü kişileri bilme; eksik veya yanlış işlenmişse düzeltilmesini isteme; md. 7 şartları çerçevesinde silinmesini veya yok edilmesini isteme; düzeltme ve silme işlemlerinin aktarılan üçüncü kişilere bildirilmesini isteme; münhasıran otomatik sistemlerle analiz edilmesi sonucu aleyhine bir sonuç çıkmasına itiraz etme; kanuna aykırı işleme nedeniyle zarara uğrarsan zararın giderilmesini talep etme.",
+          "Your rights under KVKK Art. 11: to learn whether your personal data is processed; to request information if it is; to learn the purpose and whether it is used accordingly; to know the third parties it is transferred to in Türkiye or abroad; to request correction of incomplete or inaccurate data; to request deletion or destruction under Art. 7; to request that corrections and deletions be notified to those third parties; to object to an outcome against you resulting solely from automated analysis; and to claim compensation for damage caused by unlawful processing.",
+        ),
+        t(
+          `Başvuru yolu: talebini kimliğini ve talebini açıkça belirterek ${contact} adresine yazılı (e-posta) olarak ilet. Talebini en kısa sürede ve en geç 30 gün içinde ücretsiz sonuçlandırırız (md. 13). Başvurun reddedilir, yanıtı yetersiz bulursan veya süresinde yanıt alamazsan, yanıtı öğrendiğin tarihten itibaren 30 gün ve her hâlde başvuru tarihinden itibaren 60 gün içinde Kişisel Verileri Koruma Kurulu'na şikâyette bulunabilirsin (md. 14, kvkk.gov.tr). Google'ın tuttuğu reklam verileri için Google'ın araçlarını da kullanabilirsin.`,
+          `How to apply: email ${contact} in writing, stating who you are and what you are asking for. We will resolve your request as soon as possible and within 30 days at the latest, free of charge (Art. 13). If your request is refused, you find the answer insufficient, or you get no answer in time, you can complain to the Personal Data Protection Board within 30 days of learning of the answer and in any case within 60 days of your application (Art. 14, kvkk.gov.tr). For advertising data held by Google, you can also use Google's own tools.`,
+        ),
       ],
     },
     {
       title: t("ABD eyalet gizlilik hakları", "US state privacy rights"),
       body: [
         t(
-          "CutSense kişisel bilgileri para karşılığı satmaz. Ancak Google'ın ücretsiz sürümde reklamları kişiselleştirmesi, California (CCPA/CPRA) ve benzeri eyalet yasalarında kişisel bilgilerin \"satışı\" veya hedefli reklam için \"paylaşılması\" sayılabilir. İlgili kategoriler: tanımlayıcılar, internet veya ağ etkinliği (reklam etkileşimleri) ve yaklaşık konum.",
-          "CutSense does not sell personal information for money. However, Google personalizing ads in the free version may count as a \"sale\" or \"sharing\" of personal information for targeted advertising under California law (CCPA/CPRA) and similar state laws. The categories involved are identifiers, internet or network activity (ad interactions), and approximate location.",
+          "CutSense kişisel bilgileri para karşılığı satmaz. Ancak Google'ın ücretsiz sürümde reklamları kişiselleştirmesi, California (CCPA/CPRA) ve benzeri eyalet yasalarında kişisel bilgilerin \"satışı\" veya hedefli reklam için \"paylaşılması\" sayılabilir. İlgili kategoriler: tanımlayıcılar, internet veya ağ etkinliği (reklam etkileşimleri) ve yaklaşık konum. Hassas kişisel bilgi (kesin konum, sağlık, finansal hesap, kimlik numarası gibi) toplamaz, satmaz veya paylaşmayız.",
+          "CutSense does not sell personal information for money. However, Google personalizing ads in the free version may count as a \"sale\" or \"sharing\" of personal information for targeted advertising under California law (CCPA/CPRA) and similar state laws. The categories involved are identifiers, internet or network activity (ad interactions), and approximate location. We do not collect, sell, or share sensitive personal information (such as precise location, health, financial account, or government ID data).",
         ),
         t(
-          "Hedefli reklamdan çıkmak için: uygulama bir gizlilik seçeneği gösteriyorsa Ayarlar > Reklam gizliliği'ni kullan; Google reklam ayarlarını myadcenter.google.com adresinden yönet ya da sunulduğu yerde CutSense Pro ile reklamları tamamen kapat. Seninle ilişkilendirilmiş bir veri tutmadığımız için talebi senin yerine Google'a uygulayamayız; ancak her soru için bize yazabilirsin ve hakkını kullandığın için sana farklı davranmayız.",
-          "To opt out of targeted ads: use Settings > Ad privacy in the app if it shows a privacy option; manage Google's ad settings at myadcenter.google.com; or, where available, turn ads off completely with CutSense Pro. Because we hold no data linked to you, we cannot apply an opt-out at Google on your behalf, but you can contact us with any question and we will not treat you differently for using your rights.",
+          "Hedefli reklamdan çıkmak için: uygulama bir gizlilik seçeneği gösteriyorsa Ayarlar > Reklam gizliliği'ni kullan; Google reklam ayarlarını myadcenter.google.com adresinden yönet iPhone'unda Ayarlar > Gizlilik ve Güvenlik > Apple Reklamları ve Takip ayarlarını kontrol et; ya da sunulduğu yerde CutSense Pro ile reklamları tamamen kapat. Tarayıcı kaynaklı Global Privacy Control sinyalleri bu uygulamaya ulaşmaz. Seninle ilişkilendirilmiş bir veri tutmadığımız için talebi senin yerine Google'a uygulayamayız; ancak her soru için bize yazabilirsin ve hakkını kullandığın için sana farklı davranmayız.",
+          "To opt out of targeted ads: use Settings > Ad privacy in the app if it shows a privacy option; manage Google's ad settings at myadcenter.google.com; or, where available, turn ads off completely with CutSense Pro. Browser Global Privacy Control signals do not reach this app. Because we hold no data linked to you, we cannot apply an opt-out at Google on your behalf, but you can contact us with any question and we will not treat you differently for using your rights.",
         ),
       ],
     },
@@ -140,8 +183,8 @@ export function PrivacyContent() {
       title: t("Hakların", "Your rights"),
       body: [
         t(
-          "Bulunduğun yere bağlı olarak verilerine erişme, düzeltme, silme, işlemeyi kısıtlama veya itiraz etme, taşınabilirlik ve rızanı geri çekme hakların olabilir; ayrıca yerel veri koruma otoritesine şikâyet edebilirsin. Talepler için bize yaz; 30 gün içinde yanıt veririz. Google'ın tuttuğu reklam verileri için Google'ın araçlarını kullanman gerekir, çünkü bu verilere biz erişemeyiz.",
-          "Depending on where you live, you may have the right to access, correct, delete, restrict or object to processing of, and port your data, and to withdraw consent; you can also complain to your local data protection authority. Email us with any request and we will reply within 30 days. For advertising data held by Google, use Google's tools, because we cannot access that data.",
+          "Bulunduğun yere bağlı olarak verilerine erişme, düzeltme, silme, işlemeyi kısıtlama veya itiraz etme, taşınabilirlik ve rızanı geri çekme hakların olabilir; ayrıca yerel veri koruma otoritesine şikâyet edebilirsin. Talepler için bize yaz; 30 gün içinde yanıt veririz. Bölgeye özel ayrıntılar yukarıdaki GDPR, KVKK ve ABD bölümlerinde. Google'ın tuttuğu reklam verileri için Google'ın araçlarını kullanman gerekir, çünkü bu verilere biz erişemeyiz.",
+          "Depending on where you live, you may have the right to access, correct, delete, restrict or object to processing of, and port your data, and to withdraw consent; you can also complain to your local data protection authority. Email us with any request and we will reply within 30 days. Region-specific details are in the GDPR, KVKK, and US sections above. For advertising data held by Google, use Google's tools, because we cannot access that data.",
         ),
       ],
     },
@@ -158,8 +201,12 @@ export function PrivacyContent() {
       title: t("Çocuklar", "Children"),
       body: [
         t(
-          "CutSense 13 yaş altındaki çocuklara yönelik değildir ve bilerek çocuklardan kişisel veri toplamayız. Bir çocuğun bize veri gönderdiğini düşünüyorsan bize yaz, sileriz.",
-          "CutSense is not directed to children under 13, and we do not knowingly collect personal data from children. If you believe a child has sent us personal data, contact us and we will delete it.",
+          "CutSense 13 yaş altındaki çocuklara (AEA ve Birleşik Krallık'ta 16 yaş altına veya ülkendeki dijital rıza yaşının altına) yönelik değildir. Reklam istekleri çocuklara yönelik olarak işaretlenmez, bu yüzden uygulama çocukların kendi başına kullanması için tasarlanmamıştır. Bilerek çocuklardan kişisel veri toplamayız.",
+          "CutSense is not directed to children under 13 (or under 16 in the EEA and UK, or below the age of digital consent in your country). Ad requests are not tagged as child-directed, so the app is not designed for children to use on their own. We do not knowingly collect personal data from children.",
+        ),
+        t(
+          "Ebeveyn veya vasiysen ve çocuğunun bize veri gönderdiğini düşünüyorsan bize yaz; doğruladıktan sonra sileriz. Cihazdaki ayarlar ve Geçmiş, uygulamayı silerek kaldırılır; Google reklam verileri için Google'ın araçlarını kullan.",
+          "If you are a parent or guardian and believe your child has sent us personal data, email us and we will delete it after verification. On-device settings and History are removed by deleting the app; for Google's advertising data, use Google's tools.",
         ),
       ],
     },
@@ -176,8 +223,8 @@ export function PrivacyContent() {
       title: t("İletişim", "Contact"),
       body: [
         t(
-          `Gizlilik soruları ve talepleri için ${contact} adresine yaz.`,
-          `For privacy questions and requests, email ${contact}.`,
+          `Veri sorumlusu: ${seller}, Türkiye. Gizlilik soruları ve talepleri için ${contact} adresine yaz.`,
+          `Data controller: ${seller}, Türkiye. For privacy questions and requests, email ${contact}.`,
         ),
       ],
     },

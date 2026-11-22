@@ -7,7 +7,7 @@ import { SiteFooter, SiteNav } from "../site-chrome";
 export function SupportContent() {
   const { t } = useLanguage();
 
-  const issues = [
+  const issues: { title: string; body: string; link?: { href: string; label: string } }[] = [
     {
       title: t("Video uzun sürüyor", "The video takes a long time"),
       body: t(
@@ -46,8 +46,23 @@ export function SupportContent() {
     {
       title: t("İade", "Refunds"),
       body: t(
-        "Ödemeleri Apple işlediği için iadeleri de Apple yapar: reportaproblem.apple.com adresinden talep et. İade edilen satın alımda Pro kapanır.",
-        "Apple processes payments, so refunds are handled by Apple: request one at reportaproblem.apple.com. If a purchase is refunded, Pro turns off.",
+        "Ödemeleri Apple işlediği için iadeleri de Apple yapar; biz doğrudan iade yapamayız. Talebini Apple'ın sorun bildirme sayfasından ilet. İade edilen satın alımda Pro kapanır.",
+        "Apple processes payments, so refunds are handled by Apple; we cannot issue them directly. Request one on Apple's report-a-problem page. If a purchase is refunded, Pro turns off.",
+      ),
+      link: { href: "https://reportaproblem.apple.com", label: "reportaproblem.apple.com" },
+    },
+    {
+      title: t("Teklifler hakkında sorular", "Questions about offers"),
+      body: t(
+        "Hoş geldin teklifi ilk tanıtımın sonunda bir kez gösterilebilir. Flaş teklif, Pro almadıysan tanıtımdan 10 dakika sonra başlar, 15 dakika sürer ve kurulum başına bir kez olur; süresi geçen teklif geri getirilemez. Ödenecek fiyat her zaman satın alma anında App Store'da gösterilendir. Pro'n zaten varsa yeniden satın alma, Geri Yükle'yi kullan. Ayrıntılar Kullanım Şartları'nda.",
+        "The welcome offer may be shown once at the end of the first-run intro. If you have not bought Pro, the flash offer starts 10 minutes after the intro, lasts 15 minutes, and happens once per installation; an expired offer cannot be brought back. The price you pay is always the one the App Store shows at purchase. If you already have Pro, do not buy again; use Restore. Details are in the Terms of Service.",
+      ),
+    },
+    {
+      title: t("Gizlilik talepleri", "Privacy requests"),
+      body: t(
+        "Verilerine erişim, düzeltme veya silme talebin (KVKK, GDPR veya ABD eyalet yasaları kapsamında) için kim olduğunu ve ne istediğini yazarak e-posta gönder; 30 gün içinde ücretsiz yanıt veririz. Videoların cihazından çıkmadığı için bizde video bulunmaz. Geçmiş'i Ayarlar > Geçmişi temizle ile, reklam verilerini Google'ın araçlarıyla yönetebilirsin.",
+        "To access, correct, or delete your data (under KVKK, GDPR, or US state laws), email us saying who you are and what you need; we reply within 30 days, free of charge. Your videos never leave your device, so we hold none of them. You can clear History in Settings > Clear history and manage advertising data with Google's tools.",
       ),
     },
   ];
@@ -73,7 +88,22 @@ export function SupportContent() {
           {issues.map((issue) => (
             <section key={issue.title}>
               <h2>{issue.title}</h2>
-              <p>{issue.body}</p>
+              <p>
+                {issue.body}
+                {issue.link ? (
+                  <>
+                    {" "}
+                    <a
+                      href={issue.link.href}
+                      rel="noopener noreferrer"
+                      style={{ color: "var(--text)", textDecoration: "underline" }}
+                      target="_blank"
+                    >
+                      {issue.link.label}
+                    </a>
+                  </>
+                ) : null}
+              </p>
             </section>
           ))}
         </div>
