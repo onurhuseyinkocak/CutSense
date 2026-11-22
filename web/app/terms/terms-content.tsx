@@ -19,8 +19,8 @@ export function TermsContent() {
       title: t("Biz kimiz", "Who we are"),
       body: [
         t(
-          `CutSense, App Store'da satıcı olarak görünen ${seller} tarafından Türkiye'den sunulur ("biz"). İletişim: ${contact}.`,
-          `CutSense is provided from Türkiye by ${seller}, the seller listed on the App Store ("we", "us"). Contact: ${contact}.`,
+          `CutSense, App Store'da satıcı olarak görünen ${seller} tarafından Türkiye'den sunulur ("biz"). E-posta: ${contact}.`,
+          `CutSense is provided from Türkiye by ${seller}, the seller listed on the App Store ("we", "us"). Email: ${contact}.`,
         ),
       ],
     },
@@ -28,8 +28,8 @@ export function TermsContent() {
       title: t("Bu şartlar ve Apple EULA", "These terms and Apple's EULA"),
       body: [
         t(
-          "CutSense'i indirmen veya kullanman, bu şartları ve Apple'ın Standart Lisanslı Uygulama Son Kullanıcı Lisans Sözleşmesi'ni (apple.com/legal/internet-services/itunes/dev/stdeula) kabul ettiğin anlamına gelir. Bu şartlar Apple EULA'yı tamamlar; uygulama lisansı konusunda çelişki olursa Apple EULA geçerlidir. Gizlilik Politikamız da bu şartların parçasıdır.",
-          "By downloading or using CutSense you agree to these terms and to Apple's Standard Licensed Application End User License Agreement (apple.com/legal/internet-services/itunes/dev/stdeula). These terms supplement Apple's EULA; if they conflict on the app license, Apple's EULA governs. Our Privacy Policy is also part of these terms.",
+          "CutSense'i indirmen veya kullanman, bu şartları ve Apple'ın Standart Lisanslı Uygulama Son Kullanıcı Lisans Sözleşmesi'ni (apple.com/legal/internet-services/itunes/dev/stdeula) kabul ettiğin anlamına gelir. Bu şartlar Apple EULA'yı tamamlar; uygulama lisansı konusunda çelişki olursa Apple EULA geçerlidir. Gizlilik Politikamız da geçerlidir.",
+          "By downloading or using CutSense you agree to these terms and to Apple's Standard Licensed Application End User License Agreement (apple.com/legal/internet-services/itunes/dev/stdeula). These terms supplement Apple's EULA; if they conflict on the app license, Apple's EULA governs. Our Privacy Policy also applies.",
         ),
         t(
           "Bu şartlar seninle bizim aramızdadır, Apple ile değil. Uygulamanın bakımı, desteği ve içeriğinden Apple değil biz sorumluyuz. Apple ve bağlı şirketleri bu şartların üçüncü taraf lehtarıdır ve bunları sana karşı uygulayabilir.",
@@ -38,10 +38,19 @@ export function TermsContent() {
       ],
     },
     {
+      title: t("Yaş ve ehliyet", "Age and capacity"),
+      body: [
+        t(
+          "CutSense'i kullanmak için en az 13 yaşında (ülkende dijital rıza yaşı daha yüksekse o yaşta) olmalısın. Reşit değilsen CutSense'i ve satın alımları ebeveyninin veya vasinin izniyle kullanabilirsin.",
+          "You must be at least 13 years old (or the higher digital-consent age in your country) to use CutSense. If you are a minor, you may use CutSense and make purchases only with the consent of your parent or guardian.",
+        ),
+      ],
+    },
+    {
       title: t("Lisans", "License"),
       body: [
         t(
-          "CutSense sana satılmaz, lisanslanır. Bu şartlara ve App Store kurallarına tabi olarak, sahip olduğun veya kontrol ettiğin Apple cihazlarında CutSense'i kişisel ve ticari olmayan amaçlarla, ayrıca kendi videolarını yayınlamak için kullanman amacıyla sınırlı, münhasır olmayan, devredilemez ve geri alınabilir bir lisans veririz. Uygulama, kodu, tasarımı ve CutSense adı bize aittir; burada açıkça verilmeyen tüm haklar saklıdır.",
+          "CutSense sana satılmaz, lisanslanır. Bu şartlara ve App Store kurallarına tabi olarak, sahip olduğun veya kontrol ettiğin Apple cihazlarında CutSense'i kullanman için, kendi videolarını düzenleyip yayınlamak dahil, sınırlı, münhasır olmayan, devredilemez ve geri alınabilir bir lisans veririz. Uygulama, kodu, tasarımı ve CutSense adı bize aittir; burada açıkça verilmeyen tüm haklar saklıdır.",
           "CutSense is licensed, not sold, to you. Subject to these terms and App Store rules, we grant you a limited, non-exclusive, non-transferable, revocable license to use CutSense on Apple devices you own or control, including to edit and publish your own videos. The app, its code, its design, and the CutSense name belong to us; all rights not expressly granted are reserved.",
         ),
       ],
@@ -54,8 +63,8 @@ export function TermsContent() {
           "You keep ownership of the videos you select, edit, export, save, or share. Videos are processed on your iPhone; we never receive, see, or store them, and we claim no rights over them.",
         ),
         t(
-          "İşlediğin her video için gerekli haklara ve izinlere sahip olmalısın: telif hakkı, müzik lisansı, videodaki kişilerin rızası, gizlilik ve tanıtım hakları dahil. İçeriğinden, onu nerede yayınladığından ve platform kurallarına uymaktan yalnızca sen sorumlusun. İçeriğin veya bu şartları ihlal etmen nedeniyle bize karşı üçüncü kişilerden gelen taleplerden, yasanın izin verdiği ölçüde bizi sorumlu tutmazsın.",
-          "You must have all rights and permissions needed for every video you process, including copyright, music licenses, the consent of people who appear in it, and privacy and publicity rights. You alone are responsible for your content, where you publish it, and following each platform's rules. To the extent the law allows, you will hold us harmless from third-party claims arising from your content or your breach of these terms.",
+          "İşlediğin her video için gerekli haklara ve izinlere sahip olmalısın: telif hakkı, müzik lisansı, videodaki kişilerin rızası, gizlilik ve tanıtım hakları dahil. İçeriğinden, onu nerede yayınladığından ve platform kurallarına uymaktan yalnızca sen sorumlusun. İçeriğin veya bu şartları ihlal etmen nedeniyle üçüncü kişiler bize karşı talepte bulunursa, yasanın izin verdiği ölçüde bu taleplerden doğan zararımızı karşılarsın.",
+          "You must have all rights and permissions needed for every video you process, including copyright, music licenses, the consent of people who appear in it, and privacy and publicity rights. You alone are responsible for your content, where you publish it, and following each platform's rules. If third parties bring claims against us arising from your content or your breach of these terms, you will, to the extent the law allows, cover our losses from those claims.",
         ),
       ],
     },
@@ -81,12 +90,12 @@ export function TermsContent() {
       title: t("Ücretsiz sürüm, reklamlar ve ödüllü reklamlar", "Free version, ads, and rewarded ads"),
       body: [
         t(
-          "CutSense'i indirmek ve kullanmak ücretsizdir; hesap ve abonelik yoktur. Ücretsiz sürüm Google tarafından sağlanan banner reklamlar, işlem sırasında native reklamlar ve isteğe bağlı ödüllü reklamlar gösterir. Reklamların içeriğinden reklam verenler sorumludur.",
-          "CutSense is free to download and use, with no account and no subscription. The free version shows banner ads, native ads while a video is processing, and optional rewarded ads, all provided by Google. Advertisers are responsible for the content of their ads.",
+          "CutSense'i indirmek ve kullanmak ücretsizdir; hesap ve abonelik yoktur. Ücretsiz sürüm Google tarafından sağlanan banner reklamlar, işlem sırasında native reklamlar ve atlanabilir ödüllü reklamlar gösterir. Reklamların içeriğinden reklam verenler sorumludur.",
+          "CutSense is free to download and use, with no account and no subscription. The free version shows banner ads, native ads while a video is processing, and skippable rewarded ads, all provided by Google. Advertisers are responsible for the content of their ads.",
         ),
         t(
-          "Ödüllü bir reklamı sonuna kadar izlersen banner ve native reklamlar 24 saat durur. Ödüller birikir, ancak toplam reklamsız süre hiçbir zaman 72 saati geçmez. Reklam mevcut değilse ödül verilmeyebilir. Ödülün nakdi değeri yoktur, devredilemez ve cihazda saklanır; uygulamayı silmek kalan süreyi siler.",
-          "If you watch a rewarded ad to the end, banner and native ads pause for 24 hours. Rewards stack, but the total ad-free time never exceeds 72 hours. If no ad is available, no reward may be given. The reward has no cash value, is not transferable, and is stored on your device; deleting the app removes any remaining time.",
+          "Ödüllü reklam geçişi (1.1 ve sonrası): ödüllü bir reklamı sonuna kadar izlersen banner ve native reklamlar 24 saat kapalı kalır. Ödüller birikir, ancak banner ve native reklamların kapalı kaldığı toplam süre hiçbir zaman 72 saati geçmez. Bu süre içinde de ödüllü reklam teklifi çıkabilir; 3 saniyelik geri sayımla gösterilir ve atlanabilir. Reklam mevcut değilse ödül verilmeyebilir. Ödülün nakdi değeri yoktur, devredilemez ve cihazda saklanır; uygulamayı silmek kalan süreyi siler.",
+          "Rewarded pass (version 1.1 and later): if you watch a rewarded ad to the end, banner and native ads stay off for 24 hours. Rewards stack, but the total time banner and native ads stay off never exceeds 72 hours. The rewarded ad offer can still appear during that time; it shows with a 3-second countdown and can be skipped. If no ad is available, no reward may be given. The reward has no cash value, is not transferable, and is stored on your device; deleting the app removes any remaining time.",
         ),
       ],
     },
@@ -94,8 +103,8 @@ export function TermsContent() {
       title: t("CutSense Pro", "CutSense Pro"),
       body: [
         t(
-          "Uygulamada sunulduğu yerde CutSense Pro, App Store üzerinden alınan tek seferlik bir uygulama içi satın alımdır (tüketilmeyen ürün). Abonelik değildir ve yenilenmez. Reklamları kaldırır ve ince ayar kontrollerini (en kısa duraklama ve nefes payı) açar. Normal fiyat ABD'de 7,99 $'dır. Geçerli olan fiyat, satın almadan önce App Store'un ülken için gösterdiği fiyat ve vergilerdir.",
-          "Where available in the app, CutSense Pro is a one-time in-app purchase (non-consumable) made through the App Store. It is not a subscription and never renews. It removes ads and unlocks fine-tune controls (minimum pause and breathing room). The regular price is US$7.99 in the United States. The price that applies is the one, with taxes, the App Store shows for your country before you confirm.",
+          "Uygulamada sunulduğu yerde CutSense Pro, App Store üzerinden alınan tek seferlik bir uygulama içi satın alımdır (tüketilmeyen ürün). Abonelik değildir ve yenilenmez. Reklamları kaldırır ve ince ayar kontrollerini (en kısa duraklama ve nefes payı) açar; reklam SDK'sı satın almadan sonraki açılıştan itibaren hiç başlatılmaz. Normal fiyat ABD'de 7,99 $'dır. Geçerli olan fiyat, satın almadan önce App Store'un ülken için gösterdiği fiyat ve vergilerdir.",
+          "Where available in the app, CutSense Pro is a one-time in-app purchase (non-consumable) made through the App Store. It is not a subscription and never renews. It removes ads and unlocks fine-tune controls (minimum pause and breathing room); the ad SDK is not started from the next launch after purchase. The regular price is US$7.99 in the United States. The price that applies is the one, with taxes, the App Store shows for your country before you confirm.",
         ),
         t(
           "Pro, satın aldığın Apple Kimliğine bağlıdır. Yeni bir cihazda veya yeniden kurulumdan sonra Ayarlar > Satın Alımları Geri Yükle ile ücretsiz geri yükleyebilirsin; her satın alma ekranında da Geri Yükle vardır. Pro'yu yeniden satın almak yerine her zaman önce geri yükle.",
@@ -111,7 +120,7 @@ export function TermsContent() {
           "Where offered in the app, you can buy CutSense Pro with one of two one-time discounts. The price that applies is always the one shown in the app and on the App Store confirmation sheet at the time of purchase; the US prices below are examples. The regular price (US$7.99 in the United States) is shown struck through on every offer screen.",
         ),
         t(
-          "Hoş geldin teklifi (ABD'de 5,99 $): ilk açılıştaki tanıtımın sonunda bir kez gösterilebilir. Geri sayımı yoktur. Tanıtımı Atla ile geçersen gösterilmez. “Şimdi değil” veya kapat dersen tekrar çıkmaz.",
+          "Hoş geldin teklifi (ABD'de 5,99 $): ilk açılıştaki tanıtımın sonunda bir kez gösterilebilir. Geri sayımı yoktur. Tanıtımı Geç ile atlarsan gösterilmez. “Şimdi değil” veya kapat dersen tekrar çıkmaz.",
           "Welcome offer (US$5.99 in the United States): may be shown once, at the end of the first-run intro. It has no countdown. It is not shown if you skip the intro. If you tap Not now or close it, it does not come back.",
         ),
         t(
@@ -190,7 +199,7 @@ export function TermsContent() {
       title: t("Değişiklikler", "Changes"),
       body: [
         t(
-          "Bu şartları güncelleyebiliriz. Güncel sürüm her zaman bu sayfadadır ve yürürlük tarihi yukarıda yazar. Önemli değişiklikler yayımlandıktan sonra geçerli olur ve önceden yaptığın satın alımları geriye dönük olarak etkilemez. Güncellemelerden sonra CutSense'i kullanmaya devam etmen, güncellenmiş şartları kabul ettiğin anlamına gelir; kabul etmiyorsan uygulamayı kullanmayı bırakabilirsin.",
+          "Bu şartları güncelleyebiliriz. Güncel sürüm her zaman bu sayfadadır ve yürürlük tarihi yukarıda yazar. Değişiklikler yayımlandıktan sonra geçerli olur ve önceden yaptığın satın alımları geriye dönük olarak etkilemez. Güncellemelerden sonra CutSense'i kullanmaya devam etmen, güncellenmiş şartları kabul ettiğin anlamına gelir; kabul etmiyorsan uygulamayı kullanmayı bırakabilirsin.",
           "We may update these terms. The current version is always on this page, with the effective date above. Changes apply once published and do not retroactively affect purchases you already made. Continued use of CutSense after an update means you accept the updated terms; if you do not agree, you can stop using the app.",
         ),
       ],
@@ -223,7 +232,7 @@ export function TermsContent() {
         <h1>{t("Kullanım Şartları", "Terms of Service")}</h1>
         <p className="legal-intro">
           {t(
-            "Bu şartlar CutSense iPhone uygulamasını ve web sitesini kullanımını düzenler.",
+            "Bu şartlar CutSense iPhone uygulamasının ve web sitesinin kullanımını düzenler.",
             "These terms govern your use of the CutSense iPhone app and website.",
           )}
         </p>

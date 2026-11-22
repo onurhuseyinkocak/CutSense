@@ -35,6 +35,7 @@
 		90FBD59661B0DCBDE7DB8550 /* OnboardingStage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6CDB334E99903F247506157D /* OnboardingStage.swift */; };
 		99128F340EED2CAADD304369 /* GoogleMobileAds in Frameworks */ = {isa = PBXBuildFile; productRef = 4761CA77849DAE470AA8FC20 /* GoogleMobileAds */; };
 		9F77762EB16A8A1F8930110A /* OfferCenterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C443ADF130ABE96B8345D7BE /* OfferCenterTests.swift */; };
+		A0251F65E9C2A79CE53FAA69 /* AdRegionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 17829E771382537CDA64E889 /* AdRegionTests.swift */; };
 		A27C5761649779A1BCE3B638 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = C568ED16C5A5569D901E936F /* Assets.xcassets */; };
 		AF36EB525821348164F48197 /* PaywallView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 540A6003B72CEFEAB224B81E /* PaywallView.swift */; };
 		B665BB21E20DBA5C24D05B7F /* ReviewScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2B01E9767A4EA100187484E /* ReviewScreen.swift */; };
@@ -77,6 +78,7 @@
 		127D3CEB71E9B92C26E5F83E /* MonoWaveTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MonoWaveTests.swift; sourceTree = "<group>"; };
 		13AFA9938D45681FE20E7282 /* HistoryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HistoryView.swift; sourceTree = "<group>"; };
 		13D33E687FE1E42B0956988F /* HistoryStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HistoryStoreTests.swift; sourceTree = "<group>"; };
+		17829E771382537CDA64E889 /* AdRegionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdRegionTests.swift; sourceTree = "<group>"; };
 		1CE82EDDB8CCE8A2C8A6F152 /* OnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingView.swift; sourceTree = "<group>"; };
 		1D9ADDEE72E898A7542A3E28 /* AdMobService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdMobService.swift; sourceTree = "<group>"; };
 		28901B74846173D20088B4D4 /* SettingsScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsScreen.swift; sourceTree = "<group>"; };
@@ -179,6 +181,7 @@
 		5A39D3BCEFF3DA443E3968C3 /* Release */ = {
 			isa = PBXGroup;
 			children = (
+				17829E771382537CDA64E889 /* AdRegionTests.swift */,
 				13D33E687FE1E42B0956988F /* HistoryStoreTests.swift */,
 				3BF0F5FBBE33042537D8729F /* ImportRetryTests.swift */,
 				127D3CEB71E9B92C26E5F83E /* MonoWaveTests.swift */,
@@ -481,6 +484,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				A0251F65E9C2A79CE53FAA69 /* AdRegionTests.swift in Sources */,
 				D4824C4195181129371413AE /* HistoryStoreTests.swift in Sources */,
 				68CCD216F3032ADE3DEDF096 /* ImportRetryTests.swift in Sources */,
 				6F2AFFB3F9B95785EBC560FC /* MonoWaveTests.swift in Sources */,

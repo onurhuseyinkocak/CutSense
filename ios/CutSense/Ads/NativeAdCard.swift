@@ -35,7 +35,7 @@ final class NativeAdLoader: NSObject, ObservableObject, NativeAdLoaderDelegate {
         )
         loader.delegate = self
         adLoader = loader
-        loader.load(Request())
+        loader.load(AdMobService.makeRequest())
     }
 
     nonisolated func adLoader(_ adLoader: AdLoader, didReceive nativeAd: NativeAd) {

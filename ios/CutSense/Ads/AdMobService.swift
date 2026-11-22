@@ -2,6 +2,7 @@ import SwiftUI
 import UIKit
 import GoogleMobileAds
 import UserMessagingPlatform
+import StoreKit
 
 private final class AdMobBoolContinuationBox: @unchecked Sendable {
     private let lock = NSLock()
@@ -23,11 +24,35 @@ private final class AdMobBoolContinuationBox: @unchecked Sendable {
     }
 }
 
+/// KVKK: every ad request from Türkiye is sent as non-personalized.
+enum AdRegion {
+    /// Storefront wins (ISO 3166-1 alpha-3); the device region is only a fallback.
+    static func isTurkey(storefrontCountryCode: String?, localeRegion: String?) -> Bool {
+        if let storefrontCountryCode { return storefrontCountryCode == "TUR" }
+        return localeRegion == "TR"
+    }
+}
+
 @MainActor
 enum AdMobService {
     private static let consentTimeout: Duration = .seconds(8)
     private static var configureTask: Task<Void, Never>?
     private static var didStartSDK = false
+    private static var requestsNonPersonalizedAds = AdRegion.isTurkey(
+        storefrontCountryCode: nil,
+        localeRegion: Locale.current.region?.identifier
+    )
+
+    /// Every banner, native and rewarded request goes through here.
+    static func makeRequest() -> Request {
+        let request = Request()
+        if requestsNonPersonalizedAds {
+            let extras = Extras()
+            extras.additionalParameters = ["npa": "1"]
+            request.register(extras)
+        }
+        return request
+    }
 
     static var isEnabled: Bool {
         ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] == nil
@@ -77,7 +102,12 @@ enum AdMobService {
     private static func configureIfNeeded() {
         guard configureTask == nil else { return }
         configureTask = Task { @MainActor in
+            async let storefrontCountry = Storefront.current?.countryCode
             await gatherConsent()
+            requestsNonPersonalizedAds = AdRegion.isTurkey(
+                storefrontCountryCode: await storefrontCountry,
+                localeRegion: Locale.current.region?.identifier
+            )
             startMobileAdsIfAllowed()
         }
     }
@@ -234,7 +264,7 @@ struct AdBannerView: UIViewRepresentable {
                 guard let self, let host = self.host else { return }
                 host.banner.adUnitID = adUnitID
                 host.banner.rootViewController = AdMobService.rootViewController
-                host.banner.load(Request())
+                host.banner.load(AdMobService.makeRequest())
                 self.loadedAdUnitID = adUnitID
                 self.loadedSize = adSize.size
             }
@@ -383,7 +413,7 @@ final class RewardedInterstitialAdController: NSObject, ObservableObject, FullSc
         do {
             let loaded = try await RewardedInterstitialAd.load(
                 with: AdMobIDs.activeRewardedInterstitialAdUnitID,
-                request: Request()
+                request: AdMobService.makeRequest()
             )
             guard ad == nil else { return }
             loaded.fullScreenContentDelegate = self
