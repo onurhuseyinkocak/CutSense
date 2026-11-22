@@ -475,6 +475,41 @@ enum Translations {
             it: "Foto non è riuscita a passare questo video. Riprova.",
             ja: "写真アプリからこの動画を受け取れませんでした。もう一度お試しください。",
             ko: "사진 앱에서 이 동영상을 가져오지 못했습니다. 다시 시도하세요.")),
+        // MARK: History
+        ("History", row(es: "Historial", pt: "Histórico", de: "Verlauf", fr: "Historique", it: "Cronologia", ja: "履歴", ko: "기록")),
+        ("Silence cut", row(es: "Silencio cortado", pt: "Silêncio cortado", de: "Stille entfernt", fr: "Silence coupé", it: "Silenzio tagliato", ja: "カットした無音", ko: "잘라낸 무음")),
+        ("Videos", row(es: "Videos", pt: "Vídeos", de: "Videos", fr: "Vidéos", it: "Video", ja: "動画", ko: "동영상")),
+        ("No edits yet", row(es: "Aún no hay ediciones", pt: "Nenhuma edição ainda", de: "Noch keine Bearbeitungen", fr: "Aucun montage pour l'instant", it: "Ancora nessuna modifica", ja: "まだ編集がありません", ko: "아직 편집이 없습니다")),
+        ("Videos you save to Photos appear here.", row(
+            es: "Los videos que guardes en Fotos aparecerán aquí.",
+            pt: "Os vídeos que você salvar no Fotos aparecem aqui.",
+            de: "Videos, die du in Fotos sicherst, erscheinen hier.",
+            fr: "Les vidéos enregistrées dans Photos apparaissent ici.",
+            it: "I video salvati in Foto appaiono qui.",
+            ja: "写真に保存した動画がここに表示されます。",
+            ko: "사진에 저장한 동영상이 여기에 표시됩니다.")),
+        ("Custom", row(es: "Personalizado", pt: "Personalizado", de: "Eigene", fr: "Personnalisé", it: "Personalizzato", ja: "カスタム", ko: "사용자 설정")),
+        ("Delete", row(es: "Eliminar", pt: "Apagar", de: "Löschen", fr: "Supprimer", it: "Elimina", ja: "削除", ko: "삭제")),
+        ("Opens Photos", row(es: "Abre Fotos", pt: "Abre o Fotos", de: "Öffnet Fotos", fr: "Ouvre Photos", it: "Apre Foto", ja: "写真を開きます", ko: "사진을 엽니다")),
+        ("Clear history", row(es: "Borrar historial", pt: "Limpar histórico", de: "Verlauf löschen", fr: "Effacer l'historique", it: "Cancella cronologia", ja: "履歴を消去", ko: "기록 지우기")),
+        ("Clear history?", row(es: "¿Borrar historial?", pt: "Limpar histórico?", de: "Verlauf löschen?", fr: "Effacer l'historique ?", it: "Cancellare la cronologia?", ja: "履歴を消去しますか？", ko: "기록을 지울까요?")),
+        ("Your videos in Photos are not affected.", row(
+            es: "Tus videos en Fotos no se ven afectados.",
+            pt: "Seus vídeos no Fotos não são afetados.",
+            de: "Deine Videos in Fotos bleiben unberührt.",
+            fr: "Vos vidéos dans Photos ne sont pas concernées.",
+            it: "I tuoi video in Foto non vengono toccati.",
+            ja: "写真内の動画には影響しません。",
+            ko: "사진의 동영상에는 영향이 없습니다.")),
+        ("From %@ to %@, %@ removed", row(es: "De %@ a %@, %@ eliminado", pt: "De %@ para %@, %@ removido", de: "Von %@ auf %@, %@ entfernt", fr: "De %@ à %@, %@ supprimé", it: "Da %@ a %@, %@ rimosso", ja: "%@から%@へ、%@カット", ko: "%@에서 %@로, %@ 제거")),
+        ("Only a small preview and the numbers are kept. Your videos stay in Photos.", row(
+            es: "Solo se guardan una vista previa pequeña y las cifras. Tus videos siguen en Fotos.",
+            pt: "Só uma prévia pequena e os números são guardados. Seus vídeos ficam no Fotos.",
+            de: "Gespeichert werden nur eine kleine Vorschau und die Zahlen. Deine Videos bleiben in Fotos.",
+            fr: "Seuls un petit aperçu et les chiffres sont conservés. Vos vidéos restent dans Photos.",
+            it: "Vengono salvati solo una piccola anteprima e i numeri. I tuoi video restano in Foto.",
+            ja: "保存されるのは小さなプレビューと数値だけです。動画は写真に残ります。",
+            ko: "작은 미리보기와 수치만 저장됩니다. 동영상은 사진에 그대로 있습니다.")),
     ]
 
     static let table: [String: [AppLanguage: String]] = Dictionary(rows, uniquingKeysWith: { first, _ in first })

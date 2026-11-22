@@ -13,6 +13,8 @@ struct SettingsScreen: View {
     @State private var isRestoring = false
     @State private var restoreMessage: String?
     @State private var adFreeUntil = AdFreePass.expiry
+    @State private var history = HistoryStore.shared
+    @State private var confirmsClearHistory = false
 
     private var language: AppLanguage { AppLanguage.value(from: languageRaw) }
     private func t(_ tr: String, _ en: String) -> String { appText(language, tr, en) }
@@ -68,6 +70,20 @@ struct SettingsScreen: View {
                     row(t("Temizle", "Clear"), "trash")
                 }
                 .disabled(usage == 0)
+                Button {
+                    confirmsClearHistory = true
+                } label: {
+                    row(t("Geçmişi temizle", "Clear history"), "clock.arrow.circlepath")
+                }
+                .disabled(history.entries.isEmpty)
+                .accessibilityIdentifier("clearHistoryButton")
+                // On the row: the iOS 26 popover then points at it instead of the nav bar.
+                .confirmationDialog(t("Geçmiş temizlensin mi?", "Clear history?"), isPresented: $confirmsClearHistory, titleVisibility: .visible) {
+                    Button(t("Geçmişi temizle", "Clear history"), role: .destructive) { history.clear() }
+                    Button(t("İptal", "Cancel"), role: .cancel) {}
+                } message: {
+                    Text(t("Galerideki videoların etkilenmez.", "Your videos in Photos are not affected."))
+                }
             } header: {
                 header(t("Depolama", "Storage"))
             } footer: {

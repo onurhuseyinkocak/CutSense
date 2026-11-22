@@ -24,6 +24,7 @@
 		561874C3A9AB619740F6F090 /* MonoKit.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6FC8DDB8051423239B3C0AC0 /* MonoKit.swift */; };
 		5C2F30243E7024441DEC15CD /* PhotosSaveService.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0362DFB1D828F4A88A12862 /* PhotosSaveService.swift */; };
 		621B23EB9DBB5097D33CDD45 /* OnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1CE82EDDB8CCE8A2C8A6F152 /* OnboardingView.swift */; };
+		62996B26DA67632CECD3F5C8 /* HistoryStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = EECD4649E0414B6C64D68335 /* HistoryStore.swift */; };
 		64B4BC0BF261374B2E604359 /* OfferCenter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8EB756F45213FFD77A322327 /* OfferCenter.swift */; };
 		65B29FA46422EFA196064CDE /* DebugQASeed.swift in Sources */ = {isa = PBXBuildFile; fileRef = B93A97AA31BA1ED4724922A6 /* DebugQASeed.swift */; };
 		68CCD216F3032ADE3DEDF096 /* ImportRetryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3BF0F5FBBE33042537D8729F /* ImportRetryTests.swift */; };
@@ -42,6 +43,7 @@
 		CDF0ACC03AF3EDCFA64C3D94 /* QuickSilenceView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E58D84C896EEF6326B68D129 /* QuickSilenceView.swift */; };
 		CE75044298708EE413E5FC2D /* WorkFilesTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2AE1516E17CA740B67BCC3DC /* WorkFilesTests.swift */; };
 		D2BD8EF815D8FB6530381BE4 /* VideoImportService.swift in Sources */ = {isa = PBXBuildFile; fileRef = C62FC1631B126EE52AC1C53B /* VideoImportService.swift */; };
+		D4824C4195181129371413AE /* HistoryStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13D33E687FE1E42B0956988F /* HistoryStoreTests.swift */; };
 		D92367A2D1E589D530489394 /* TranslationsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8E3C5A2DBFDEA2F0D65BD0D1 /* TranslationsTests.swift */; };
 		E89C46D36F67DDE220E1E831 /* EdgeCaseUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB61B9CA38EDBB2BC9E5DDBB /* EdgeCaseUITests.swift */; };
 		ED4D21C239CACAD8D6D15CD5 /* ProStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 76D307ED363DB96DE47A88D7 /* ProStore.swift */; };
@@ -49,6 +51,7 @@
 		F2FAAC8BD865412DB715DC8B /* QuickSilenceEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB97188D8E41E8EDA18FFC31 /* QuickSilenceEngine.swift */; };
 		FB222E44B97B13DD4E891301 /* DeviceFlowUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7363938B0F76D35960F216DC /* DeviceFlowUITests.swift */; };
 		FCC3A11D6F78C346121A111C /* AdMobService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D9ADDEE72E898A7542A3E28 /* AdMobService.swift */; };
+		FE6635C3DC56A299DD75C553 /* HistoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13AFA9938D45681FE20E7282 /* HistoryView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -72,6 +75,8 @@
 		08EF21FB2749D3913F7B45B5 /* CutSenseUITests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = CutSenseUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		0A44387A54DD488C3F8BC008 /* MonoWave.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MonoWave.swift; sourceTree = "<group>"; };
 		127D3CEB71E9B92C26E5F83E /* MonoWaveTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MonoWaveTests.swift; sourceTree = "<group>"; };
+		13AFA9938D45681FE20E7282 /* HistoryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HistoryView.swift; sourceTree = "<group>"; };
+		13D33E687FE1E42B0956988F /* HistoryStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HistoryStoreTests.swift; sourceTree = "<group>"; };
 		1CE82EDDB8CCE8A2C8A6F152 /* OnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingView.swift; sourceTree = "<group>"; };
 		1D9ADDEE72E898A7542A3E28 /* AdMobService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdMobService.swift; sourceTree = "<group>"; };
 		28901B74846173D20088B4D4 /* SettingsScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsScreen.swift; sourceTree = "<group>"; };
@@ -108,6 +113,7 @@
 		C568ED16C5A5569D901E936F /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		C62FC1631B126EE52AC1C53B /* VideoImportService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VideoImportService.swift; sourceTree = "<group>"; };
 		E58D84C896EEF6326B68D129 /* QuickSilenceView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuickSilenceView.swift; sourceTree = "<group>"; };
+		EECD4649E0414B6C64D68335 /* HistoryStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HistoryStore.swift; sourceTree = "<group>"; };
 		F0362DFB1D828F4A88A12862 /* PhotosSaveService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhotosSaveService.swift; sourceTree = "<group>"; };
 		F2B01E9767A4EA100187484E /* ReviewScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReviewScreen.swift; sourceTree = "<group>"; };
 		FB97188D8E41E8EDA18FFC31 /* QuickSilenceEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuickSilenceEngine.swift; sourceTree = "<group>"; };
@@ -148,6 +154,7 @@
 			isa = PBXGroup;
 			children = (
 				B93A97AA31BA1ED4724922A6 /* DebugQASeed.swift */,
+				13AFA9938D45681FE20E7282 /* HistoryView.swift */,
 				6FC8DDB8051423239B3C0AC0 /* MonoKit.swift */,
 				0A44387A54DD488C3F8BC008 /* MonoWave.swift */,
 				6CDB334E99903F247506157D /* OnboardingStage.swift */,
@@ -172,6 +179,7 @@
 		5A39D3BCEFF3DA443E3968C3 /* Release */ = {
 			isa = PBXGroup;
 			children = (
+				13D33E687FE1E42B0956988F /* HistoryStoreTests.swift */,
 				3BF0F5FBBE33042537D8729F /* ImportRetryTests.swift */,
 				127D3CEB71E9B92C26E5F83E /* MonoWaveTests.swift */,
 				C443ADF130ABE96B8345D7BE /* OfferCenterTests.swift */,
@@ -206,6 +214,7 @@
 		90FC386ABC0727C85E48A2B7 /* Storage */ = {
 			isa = PBXGroup;
 			children = (
+				EECD4649E0414B6C64D68335 /* HistoryStore.swift */,
 				37CA1075A0AAFD9751456F3A /* WorkFiles.swift */,
 			);
 			path = Storage;
@@ -434,6 +443,8 @@
 				888EE52AA670A80854D14A24 /* AppLanguage.swift in Sources */,
 				26E48D862C02A3CACFCC666D /* AudioAnalysisService.swift in Sources */,
 				65B29FA46422EFA196064CDE /* DebugQASeed.swift in Sources */,
+				62996B26DA67632CECD3F5C8 /* HistoryStore.swift in Sources */,
+				FE6635C3DC56A299DD75C553 /* HistoryView.swift in Sources */,
 				561874C3A9AB619740F6F090 /* MonoKit.swift in Sources */,
 				197186FDBC2287B64F4F9DB5 /* MonoWave.swift in Sources */,
 				4F679B0A91607C40888C1D6B /* NativeAdCard.swift in Sources */,
@@ -470,6 +481,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				D4824C4195181129371413AE /* HistoryStoreTests.swift in Sources */,
 				68CCD216F3032ADE3DEDF096 /* ImportRetryTests.swift in Sources */,
 				6F2AFFB3F9B95785EBC560FC /* MonoWaveTests.swift in Sources */,
 				9F77762EB16A8A1F8930110A /* OfferCenterTests.swift in Sources */,

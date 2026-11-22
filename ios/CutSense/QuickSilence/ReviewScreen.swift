@@ -572,10 +572,7 @@ struct ReviewScreen: View {
 
     /// "1080p · ≈48 MB"; size scales the source by the kept share (passthrough estimate).
     private var sourceSummary: String? {
-        guard let sourceInfo, plan.duration > 0 else { return nil }
-        let short = min(sourceInfo.pixelSize.width, sourceInfo.pixelSize.height)
-        guard short > 0 else { return nil }
-        let label = short >= 2160 ? "4K" : "\(Int(short))p"
+        guard let sourceInfo, plan.duration > 0, let label = sourceInfo.resolutionLabel else { return nil }
         let bytes = Int64(Double(sourceInfo.fileBytes) * plan.outputDuration / plan.duration)
         return "\(label) · ≈\(bytes.formatted(.byteCount(style: .file).locale(Locale(identifier: language.rawValue))))"
     }
@@ -1151,4 +1148,14 @@ private struct ExportOverlay: View {
     }
 }
 
-struct ReviewSourceInfo: Equatable { let pixelSize: CGSize; let fileBytes: Int64 }
+struct ReviewSourceInfo: Equatable {
+    let pixelSize: CGSize
+    let fileBytes: Int64
+
+    /// "1080p" / "4K" from the short edge; nil when the size is unknown.
+    var resolutionLabel: String? {
+        let short = min(pixelSize.width, pixelSize.height)
+        guard short > 0 else { return nil }
+        return short >= 2160 ? "4K" : "\(Int(short))p"
+    }
+}

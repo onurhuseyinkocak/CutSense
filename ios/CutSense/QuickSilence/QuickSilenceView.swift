@@ -43,6 +43,7 @@ struct QuickSilenceView: View {
     @State private var privacyOptionsRequired = false
     @State private var didStartAutorun = false
     @State private var showsPaywall = false
+    @State private var showsHistory = false
     @State private var showsFineTune = false
     /// False while Settings is pushed on top; full-screen ads wait for it.
     @State private var isScreenVisible = true
@@ -73,7 +74,8 @@ struct QuickSilenceView: View {
     var body: some View {
         observers(screen
             .toolbar { toolbarContent }
-            .sheet(isPresented: $showsPaywall) { ProSheet(language: appLanguage) })
+            .sheet(isPresented: $showsPaywall) { ProSheet(language: appLanguage) }
+            .navigationDestination(isPresented: $showsHistory) { HistoryView(language: appLanguage) })
     }
 
     /// Split out of `body`: one long modifier chain exceeded the type checker's time limit.
@@ -147,6 +149,12 @@ struct QuickSilenceView: View {
                     .accessibilityLabel("CutSense Pro")
                     .accessibilityIdentifier("proCapsule")
                 }
+                Button { showsHistory = true } label: {
+                    toolbarGlyph("clock.arrow.circlepath")
+                }
+                .disabled(isWorking || exportTask != nil)
+                .accessibilityLabel(t("Geçmiş", "History"))
+                .accessibilityIdentifier("historyButton")
                 NavigationLink {
                     SettingsScreen(urlsInUse: session.urlsInUse)
                 } label: {
@@ -490,6 +498,11 @@ struct QuickSilenceView: View {
         #if DEBUG
         let env = ProcessInfo.processInfo.environment
         if env["CUTSENSE_SHOW_PAYWALL"] == "1" { showsPaywall = true }
+        // Once: .task reruns when History pops, which would push it again. Skips the autorun video.
+        if env["CUTSENSE_SHOW_HISTORY"] == "1", !didStartAutorun {
+            didStartAutorun = true
+            showsHistory = true
+        }
         guard !didStartAutorun else { return }
         guard let path = env["CUTSENSE_AUTORUN_VIDEO_URL"], !path.isEmpty else { return }
         // Relative paths resolve against Documents so a device run can use a file copied in with devicectl.
@@ -643,6 +656,20 @@ struct QuickSilenceView: View {
         let result = await PhotosSaveService.saveVideo(at: url)
         switch result {
         case .success:
+            // Awaited: the export overlay holds the file until this returns, so New Video can't delete it mid-thumbnail.
+            if let plan {
+                let thumb = await HistoryStore.thumbnail(of: url, outputDuration: plan.outputDuration)
+                HistoryStore.shared.add(HistoryEntry(
+                    id: UUID(),
+                    date: Date(),
+                    originalDuration: plan.duration,
+                    outputDuration: plan.outputDuration,
+                    removedPercent: plan.removedPercent,
+                    intensity: cutIntensity.rawValue,
+                    isCustom: cutSettings != QuickSilenceEngine.CutSettings(cutIntensity),
+                    resolution: sourceInfo?.resolutionLabel,
+                    hasThumbnail: thumb != nil), thumbnail: thumb)
+            }
             saved = true
             OfferCenter.shared.noteSave()
             scheduleReviewPrompt()
