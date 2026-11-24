@@ -19,7 +19,11 @@ final class EdgeCaseUITests: XCTestCase {
         // skipAdBreakIfShown selects Balanced instead.
         app.launchArguments += ["-app_language", "en", "-AppleLanguages", "(en)", "-onboarding_done_v1", "YES",
                                "-finetune_active", "NO"]
+        // Clean offer state: a flash left due by an earlier test opens on the first foreground and covers the screen.
+        app.launchEnvironment["CUTSENSE_RESET_ONBOARDING"] = "1"
         addUIInterruptionMonitor(withDescription: "System alerts") { [unowned self] alert in
+            // Never answer an Apple Account sign-in: "OK"/"Tamam" there submits an empty password.
+            if alert.label.contains("Apple") { return false }
             for label in alertChoice + ["Not Now"] where alert.buttons[label].exists {
                 alert.buttons[label].tap()
                 return true
@@ -310,20 +314,20 @@ final class EdgeCaseUITests: XCTestCase {
         tapRepeatedly(newVideo, times: 2)
         let choose = app.buttons["chooseVideoButton"]
         XCTAssertTrue(choose.waitForExistence(timeout: 10))
+        // Choose Video sits under New Video on home: the second tap can open the picker, as it would for a user.
+        let opened = closePickerIfOpen(within: 3)
+        print("QA-DOUBLETAP newVideo second tap opened picker=\(opened)")
         try assertStorageZero()
         app.navigationBars.buttons.firstMatch.tap()
         tapRepeatedly(choose, times: 3)
-        let cells = app.images.matching(identifier: "PXGGridLayout-Info")
         // A late tap may land on a grid cell and pick a video, as it would for a user: both are fine.
         let working = app.buttons["Cancel"]
-        _ = cells.firstMatch.waitForExistence(timeout: 20)
-        snapshot("picker-after-triple-tap")
-        if cells.firstMatch.exists {
-            let cancel = app.buttons.matching(NSPredicate(format: "label IN {'Cancel', 'Vazgeç', 'İptal'}")).firstMatch
-            if cancel.exists { cancel.tap() } else { app.swipeDown(velocity: .fast) }
+        if closePickerIfOpen(within: 20) {
             XCTAssertTrue(choose.waitForExistence(timeout: 10), "Home not back after cancelling picker")
         } else {
-            XCTAssertTrue(working.exists || app.buttons["saveButton"].exists, "Neither picker nor processing after triple tap")
+            // A picked video starts processing, and a free user's ad break may cover it with a full-screen ad.
+            let adUp = app.buttons["Close Advertisement"].exists || app.staticTexts["Test mode"].exists
+            XCTAssertTrue(working.exists || app.buttons["saveButton"].exists || adUp, "Neither picker nor processing after triple tap")
         }
     }
 
@@ -487,9 +491,22 @@ final class EdgeCaseUITests: XCTestCase {
         app.descendants(matching: .any).matching(NSPredicate(format: "label == 'Creating video'")).firstMatch.exists
     }
 
+    /// Cancels the Photos picker if its grid shows up within `seconds`; returns whether it was open.
+    private func closePickerIfOpen(within seconds: TimeInterval) -> Bool {
+        let cells = app.images.matching(identifier: "PXGGridLayout-Info")
+        guard cells.firstMatch.waitForExistence(timeout: seconds) else { return false }
+        snapshot("picker-open")
+        let cancel = app.buttons.matching(NSPredicate(format: "label IN {'Cancel', 'Vazgeç', 'İptal'}")).firstMatch
+        if cancel.exists { cancel.tap() } else { app.swipeDown(velocity: .fast) }
+        XCTAssertTrue(cells.firstMatch.waitForNonExistence(timeout: 10), "Picker did not close")
+        return true
+    }
+
     private func assertStorageZero() throws {
         let settings = app.buttons["settingsButton"]
         XCTAssertTrue(settings.waitForExistence(timeout: 15))
+        // During the home transition the button resolves to {-1,-1} and the tap is lost.
+        _ = XCTWaiter.wait(for: [XCTNSPredicateExpectation(predicate: NSPredicate(format: "isHittable == true"), object: settings)], timeout: 5)
         settings.tap()
         let row = app.descendants(matching: .any)["storageUsageRow"]
         XCTAssertTrue(row.waitForExistence(timeout: 10))
@@ -502,7 +519,7 @@ final class EdgeCaseUITests: XCTestCase {
         if skip.waitForExistence(timeout: 5) {
             // The card slides in from the top; a tap during the transition resolves to {-1,-1} and is lost.
             _ = XCTWaiter.wait(for: [XCTNSPredicateExpectation(predicate: NSPredicate(format: "isHittable == true"), object: skip)], timeout: 2)
-            skip.tap()
+            if skip.exists && skip.isHittable { skip.tap() }  // the break may end on its own meanwhile
             if doubleTap, skip.exists { skip.tap() }
         }
         // A Skip tap that lands as the 3-2-1 countdown ends is too late: the full-screen ad opens (by design).
@@ -513,7 +530,7 @@ final class EdgeCaseUITests: XCTestCase {
         var shot = false
         while Date() < deadline, !(save.exists && save.isHittable) {
             if !shot, close.firstMatch.exists { snapshot("ad-presented"); shot = true }
-            if let button = close.allElementsBoundByIndex.first(where: { $0.isHittable }) { button.tap() }
+            if let button = close.allElementsBoundByIndex.first(where: { $0.frame.width > 0 && $0.isHittable }) { button.tap() }
             sleep(1)
         }
         let balanced = app.buttons["Balanced"]

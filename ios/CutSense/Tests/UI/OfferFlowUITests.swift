@@ -16,6 +16,8 @@ final class OfferFlowUITests: XCTestCase {
         if !keepTransactions { session.clearTransactions() }
         app = XCUIApplication()
         app.launchArguments += ["-app_language", "en", "-AppleLanguages", "(en)"]
+        // Clean offer state: a flash left due by an earlier test opens on the first foreground and covers the screen.
+        app.launchEnvironment["CUTSENSE_RESET_ONBOARDING"] = "1"
         addUIInterruptionMonitor(withDescription: "System alerts") { alert in
             // Never answer an Apple Account sign-in: "OK"/"Tamam" there submits an empty password.
             if alert.label.contains("Apple") { return false }
@@ -70,10 +72,12 @@ final class OfferFlowUITests: XCTestCase {
         snapshot("onboarding-swiped")
         let skip = app.buttons["onboardingSkip"]
         skip.tap(); if skip.exists { skip.tap() }
-        // Skip lands on the welcome offer when the welcome SKU loads; Not now finishes onboarding.
+        // Skip lands on the welcome offer (local StoreKit config loads the SKU); Not now finishes onboarding.
         let notNow = app.buttons["offerNotNow"]
-        if notNow.waitForExistence(timeout: 8) { snapshot("skip-welcome-offer"); notNow.tap() }
-        XCTAssertTrue(app.buttons["chooseVideoButton"].waitForExistence(timeout: 10), "Skip did not open home")
+        XCTAssertTrue(notNow.waitForExistence(timeout: 20), "Skip did not open the welcome offer")
+        snapshot("skip-welcome-offer")
+        notNow.tap()
+        XCTAssertTrue(app.buttons["chooseVideoButton"].waitForExistence(timeout: 10), "Not now did not open home")
     }
 
     // MARK: Purchase
@@ -136,6 +140,8 @@ final class OfferFlowUITests: XCTestCase {
         let skip = app.buttons["onboardingSkip"]
         XCTAssertTrue(skip.waitForExistence(timeout: 15))
         skip.tap()
+        // Skip lands on the welcome offer; Not now finishes onboarding.
+        if app.buttons["offerNotNow"].waitForExistence(timeout: 8) { app.buttons["offerNotNow"].tap() }
         XCTAssertTrue(app.buttons["chooseVideoButton"].waitForExistence(timeout: 10))
         XCTAssertFalse(app.buttons["offerPill"].exists, "Pill before the flash starts")
         let buy = app.buttons["offerBuyButton"]
@@ -177,6 +183,8 @@ final class OfferFlowUITests: XCTestCase {
         let skip = app.buttons["onboardingSkip"]
         XCTAssertTrue(skip.waitForExistence(timeout: 15))
         skip.tap()
+        // Skip lands on the welcome offer; Not now finishes onboarding.
+        if app.buttons["offerNotNow"].waitForExistence(timeout: 8) { app.buttons["offerNotNow"].tap() }
         XCTAssertTrue(app.buttons["chooseVideoButton"].waitForExistence(timeout: 10))
         app.terminate()
         sleep(14)
@@ -257,6 +265,7 @@ final class OfferFlowUITests: XCTestCase {
         let bannerShown = banner.waitForExistence(timeout: 20)
         snapshot("free-review-banner")
         // The PRO capsule is home-only (isIdle); on review the locked fine-tune is the Pro entry.
+        XCTAssertFalse(app.buttons["proActiveBadge"].exists || app.staticTexts["proActiveBadge"].exists, "PRO badge for a free user")
         print("QA-PRO free native=\(native) bannerWhileWorking=\(bannerWhileWorking) adBreak=\(adBreak) fullScreenAd=\(fullScreenAd) banner=\(bannerShown)")
 
         app.buttons["fineTuneButton"].tap()
@@ -284,6 +293,14 @@ final class OfferFlowUITests: XCTestCase {
         XCTAssertTrue(app.buttons["Saved to Photos"].waitForExistence(timeout: 600))
         XCTAssertFalse(skip.exists, "Ad break during a Pro save")
         snapshot("pro-saved")
+        for source in [app!, springboard] where source.buttons["Not Now"].waitForExistence(timeout: 3) { source.buttons["Not Now"].tap(); break }
+        app.buttons["newVideoButton"].tap()
+        XCTAssertTrue(app.buttons["chooseVideoButton"].waitForExistence(timeout: 10), "New Video did not return home")
+        let badge = app.descendants(matching: .any)["proActiveBadge"]
+        XCTAssertTrue(badge.waitForExistence(timeout: 5), "PRO badge missing on home after buying")
+        XCTAssertFalse(app.buttons["proCapsule"].exists, "PRO capsule on home after buying")
+        print("QA-PRO home badge=\(badge.exists) capsule=\(app.buttons["proCapsule"].exists)")
+        snapshot("pro-home-badge")
 
         // Kill + relaunch on another video: still Pro, no native card, no ad break, no banner, no offer/consent.
         app.terminate()
@@ -418,7 +435,12 @@ final class OfferFlowUITests: XCTestCase {
     private func keepToggle(_ i: Int) -> XCUIElement { app.switches["cutToggle_\(i)"] }
 
     /// Taps the switch itself; the row's centre is the audition button.
-    private func tapToggle(_ i: Int) { keepToggle(i).coordinate(withNormalizedOffset: CGVector(dx: 0.92, dy: 0.5)).tap() }
+    private func tapToggle(_ i: Int) {
+        // On a 16e the half-height list ends near row 3: scroll it into view first.
+        // A row clipped at the bottom edge reports hittable but the tap misses: keep it clear of the edge.
+        for _ in 0..<3 where !keepToggle(i).isHittable || keepToggle(i).frame.maxY > app.frame.maxY - 80 { app.swipeUp(velocity: .slow) }
+        keepToggle(i).coordinate(withNormalizedOffset: CGVector(dx: 0.92, dy: 0.5)).tap()
+    }
 
     private func removingLabel() -> String {
         app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH 'Removing'")).firstMatch.label
@@ -433,7 +455,8 @@ final class OfferFlowUITests: XCTestCase {
         let close = app.buttons.matching(NSPredicate(format: "label CONTAINS[c] 'close' AND isEnabled == true"))
         let deadline = Date().addingTimeInterval(45)
         while Date() < deadline, app.buttons["Close Advertisement"].exists {
-            close.allElementsBoundByIndex.first { $0.isHittable }?.tap()
+            // Zero-frame ad web elements throw on isHittable: filter them out first.
+            close.allElementsBoundByIndex.first { $0.frame.width > 0 && $0.isHittable }?.tap()
             sleep(1)
         }
     }

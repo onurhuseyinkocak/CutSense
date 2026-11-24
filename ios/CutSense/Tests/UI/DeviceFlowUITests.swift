@@ -13,11 +13,15 @@ final class DeviceFlowUITests: XCTestCase {
         // No `-cut_intensity` here: the argument domain overrides @AppStorage writes, so level taps bounced back.
         app.launchArguments += ["-app_language", "en", "-AppleLanguages", "(en)", "-onboarding_done_v1", "YES",
                                "-finetune_active", "NO"]
+        // Clean offer state: a flash left due by an earlier test opens on the first foreground and covers the screen.
+        app.launchEnvironment["CUTSENSE_RESET_ONBOARDING"] = "1"
         let env = ProcessInfo.processInfo.environment
-        for key in ["CUTSENSE_AUTORUN_VIDEO_URL", "CUTSENSE_FORCE_PRO", "CUTSENSE_FORCE_PREVIEW_FALLBACK"] {
+        for key in ["CUTSENSE_AUTORUN_VIDEO_URL", "CUTSENSE_FORCE_PRO", "CUTSENSE_FORCE_PREVIEW_FALLBACK", "CUTSENSE_DISABLE_ADS", "CUTSENSE_QA_SEED_PHOTOS"] {
             if let value = env[key] { app.launchEnvironment[key] = value }
         }
         addUIInterruptionMonitor(withDescription: "System alerts") { alert in
+            // Never answer an Apple Account sign-in: "OK"/"Tamam" there submits an empty password.
+            if alert.label.contains("Apple") { return false }
             for label in ["Allow Full Access", "Allow Access to All Photos", "Allow", "OK", "Tam Erişime İzin Ver", "Tüm Fotoğraflara Erişim İzni Ver", "İzin Ver", "Tamam", "Not Now"] where alert.buttons[label].exists {
                 alert.buttons[label].tap()
                 return true
@@ -32,24 +36,35 @@ final class DeviceFlowUITests: XCTestCase {
         try reviewRestoreSave()
     }
 
-    /// Real picker path: Photos → first video → review → save.
+    /// Real picker path: Photos → the owner's clip → review → save.
+    /// TEST_RUNNER_QA_PICK_LABEL=<text in the cell label> picks another video (labels follow the system language).
     func testPickFromPhotosAndSave() throws {
         app.launch()
+        try pickFromPhotos(ProcessInfo.processInfo.environment["QA_PICK_LABEL"])
+        try reviewRestoreSave(shareAndOpenPhotos: true)
+    }
+
+    private func pickFromPhotos(_ label: String?) throws {
         let choose = app.buttons["chooseVideoButton"]
         XCTAssertTrue(choose.waitForExistence(timeout: 15))
         choose.tap()
         let cells = app.images.matching(identifier: "PXGGridLayout-Info")
         XCTAssertTrue(cells.firstMatch.waitForExistence(timeout: 20), "Photos picker did not show any item")
         snapshot("picker")
-        // Prefer the owner's minutes-long clip (picker labels follow the system language).
-        let ownerClip = cells.matching(NSPredicate(format: "label CONTAINS 'dört dakika otuz dört' OR label CONTAINS[c] '4 minutes, 34'")).firstMatch
-        // Test exports pile up at the top of the grid; scroll until the owner's clip is on screen.
-        for _ in 0..<25 where !(ownerClip.exists && ownerClip.isHittable) { app.swipeUp(velocity: .slow) }
-        for _ in 0..<25 where !(ownerClip.exists && ownerClip.isHittable) { app.swipeDown(velocity: .slow) }
-        XCTAssertTrue(ownerClip.exists && ownerClip.isHittable, "Owner's 4:34 clip not found in the picker")
-        snapshot("picker-owner-clip")
-        ownerClip.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).tap()
-        try reviewRestoreSave(shareAndOpenPhotos: true)
+        let predicate = label.map { NSPredicate(format: "label CONTAINS %@", $0) }
+            ?? NSPredicate(format: "label CONTAINS 'dört dakika otuz dört' OR label CONTAINS[c] '4 minutes, 34'")
+        let clip = cells.matching(predicate).firstMatch
+        // Picker cells live in another process and never report isHittable: check the frame instead,
+        // clear of the picker's top bar and bottom toolbar.
+        let visible = app.windows.firstMatch.frame.insetBy(dx: 0, dy: 140)
+        func onScreen() -> Bool { clip.exists && visible.contains(CGPoint(x: clip.frame.midX, y: clip.frame.midY)) }
+        // The grid opens at the newest item (bottom); older ones are above.
+        for _ in 0..<40 where !onScreen() { app.swipeDown(velocity: .slow) }
+        for _ in 0..<40 where !onScreen() { app.swipeUp(velocity: .slow) }
+        print("QA-PICK want=\(label ?? "owner 4:34") found=\(clip.exists) frame=\(clip.exists ? clip.frame : .zero) label=\(clip.exists ? clip.label : "-")")
+        XCTAssertTrue(onScreen(), "Video \(label ?? "owner 4:34") not found in the picker")
+        snapshot("picker-clip")
+        clip.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).tap()
     }
 
     /// One fixture seeded into Photos by DebugQASeed (copy it to Documents/qa/ first), picked as the newest item.
@@ -259,14 +274,15 @@ final class DeviceFlowUITests: XCTestCase {
         let skip = app.buttons["skipAdButton"]
         if skip.waitForExistence(timeout: 6) {
             _ = XCTWaiter.wait(for: [XCTNSPredicateExpectation(predicate: NSPredicate(format: "isHittable == true"), object: skip)], timeout: 2)
-            skip.tap()
+            if skip.exists && skip.isHittable { skip.tap() }  // the break may end on its own meanwhile
         }
         // A full-screen ad (if the countdown already elapsed): its "Close Advertisement" stays disabled until the end card.
         let save = app.buttons["saveButton"]
         let close = app.buttons.matching(NSPredicate(format: "(label CONTAINS[c] 'close' OR label CONTAINS[c] 'kapat') AND isEnabled == true"))
         let deadline = Date().addingTimeInterval(45)
         while Date() < deadline, !(save.exists && save.isHittable) {
-            if let button = close.allElementsBoundByIndex.first(where: { $0.isHittable }) { snapshot("ad-close"); button.tap() }
+            // Zero-frame ad web elements throw on isHittable: filter them out first.
+            if let button = close.allElementsBoundByIndex.first(where: { $0.frame.width > 0 && $0.isHittable }) { snapshot("ad-close"); button.tap() }
             sleep(1)
         }
     }
