@@ -1,7 +1,8 @@
 """App Store 1.1.0 screenshots: one waveform strip runs through all six frames (docs/store-shots-1.1.0.md).
 
-Usage: python3 compose.py <raw dir with raw_N_*.png> <demo clip>
-Writes en-US-110/01_hook.png ... 06_pro.png and contact.png next to this script.
+Usage: python3 compose.py <raw dir with raw_N_*.png> <demo clip> [locale, default en-US]
+Writes <locale>-110/01_hook.png ... 06_pro.png and contact.png next to this script.
+Raw captures must be in the same app language as the locale's copy (COPY below).
 """
 import subprocess, sys
 from array import array
@@ -9,14 +10,22 @@ from pathlib import Path
 from PIL import Image, ImageDraw, ImageFont
 
 S, CLIP = Path(sys.argv[1]), sys.argv[2]
-OUT = Path(__file__).resolve().parent / 'en-US-110'
+LOC = sys.argv[3] if len(sys.argv) > 3 else 'en-US'
+OUT = Path(__file__).resolve().parent / f'{LOC}-110'
 W, H = 1320, 2868
 X0, MAXW = 88, 1144
 WHITE, GREY = (255, 255, 255), (163, 163, 163)
 SF, MONO = '/System/Library/Fonts/SFNS.ttf', '/System/Library/Fonts/SFNSMono.ttf'
 
 
+CJK = {'ja': ('/System/Library/Fonts/ヒラギノ角ゴシック W7.ttc', 0, '/System/Library/Fonts/ヒラギノ角ゴシック W4.ttc', 0),
+       'ko': ('/System/Library/Fonts/AppleSDGothicNeo.ttc', 6, '/System/Library/Fonts/AppleSDGothicNeo.ttc', 0)}.get(LOC)
+
+
 def sf(size, axes):
+    if CJK:
+        bold = axes[3] >= 700
+        return ImageFont.truetype(CJK[0 if bold else 2], size, index=CJK[1 if bold else 3])
     f = ImageFont.truetype(SF, size)
     f.set_variation_by_axes(axes)  # [width, opsz, grad, weight]
     return f
@@ -24,6 +33,11 @@ def sf(size, axes):
 
 def mono(size):
     return ImageFont.truetype(MONO, size)
+
+
+def label_font(size):
+    """Capsules and strip notes: SF Mono for Latin, the CJK text face otherwise."""
+    return sf(size, [100, 28, 400, 400]) if CJK else mono(size)
 
 
 def bars():
@@ -59,6 +73,9 @@ def strip(d, k, vals, cut):
             d.rounded_rectangle([cx - 11, 880 - h / 2, cx + 11, 880 + h / 2], 11, fill=WHITE)
 
 
+LEAD = 162 if CJK else 146  # CJK glyphs fill the whole em box and need more line gap
+
+
 def title(d, lines, sub, top):
     size = 132
     while max(d.textlength(t, font=sf(size, [100, 96, 400, 700])) for t in lines) > MAXW:
@@ -66,8 +83,8 @@ def title(d, lines, sub, top):
         assert size >= 112, f'title too long: {lines}'
     f = sf(size, [100, 96, 400, 700])
     for i, (t, c) in enumerate(zip(lines, (WHITE, GREY))):
-        d.text((X0, top + i * 146), t, font=f, fill=c)
-    bottom = top + 146 + f.getbbox(lines[1])[3]
+        d.text((X0, top + i * LEAD), t, font=f, fill=c)
+    bottom = top + LEAD + f.getbbox('gpy')[3]  # fixed descender depth: the subline sits at the same y on every frame
     fs = sf(54, [100, 28, 400, 400])
     assert d.textlength(sub, font=fs) <= MAXW, f'subtitle too long: {sub}'
     d.text((X0, bottom + 36), sub, font=fs, fill=GREY)
@@ -96,20 +113,112 @@ def frame(k, vals, cut):
     return c
 
 
-SHOTS = [
-    ('01_hook', 'raw_1_review', ['Cut the silence.', 'Keep the talk.'], 'Free. No watermark. No sign-up.'),
-    ('02_control', 'raw_2_cuts', ['You approve', 'every cut.'], 'Keep any pause before you save.'),
-    ('03_private', 'raw_3_home', ['Private', 'by design.'], 'Your video never leaves your iPhone.'),
-    ('04_levels', 'raw_4_tight', ['Balanced, Tight', 'or Hardcore.'], 'Pick how tight the cut feels.'),
-    ('05_finetune', 'raw_5_finetune', ['Fine-tune', 'every pause.'], 'Set minimum pause and breathing room.'),
-    ('06_pro', 'raw_6_paywall', ['Pay once.', 'No subscription.'], 'Free with ads. Pro removes them for good.'),
-]
+FILES = [('01_hook', 'raw_1_review'), ('02_control', 'raw_2_cuts'), ('03_private', 'raw_3_home'),
+         ('04_levels', 'raw_4_tight'), ('05_finetune', 'raw_5_finetune'), ('06_pro', 'raw_6_paywall')]
 
-# Measured on the 1320x2868 iPhone 17 Pro Max captures (see docs/store-shots-1.1.0.md step 5).
-HOME_TOP = 1817 - 40          # "CutSense" overline on Home
-PAY_TOP = 325 - 40            # "CutSense Pro" overline on the paywall
-PAY_BOTTOM = 1885 + 60        # bottom of the white Pro column; the price CTA starts at y=2195
-SHEET_TOP = 1878              # top edge of the Fine-tune sheet
+# Per locale: six (headline lines, subline), the three Home capsules, the two strip notes on frame 1
+# (the in-app Cut/Keep toggle words).
+# Level and Fine-tune names match Translations.swift so the headline names what the screenshot shows.
+COPY = {
+    'en-US': ([
+        (['Cut the silence.', 'Keep the talk.'], 'Free. No watermark. No sign-up.'),
+        (['You approve', 'every cut.'], 'Keep any pause before you save.'),
+        (['Cut on', 'your iPhone.'], 'Your video is never uploaded.'),
+        (['Balanced, Tight', 'or Hardcore.'], 'Pick how tight the cut feels.'),
+        (['Fine-tune', 'every pause.'], 'Set minimum pause and breathing room.'),
+        (['Pay once.', 'No subscription.'], 'Free with ads. Pro removes them for good.'),
+    ], ('No upload', 'No account', 'No watermark'), ('cut', 'keep')),
+    'tr': ([
+        (['Sessizliği kes.', 'Konuşma kalsın.'], 'Ücretsiz, filigransız, üyeliksiz.'),
+        (['Her kesimi', 'sen onaylarsın.'], 'Kaydetmeden önce dilediğin duraklamayı tut.'),
+        (['Videon', 'iPhone’unda kalır.'], 'Hiçbir sunucuya yüklenmez.'),
+        (['Dengeli, Sıkı', 'ya da Hardcore.'], 'Kesimin ne kadar sıkı olacağını sen seç.'),
+        (['Her duraklamaya', 'ince ayar.'], 'En kısa duraklamayı ve nefes payını ayarla.'),
+        (['Bir kez öde.', 'Abonelik yok.'], 'Ücretsiz sürüm reklamlı. Pro reklamı kaldırır.'),
+    ], ('Yükleme yok', 'Hesap yok', 'Filigran yok'), ('kes', 'kalsın')),
+    'es-ES': ([
+        (['Corta el silencio.', 'Conserva tu voz.'], 'Gratis, sin marca de agua ni registro.'),
+        (['Tú apruebas', 'cada corte.'], 'Mantén cualquier pausa antes de guardar.'),
+        (['Todo ocurre', 'en tu iPhone.'], 'Tus clips nunca se suben a la nube.'),
+        (['Equilibrado, Ajustado', 'o Extremo.'], 'Elige cuánto quieres recortar.'),
+        (['Ajuste fino', 'de cada pausa.'], 'Define la pausa mínima y el margen.'),
+        (['Paga una vez.', 'Sin suscripción.'], 'Gratis con anuncios. Pro los quita para siempre.'),
+    ], ('Sin subidas', 'Sin cuenta', 'Sin marca de agua'), ('cortar', 'mantener')),
+    'pt-BR': ([
+        (['Corte o silêncio.', 'Fique com a fala.'], 'Grátis, sem marca d’água e sem cadastro.'),
+        (['Você aprova', 'cada corte.'], 'Mantenha qualquer pausa antes de salvar.'),
+        (['Tudo acontece', 'no seu iPhone.'], 'Seu vídeo nunca é enviado a servidores.'),
+        (['Equilibrado, Intenso', 'ou Extremo.'], 'Escolha o quanto quer cortar.'),
+        (['Ajuste fino', 'em cada pausa.'], 'Defina a pausa mínima e o respiro.'),
+        (['Pague uma vez.', 'Sem assinatura.'], 'Grátis com anúncios. O Pro remove de vez.'),
+    ], ('Sem upload', 'Sem conta', 'Sem marca d’água'), ('cortar', 'manter')),
+    'de-DE': ([
+        (['Stille raus.', 'Gesagtes bleibt.'], 'Kostenlos, ohne Wasserzeichen und Konto.'),
+        (['Du entscheidest', 'jeden Schnitt.'], 'Behalte jede Pause vor dem Speichern.'),
+        (['Alles passiert', 'auf dem iPhone.'], 'Dein Video wird nie hochgeladen.'),
+        (['Ausgewogen, Straff', 'oder Extrem.'], 'Wähle, wie straff geschnitten wird.'),
+        (['Feinschliff', 'für jede Pause.'], 'Minimale Pause und Puffer einstellen.'),
+        (['Einmal zahlen.', 'Kein Abo.'], 'Gratis mit Werbung. Pro entfernt sie für immer.'),
+    ], ('Kein Upload', 'Kein Konto', 'Kein Wasserzeichen'), ('schneiden', 'behalten')),
+    'fr-FR': ([
+        (['Coupez les blancs.', 'Gardez la parole.'], 'Gratuit, sans filigrane ni inscription.'),
+        (['Vous validez', 'chaque coupe.'], 'Gardez une pause avant d’enregistrer.'),
+        (['Tout se passe', 'sur votre iPhone.'], 'Votre vidéo n’est jamais envoyée.'),
+        (['Équilibré, Serré', 'ou Extrême.'], 'Choisissez l’intensité de la coupe.'),
+        (['Ajustez', 'chaque pause.'], 'Réglez la pause minimale et la marge.'),
+        (['Payez une fois.', 'Sans abonnement.'], 'Gratuit avec pubs. Pro les retire pour de bon.'),
+    ], ('Aucun envoi', 'Aucun compte', 'Aucun filigrane'), ('couper', 'garder')),
+    'it': ([
+        (['Taglia i silenzi.', 'Tieni le parole.'], 'Gratis, senza filigrana né registrazione.'),
+        (['Approvi tu', 'ogni taglio.'], 'Tieni qualsiasi pausa prima di salvare.'),
+        (['Tutto avviene', 'sul tuo iPhone.'], 'Il tuo video non viene mai caricato.'),
+        (['Bilanciato, Deciso', 'o Estremo.'], 'Scegli quanto deve essere netto il taglio.'),
+        (['Regola', 'ogni pausa.'], 'Imposta la pausa minima e il margine.'),
+        (['Paghi una volta.', 'Zero abbonamenti.'], 'Gratis con pubblicità. Pro la toglie per sempre.'),
+    ], ('Nessun upload', 'Nessun account', 'Nessuna filigrana'), ('taglia', 'tieni')),
+    'ja': ([
+        (['無音はカット。', '話はそのまま。'], '無料。透かしなし、登録不要。'),
+        (['どのカットも', 'あなたが決める。'], '保存する前に、残したい間を選べます。'),
+        (['カットは', 'iPhoneの中で。'], '動画はどこにもアップロードされません。'),
+        (['バランス、タイト、', '最大から選べる。'], 'カットの強さを3段階で。'),
+        (['すべての間を', '微調整。'], '最短の間と余白を自分で設定。'),
+        (['買い切り。', 'サブスクなし。'], '無料版は広告つき。Proで広告が消えます。'),
+    ], ('アップロードなし', 'アカウント不要', '透かしなし'), ('カット', '残す')),
+    'ko': ([
+        (['무음은 자르고', '말은 남기고.'], '무료. 워터마크도, 가입도 없습니다.'),
+        (['모든 컷을', '직접 승인하세요.'], '저장 전에 원하는 멈춤을 남길 수 있어요.'),
+        (['컷은', 'iPhone 안에서.'], '동영상은 어디에도 업로드되지 않습니다.'),
+        (['균형, 타이트,', '최대 중에서.'], '원하는 컷 강도를 고르세요.'),
+        (['모든 멈춤을', '세부 조정.'], '최소 멈춤과 여유를 직접 설정하세요.'),
+        (['한 번 구매.', '구독 없음.'], '무료 버전은 광고 포함. Pro는 광고를 없앱니다.'),
+    ], ('업로드 없음', '계정 없음', '워터마크 없음'), ('자르기', '유지')),
+}
+
+SHEET_TOP = 1878              # top edge of the Fine-tune sheet (same in every language)
+
+
+def dark(px, y, x0=60, x1=1260):
+    return all(sum(px[x, y]) < 60 for x in range(x0, x1, 4))
+
+
+def home_top(raw):
+    """40 px above the "CutSense" overline: first text row after the gap under Home's own waveform.
+    Measured per capture because the subtitle wraps to 1 or 2 lines depending on language."""
+    px, y, gap = raw.load(), 1400, 0
+    while gap < 40:
+        gap = gap + 1 if dark(px, y) else 0
+        y += 1
+    while dark(px, y): y += 1
+    return y - 40
+
+
+def pay_crop(raw):
+    """Paywall crop: 40 px above the "CutSense Pro" overline to 60 px under the white Pro column."""
+    px = raw.load()
+    top = next(y for y in range(200, 800) if not dark(px, y, 60, 1100))
+    col = next(y for y in range(600, 1400) if sum(px[1075, y]) > 740)  # inside the white Pro column
+    bottom = next(y for y in range(col, H) if sum(px[1075, y]) < 600)
+    return top - 40, bottom + 60
 
 
 def main():
@@ -118,7 +227,8 @@ def main():
     for old in OUT.glob('*.png'):
         old.unlink()
     outs = []
-    for k, (name, rawname, lines, sub) in enumerate(SHOTS):
+    shots, caps, notes = COPY[LOC]
+    for k, ((name, rawname), (lines, sub)) in enumerate(zip(FILES, shots)):
         raw = Image.open(S / f'{rawname}.png').convert('RGB')
         assert raw.size == (W, H), f'{rawname}: {raw.size}'
         c = frame(k, vals, cut)
@@ -128,9 +238,10 @@ def main():
         title(d, lines, sub, 190 if pro else 170)
 
         if k == 2:
+            HOME_TOP = home_top(raw)
             paste_ui(c, raw, HOME_TOP)
-            f, y = mono(50), 1100
-            for label in ('No upload', 'No account', 'No watermark'):
+            f, y = label_font(50), 1100
+            for label in caps:
                 w = d.textlength(label, font=f) + 2 * 48
                 assert y + 112 <= HOME_TOP, 'capsules overlap the Home crop'
                 ov = Image.new('RGBA', (W, H), (0, 0, 0, 0))
@@ -140,7 +251,8 @@ def main():
                 d.text((X0 + 48, y + 56), label, font=f, fill=WHITE, anchor='lm')
                 y += 112 + 28
         elif k == 5:
-            ui = raw.crop((0, PAY_TOP, W, PAY_BOTTOM))
+            top, bottom = pay_crop(raw)
+            ui = raw.crop((0, top, W, bottom))
             if ui.height > 1740:
                 ui = ui.resize((round(W * 1740 / ui.height), 1740), Image.LANCZOS)
             c.paste(ui, ((W - ui.width) // 2, 1080))
@@ -155,12 +267,13 @@ def main():
                     if sum(px[x, y]) > 90: px[x, y] = (0, 0, 0)
 
         if k == 0:
-            f = mono(30)
+            f = label_font(30)
             first = next(i for i in range(30) if cut[i])
             end = next((i for i in range(first, 30) if not cut[i]), 30)
-            d.text((((first + end) / 2) * 44, 1010), 'cut', font=f, fill=(128, 128, 128), anchor='mt')
+            d.text((((first + end) / 2) * 44, 1010), notes[0], font=f, fill=(128, 128, 128), anchor='mt')
             top = max(range(30), key=lambda i: -1 if cut[i] else vals[i])
-            d.text((top * 44 + 22, 1010), 'kept', font=f, fill=(128, 128, 128), anchor='mt')
+            x = max(top * 44 + 22, d.textlength(notes[1], font=f) / 2 + 40)  # long words stay off the edge
+            d.text((x, 1010), notes[1], font=f, fill=(128, 128, 128), anchor='mt')
 
         path = OUT / f'{name}.png'
         c.save(path, optimize=True)
