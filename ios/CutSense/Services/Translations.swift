@@ -245,6 +245,7 @@ enum Translations {
         ("Kept pauses per video", row(es: "Pausas mantenidas por video", pt: "Pausas mantidas por vídeo", de: "Behaltene Pausen pro Video", fr: "Pauses gardées par vidéo", it: "Pause tenute per video", ja: "動画ごとに残せる間", ko: "동영상당 유지 가능한 멈춤")),
         ("unlimited", row(es: "ilimitado", pt: "ilimitado", de: "unbegrenzt", fr: "illimité", it: "illimitato", ja: "無制限", ko: "무제한")),
         ("Unlimited keeps and Fine-tune", row(es: "Mantener sin límite y Ajuste fino", pt: "Manter sem limite e Ajuste fino", de: "Unbegrenzt behalten und Feinschliff", fr: "Garder sans limite et Ajuster", it: "Tieni senza limiti e Regola", ja: "無制限に残す＋微調整", ko: "무제한 유지 및 세부 조정")),
+        ("CutSense Pro active", row(es: "CutSense Pro activo", pt: "CutSense Pro ativo", de: "CutSense Pro aktiv", fr: "CutSense Pro actif", it: "CutSense Pro attivo", ja: "CutSense Pro 有効", ko: "CutSense Pro 활성")),
         ("One-time purchase. No subscription.", row(es: "Pago único. Sin suscripción.", pt: "Compra única. Sem assinatura.", de: "Einmalkauf. Kein Abo.", fr: "Achat unique. Sans abonnement.", it: "Acquisto unico. Nessun abbonamento.", ja: "買い切り。サブスクリプションなし。", ko: "한 번 구매. 구독 없음.")),
         ("Unlock for %@", row(es: "Desbloquear por %@", pt: "Desbloquear por %@", de: "Für %@ freischalten", fr: "Débloquer pour %@", it: "Sblocca a %@", ja: "%@で解除", ko: "%@에 잠금 해제")),
         ("Restore Purchases", row(es: "Restaurar compras", pt: "Restaurar compras", de: "Käufe wiederherstellen", fr: "Restaurer les achats", it: "Ripristina acquisti", ja: "購入を復元", ko: "구매 복원")),

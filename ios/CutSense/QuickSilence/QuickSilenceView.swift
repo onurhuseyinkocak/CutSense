@@ -134,7 +134,16 @@ struct QuickSilenceView: View {
                     .disabled(exportTask != nil)
             }
             ToolbarItem(placement: .topBarLeading) {
-                if privacyOptionsRequired && !store.isPro {
+                if store.isPro {
+                    // Owned, not an offer: a filled badge so a paying user always sees Pro is on.
+                    Text("PRO").monoText(.overline).bold().foregroundStyle(Mono.C.bg)
+                        .padding(.horizontal, 10)
+                        .frame(height: 26)
+                        .background(Capsule().fill(Mono.C.text))
+                        .fixedSize()
+                        .accessibilityLabel(t("CutSense Pro etkin", "CutSense Pro active"))
+                        .accessibilityIdentifier("proActiveBadge")
+                } else if privacyOptionsRequired {
                     privacyOptionsToolbarButton
                 }
             }
