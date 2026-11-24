@@ -887,17 +887,24 @@ private struct CutListSheet: View {
                     Button {
                         if keepsLimited { onLocked() } else { setAll(restored: true) }
                     } label: {
-                        if keepsLimited {
-                            Label(appText(language, "Tümünü tut", "Keep all"), systemImage: "lock.fill")
-                        } else {
-                            Text(appText(language, "Tümünü tut", "Keep all"))
+                        Group {
+                            if keepsLimited {
+                                Label(appText(language, "Tümünü tut", "Keep all"), systemImage: "lock.fill")
+                            } else {
+                                Text(appText(language, "Tümünü tut", "Keep all"))
+                            }
                         }
+                        // Long labels (es/pt/de) shrink instead of truncating.
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.6)
                     }
                         .buttonStyle(MonoSecondaryButtonStyle(height: 40))
                         .disabled(allKept)
                         .opacity(allKept ? 0.35 : 1)
                         .accessibilityIdentifier("keepAllCutsButton")
-                    Button(appText(language, "Tümünü kes", "Cut all")) { setAll(restored: false) }
+                    Button { setAll(restored: false) } label: {
+                        Text(appText(language, "Tümünü kes", "Cut all")).lineLimit(1).minimumScaleFactor(0.6)
+                    }
                         .buttonStyle(MonoSecondaryButtonStyle(height: 40))
                         .disabled(allCut)
                         .opacity(allCut ? 0.35 : 1)
