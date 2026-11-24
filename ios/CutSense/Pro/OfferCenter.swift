@@ -62,7 +62,8 @@ final class OfferCenter {
         var end = defaults.double(forKey: Key.endsAt)
         if t >= start, !defaults.bool(forKey: Key.opened), !ProEntitlement.isPro {
             // Due but never seen: wait for the first foreground, then run the full window from that moment.
-            guard isForeground() else { return publish(nil, nil) }
+            // Also wait for prices: opening without a price would burn the 15 minutes unseen.
+            guard isForeground(), canOffer() else { return publish(nil, nil) }
             start = t
             end = t + Self.duration(Self.flashSeconds)
             defaults.set(true, forKey: Key.opened)

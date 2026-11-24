@@ -113,6 +113,19 @@ final class OfferCenterTests: XCTestCase {
         XCTAssertNil(makeCenter().active)
     }
 
+    func testWaitsForPricesBeforeOpening() {
+        let center = makeCenter()
+        let finished = finishOnboarding(center)
+        offerable = false
+        advance(700)
+        center.refresh()
+        XCTAssertNil(center.active)            // no price yet: the 15 minutes must not start unseen
+        offerable = true
+        advance(100)
+        center.refresh()
+        XCTAssertEqual(center.active, .init(kind: .flash, endsAt: finished.addingTimeInterval(1_700)))
+    }
+
     func testOpensOnFirstForegroundAfterStartAndLasts900() {
         let center = makeCenter()
         let finished = finishOnboarding(center)

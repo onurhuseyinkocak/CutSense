@@ -41,6 +41,10 @@ struct QuickSilenceApp: App {
                 // UMP consent waits until onboarding is done.
                 if showsMain { AdMobService.start() }
             }
+            // The flash window waits for prices; open it as soon as they load.
+            .onChange(of: ProStore.shared.offerPrices != nil) { _, loaded in
+                if loaded { OfferCenter.shared.refresh() }
+            }
             .onChange(of: scenePhase) { _, phase in
                 guard phase == .active else { return }
                 OfferCenter.shared.refresh()
