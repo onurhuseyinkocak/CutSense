@@ -13,7 +13,7 @@ Overrides `docs/onboarding-offer-1.1.0.md` §3 wherever the two differ.
 ## Flow
 
 1. Onboarding has 3 pages. On page 3, "Start cutting" opens `OfferPanel(kind: .welcome)` when `ProStore.shared.welcomePrices != nil && !isPro`. Otherwise onboarding finishes. The welcome step shows a "Welcome offer" overline, no countdown, the regular price struck through, Buy, a "Not now" button, X, Restore, Terms and Privacy. Both Not now and X finish onboarding.
-2. Skip on pages 1–3 finishes onboarding straight away, with no offer.
+2. ~~Skip on pages 1–3 finishes onboarding straight away, with no offer.~~ Superseded (1.1.0, `docs/monetization-14d-1.1.0.md` step 1): Skip follows the same rule as "Start cutting" and opens the welcome offer when it can be shown. The flash window now opens the first time the app is in the foreground at or after start and lasts 900 s from that moment (key `offer_flash_opened`).
 3. Every exit calls `OfferCenter.shared.noteOnboardingFinished(purchased: ProStore.shared.isPro)` and then `onFinish()`. When the user did not buy, the flash is scheduled to start at finish + 600 s and end at start + 900 s. The schedule is persisted in UserDefaults as absolute times and is armed once per install. It never re-arms.
 4. During the window, `OfferCenter.shared.active` is `Active(kind: .flash, endsAt:)`. While the flash is still pending, `active` is nil and `pendingStart` holds the start time. Pro, the end time, or a clock rollback of more than 120 s ends the flash for good.
 5. `OfferCenter` wakes itself at the start and end boundaries, so `active` flips mid-session without a scene change.

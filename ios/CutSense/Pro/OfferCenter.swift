@@ -1,8 +1,10 @@
 import Foundation
 import Observation
+import UIKit
 
-/// One flash offer per install: it starts `flashDelay` after onboarding finishes without a purchase and lasts
-/// `flashSeconds`. Start and end are absolute and survive relaunch; Pro or a rolled-back clock cancels it for good.
+/// One flash offer per install: it becomes due `flashDelay` after onboarding finishes without a purchase, opens the
+/// first time the app is in the foreground after that, and lasts `flashSeconds` from that moment. Times are absolute
+/// and survive relaunch; Pro or a rolled-back clock cancels it for good.
 @MainActor @Observable
 final class OfferCenter {
     enum Kind: String { case welcome, flash }
@@ -22,7 +24,8 @@ final class OfferCenter {
         static let autoShown = "offer_auto_shown"
         static let clockHigh = "offer_clock_high"
         static let saves = "stat_saves"
-        static let all = [armed, startsAt, endsAt, autoShown, clockHigh, saves]
+        static let opened = "offer_flash_opened"
+        static let all = [armed, startsAt, endsAt, autoShown, clockHigh, saves, opened]
     }
 
     nonisolated static let flashDelaySeconds: TimeInterval = 600
@@ -33,13 +36,16 @@ final class OfferCenter {
     @ObservationIgnored private let defaults: UserDefaults
     @ObservationIgnored private let now: () -> Date
     @ObservationIgnored private let canOffer: @MainActor () -> Bool
+    @ObservationIgnored private let isForeground: @MainActor () -> Bool
     @ObservationIgnored private var wake: Task<Void, Never>?
 
     init(defaults: UserDefaults = .standard, now: @escaping () -> Date = Date.init,
-         canOffer: @escaping @MainActor () -> Bool = { ProStore.shared.offerPrices != nil && !ProStore.shared.isPro }) {
+         canOffer: @escaping @MainActor () -> Bool = { ProStore.shared.offerPrices != nil && !ProStore.shared.isPro },
+         isForeground: @escaping @MainActor () -> Bool = { UIApplication.shared.applicationState == .active }) {
         self.defaults = defaults
         self.now = now
         self.canOffer = canOffer
+        self.isForeground = isForeground
         refresh()
     }
 
@@ -52,8 +58,17 @@ final class OfferCenter {
         }
         defaults.set(max(high, t), forKey: Key.clockHigh)
         guard defaults.object(forKey: Key.startsAt) != nil else { return publish(nil, nil) }
-        let start = defaults.double(forKey: Key.startsAt)
-        let end = defaults.double(forKey: Key.endsAt)
+        var start = defaults.double(forKey: Key.startsAt)
+        var end = defaults.double(forKey: Key.endsAt)
+        if t >= start, !defaults.bool(forKey: Key.opened), !ProEntitlement.isPro {
+            // Due but never seen: wait for the first foreground, then run the full window from that moment.
+            guard isForeground() else { return publish(nil, nil) }
+            start = t
+            end = t + Self.duration(Self.flashSeconds)
+            defaults.set(true, forKey: Key.opened)
+            defaults.set(start, forKey: Key.startsAt)
+            defaults.set(end, forKey: Key.endsAt)
+        }
         if t >= end || ProEntitlement.isPro { return cancel() }
         if t < start {
             publish(nil, Date(timeIntervalSince1970: start))
@@ -157,6 +172,7 @@ enum OnboardingGate {
         if env["CUTSENSE_FORCE_FLASH_OFFER"] == "1" {
             let t = Date().timeIntervalSince1970
             defaults.set(true, forKey: OfferCenter.Key.armed)
+            defaults.set(true, forKey: OfferCenter.Key.opened)
             defaults.set(t, forKey: OfferCenter.Key.startsAt)
             defaults.set(t + OfferCenter.duration(OfferCenter.flashSeconds), forKey: OfferCenter.Key.endsAt)
             defaults.set(t, forKey: OfferCenter.Key.clockHigh)

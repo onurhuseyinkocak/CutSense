@@ -70,6 +70,9 @@ final class OfferFlowUITests: XCTestCase {
         snapshot("onboarding-swiped")
         let skip = app.buttons["onboardingSkip"]
         skip.tap(); if skip.exists { skip.tap() }
+        // Skip lands on the welcome offer when the welcome SKU loads; Not now finishes onboarding.
+        let notNow = app.buttons["offerNotNow"]
+        if notNow.waitForExistence(timeout: 8) { snapshot("skip-welcome-offer"); notNow.tap() }
         XCTAssertTrue(app.buttons["chooseVideoButton"].waitForExistence(timeout: 10), "Skip did not open home")
     }
 

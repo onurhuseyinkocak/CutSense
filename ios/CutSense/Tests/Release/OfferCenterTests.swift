@@ -7,12 +7,14 @@ final class OfferCenterTests: XCTestCase {
     private var defaults: UserDefaults!
     private var clock = Date(timeIntervalSince1970: 1_800_000_000)
     private var offerable = true
+    private var foreground = true
 
     override func setUp() async throws {
         suiteName = "OfferCenterTests.\(UUID().uuidString)"
         defaults = UserDefaults(suiteName: suiteName)
         clock = Date(timeIntervalSince1970: 1_800_000_000)
         offerable = true
+        foreground = true
         UserDefaults.standard.removeObject(forKey: ProEntitlement.key)
     }
 
@@ -21,7 +23,8 @@ final class OfferCenterTests: XCTestCase {
     }
 
     private func makeCenter() -> OfferCenter {
-        OfferCenter(defaults: defaults, now: { [unowned self] in self.clock }, canOffer: { [unowned self] in self.offerable })
+        OfferCenter(defaults: defaults, now: { [unowned self] in self.clock }, canOffer: { [unowned self] in self.offerable },
+                    isForeground: { [unowned self] in self.foreground })
     }
 
     private func advance(_ seconds: TimeInterval) { clock = clock.addingTimeInterval(seconds) }
@@ -56,6 +59,9 @@ final class OfferCenterTests: XCTestCase {
         let center = makeCenter()
         _ = finishOnboarding(center)
         advance(1_500)
+        center.refresh()                       // first foreground after the start: opens now
+        XCTAssertNotNil(center.active)
+        advance(900)
         center.refresh()
         XCTAssertNil(center.active)
         _ = finishOnboarding(center)
@@ -97,11 +103,86 @@ final class OfferCenterTests: XCTestCase {
         let finished = finishOnboarding(makeCenter())
         advance(100)
         XCTAssertEqual(makeCenter().pendingStart, finished.addingTimeInterval(600))
-        advance(600)
-        XCTAssertEqual(makeCenter().active, .init(kind: .flash, endsAt: finished.addingTimeInterval(1_500)))
+        advance(600)                           // first seen 700 s after finish
+        XCTAssertEqual(makeCenter().active, .init(kind: .flash, endsAt: finished.addingTimeInterval(1_600)))
         advance(800)
+        XCTAssertNotNil(makeCenter().active)
+        advance(100)
         XCTAssertNil(makeCenter().active)
         advance(-100)                          // back inside the window, within tolerance: stays over
+        XCTAssertNil(makeCenter().active)
+    }
+
+    func testOpensOnFirstForegroundAfterStartAndLasts900() {
+        let center = makeCenter()
+        let finished = finishOnboarding(center)
+        foreground = false
+        advance(2_000)                         // start passed while the app was away
+        center.refresh()
+        XCTAssertNil(center.active)
+        XCTAssertNil(center.pendingStart)
+        XCTAssertNil(makeCenter().active)      // cold launch in the background does not open it either
+        foreground = true
+        center.refresh()
+        XCTAssertEqual(center.active, .init(kind: .flash, endsAt: finished.addingTimeInterval(2_900)))
+        advance(899)
+        center.refresh()
+        XCTAssertNotNil(center.active)
+        advance(1)
+        center.refresh()
+        XCTAssertNil(center.active)
+    }
+
+    func testDoesNotReopenAfterWindow() {
+        let center = makeCenter()
+        _ = finishOnboarding(center)
+        advance(600)
+        center.refresh()
+        XCTAssertNotNil(center.active)
+        advance(900)
+        center.refresh()
+        XCTAssertNil(center.active)
+        foreground = false
+        advance(5_000)
+        center.refresh()
+        foreground = true
+        center.refresh()
+        XCTAssertNil(center.active)
+        XCTAssertNil(makeCenter().active)
+        XCTAssertTrue(defaults.bool(forKey: OfferCenter.Key.opened))
+    }
+
+    func testBackgroundedDuringWindowStillExpiresByRealTime() {
+        let center = makeCenter()
+        let finished = finishOnboarding(center)
+        advance(600)
+        center.refresh()
+        XCTAssertEqual(center.active, .init(kind: .flash, endsAt: finished.addingTimeInterval(1_500)))
+        foreground = false
+        advance(300)
+        center.refresh()
+        XCTAssertNotNil(center.active)         // still live while away, same end time
+        advance(600)
+        center.refresh()
+        XCTAssertNil(center.active)
+        foreground = true
+        center.refresh()
+        XCTAssertNil(center.active)
+    }
+
+    func testProNeverSeesFlashOnForeground() {
+        let center = makeCenter()
+        _ = finishOnboarding(center)
+        foreground = false
+        advance(700)
+        center.refresh()
+        UserDefaults.standard.set(true, forKey: ProEntitlement.key)
+        defer { UserDefaults.standard.removeObject(forKey: ProEntitlement.key) }
+        foreground = true
+        center.refresh()
+        XCTAssertNil(center.active)
+        XCTAssertFalse(center.takeAutoPresent())
+        UserDefaults.standard.removeObject(forKey: ProEntitlement.key)
         XCTAssertNil(makeCenter().active)
     }
 
@@ -122,7 +203,9 @@ final class OfferCenterTests: XCTestCase {
     func testClockRollbackEndsActiveFlash() {
         let center = makeCenter()
         _ = finishOnboarding(center)
-        advance(1_000)
+        advance(600)
+        center.refresh()                       // opens at 600
+        advance(400)
         center.refresh()
         advance(-100)                          // within tolerance
         center.refresh()

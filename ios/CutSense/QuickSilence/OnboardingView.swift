@@ -99,7 +99,7 @@ struct OnboardingView: View {
             }
             .accessibilityHidden(true)
             Spacer()
-            Button(t("Geç", "Skip"), action: finish)
+            Button(t("Geç", "Skip"), action: offerOrFinish)
                 .buttonStyle(MonoTertiaryButtonStyle())
                 .accessibilityIdentifier("onboardingSkip")
         }
@@ -198,6 +198,11 @@ struct OnboardingView: View {
 
     private func advance() {
         guard isLast else { return go(to: page + 1) }
+        offerOrFinish()
+    }
+
+    /// Start cutting and Skip both land on the welcome offer when it can be shown.
+    private func offerOrFinish() {
         let store = ProStore.shared
         if store.welcomePrices != nil, !store.isPro { showsOffer = true } else { finish() }
     }
