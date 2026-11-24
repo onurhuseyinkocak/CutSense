@@ -28,6 +28,8 @@ targets:
           - "Translations.swift"
       - path: CutSense/Pro
         optional: true
+        excludes:
+          - "*.storekit" # local StoreKit testing only; schemes reference it directly
       - path: CutSense/Storage
         optional: true
       - path: CutSense/RoughCut/AudioAnalysisService.swift
